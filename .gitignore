@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Godot
+.import/
+export.cfg
+export_presets.cfg
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
