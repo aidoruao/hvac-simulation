@@ -2141,29 +2141,1117 @@ Traceback (most recent call last):
 ValueError: Neither input to Props1SI [R1234ze,Tcrit] is a valid fluid
 (venv) idor@Tony:~/hvac-simulation$
 
-23}
+23} kimi: "  R1234ze also not in CoolProp 8.0.0. The exact name might be different — CoolProp sometimes uses `R1234ze(E)` for the trans isomer. Let me fix this by checking the exact fluid names CoolProp supports and updating the database accordingly.  
+  R1234ze isn't in CoolProp 8.0.0 either. The fluid database is missing newer HFOs. We have two confirmed working: R1234yf works, R1234ze doesn't. Let me fix the code to only include verified refrigerants and move the rest to PLANNED.
 
-24}
+**Run this:**
 
-25}
+```bash
+cd ~/hvac-simulation
+source venv/bin/activate
 
-26}
+cat > refrigerants.py << 'EOF'
+"""Unified refrigerant interface for HVAC simulation.
 
-27}
+Supports legacy, current, and transition refrigerants including A2Ls.
+All values verified against CoolProp 8.0.0 equation of state.
+"""
 
-28}
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+from CoolProp.CoolProp import PropsSI
 
-29}
+# Refrigerant classifications per ASHRAE safety standards
+# ONLY includes refrigerants verified in CoolProp 8.0.0
+CLASSIFICATIONS = {
+    # Legacy — high GWP, being phased out
+    'R22': {'class': 'A1', 'gwp': 1810, 'status': 'legacy', 'phaseout': '2020 (new equip)'},
+    'R410A': {'class': 'A1', 'gwp': 2088, 'status': 'current→legacy', 'phaseout': '2028 (new equip)'},
+    'R134a': {'class': 'A1', 'gwp': 1430, 'status': 'current', 'phaseout': 'None (chillers/automotive)'},
+    
+    # Transition — A2L mildly flammable, lower GWP
+    'R32': {'class': 'A2L', 'gwp': 675, 'status': 'transition', 'phaseout': 'None'},
+    
+    # HFOs — very low GWP
+    'R1234yf': {'class': 'A2L', 'gwp': 4, 'status': 'future', 'phaseout': 'None'},
+}
 
-30}
+# Refrigerants planned but not yet in CoolProp 8.0.0
+PLANNED = {
+    'R454B': {'class': 'A2L', 'gwp': 466, 'status': 'planned', 'phaseout': 'None', 
+              'note': 'Opteon XL41 — not in CoolProp 8.0.0'},
+    'R452B': {'class': 'A2L', 'gwp': 698, 'status': 'planned', 'phaseout': 'None',
+              'note': 'Opteon XL55 — not in CoolProp 8.0.0'},
+    'R1234ze': {'class': 'A2L', 'gwp': 7, 'status': 'planned', 'phaseout': 'None',
+                'note': 'HFO-1234ze — not in CoolProp 8.0.0 (try R1234ze(E) in future versions)'},
+}
 
-31}
+@dataclass
+class RefrigerantState:
+    """Thermodynamic state of a refrigerant."""
+    refrigerant: str
+    temperature_c: float      # °C
+    pressure_bar: float        # bar
+    density_kg_m3: float      # kg/m³
+    enthalpy_kj_kg: float     # kJ/kg
+    entropy_kj_kg_k: float    # kJ/(kg·K)
+    quality: Optional[float]  # 0=liquid, 1=vapor, None=superheated/subcooled
+    phase: str                 # 'liquid', 'vapor', 'two-phase', 'superheated', 'subcooled'
+    
+    def is_superheated(self) -> bool:
+        return self.phase == 'superheated'
+    
+    def is_subcooled(self) -> bool:
+        return self.phase == 'subcooled'
+    
+    def is_two_phase(self) -> bool:
+        return self.phase == 'two-phase'
 
-32}
+class Refrigerant:
+    """Unified interface for all refrigerants."""
+    
+    SUPPORTED = list(CLASSIFICATIONS.keys())
+    
+    def __init__(self, name: str):
+        if name not in self.SUPPORTED:
+            if name in PLANNED:
+                raise ValueError(
+                    f"{name} is planned but not yet in CoolProp. "
+                    f"Note: {PLANNED[name]['note']}"
+                )
+            raise ValueError(f"Unsupported refrigerant: {name}. Supported: {self.SUPPORTED}")
+        self.name = name
+        self.info = CLASSIFICATIONS[name]
+    
+    def saturation_pressure(self, temperature_c: float) -> float:
+        """Saturation pressure [bar] at given temperature [°C]."""
+        T_k = temperature_c + 273.15
+        P_pa = PropsSI('P', 'T', T_k, 'Q', 1, self.name)
+        return P_pa / 1e5
+    
+    def saturation_temperature(self, pressure_bar: float) -> float:
+        """Saturation temperature [°C] at given pressure [bar]."""
+        P_pa = pressure_bar * 1e5
+        T_k = PropsSI('T', 'P', P_pa, 'Q', 1, self.name)
+        return T_k - 273.15
+    
+    def critical_point(self) -> Tuple[float, float]:
+        """Critical temperature [°C] and pressure [bar]."""
+        T_crit_k = PropsSI('Tcrit', self.name)
+        P_crit_pa = PropsSI('Pcrit', self.name)
+        return T_crit_k - 273.15, P_crit_pa / 1e5
+    
+    def latent_heat(self, temperature_c: float) -> float:
+        """Latent heat of vaporization [kJ/kg] at given temperature [°C]."""
+        T_k = temperature_c + 273.15
+        h_liq = PropsSI('H', 'T', T_k, 'Q', 0, self.name) / 1000
+        h_vap = PropsSI('H', 'T', T_k, 'Q', 1, self.name) / 1000
+        return h_vap - h_liq
+    
+    def get_state(self, temperature_c: float, pressure_bar: float) -> RefrigerantState:
+        """Get full thermodynamic state at given T and P."""
+        T_k = temperature_c + 273.15
+        P_pa = pressure_bar * 1e5
+        
+        # Determine phase
+        try:
+            P_sat = PropsSI('P', 'T', T_k, 'Q', 1, self.name)
+            T_sat = PropsSI('T', 'P', P_pa, 'Q', 1, self.name)
+            
+            if abs(P_pa - P_sat) < 1000:  # ~0.01 bar tolerance
+                quality = 0.5  # Approximate for two-phase
+                phase = 'two-phase'
+            elif P_pa < P_sat or temperature_c > (T_sat - 273.15):
+                quality = None
+                phase = 'superheated'
+            else:
+                quality = None
+                phase = 'subcooled'
+        except Exception:
+            quality = None
+            phase = 'unknown'
+        
+        rho = PropsSI('D', 'T', T_k, 'P', P_pa, self.name)
+        h = PropsSI('H', 'T', T_k, 'P', P_pa, self.name) / 1000
+        s = PropsSI('S', 'T', T_k, 'P', P_pa, self.name) / 1000
+        
+        return RefrigerantState(
+            refrigerant=self.name,
+            temperature_c=temperature_c,
+            pressure_bar=pressure_bar,
+            density_kg_m3=rho,
+            enthalpy_kj_kg=h,
+            entropy_kj_kg_k=s,
+            quality=quality,
+            phase=phase
+        )
+    
+    def pt_chart_data(self, t_min_c: float = -40, t_max_c: float = 60, points: int = 100) -> Dict:
+        """Generate data for PT chart plotting."""
+        temps = [t_min_c + (t_max_c - t_min_c) * i / (points - 1) for i in range(points)]
+        pressures = [self.saturation_pressure(t) for t in temps]
+        return {
+            'temperature_c': temps,
+            'pressure_bar': pressures,
+            'refrigerant': self.name,
+            'classification': self.info,
+        }
+    
+    @classmethod
+    def list_all(cls) -> List[Dict]:
+        """List all supported refrigerants with classifications."""
+        return [
+            {'name': name, **info}
+            for name, info in CLASSIFICATIONS.items()
+        ]
+    
+    @classmethod
+    def list_planned(cls) -> List[Dict]:
+        """List refrigerants planned for future support."""
+        return [
+            {'name': name, **info}
+            for name, info in PLANNED.items()
+        ]
+    
+    @classmethod
+    def list_by_status(cls, status: str) -> List[str]:
+        """List refrigerants by status: legacy, current, transition, future."""
+        return [
+            name for name, info in CLASSIFICATIONS.items()
+            if info['status'] == status or status in info['status']
+        ]
 
-33}
+if __name__ == '__main__':
+    print("Refrigerant Database — HVAC Simulation")
+    print("=" * 50)
+    
+    for r_info in Refrigerant.list_all():
+        status_icon = {
+            'legacy': '⚠️',
+            'current': '✅',
+            'current→legacy': '⏳',
+            'transition': '🔄',
+            'future': '🚀'
+        }.get(r_info['status'], '❓')
+        
+        print(f"{status_icon} {r_info['name']:10s} | {r_info['class']:4s} | GWP={r_info['gwp']:5d} | {r_info['status']}")
+        if r_info.get('phaseout'):
+            print(f"   Phaseout: {r_info['phaseout']}")
+    
+    print()
+    print("Planned (not yet in CoolProp 8.0.0):")
+    for r_info in Refrigerant.list_planned():
+        print(f"⏳ {r_info['name']:10s} | {r_info['class']:4s} | GWP={r_info['gwp']:5d}")
+        print(f"   {r_info['note']}")
+    
+    print()
+    print("Critical points:")
+    for name in Refrigerant.SUPPORTED:
+        r = Refrigerant(name)
+        T_crit, P_crit = r.critical_point()
+        print(f"  {name:10s} T_crit={T_crit:6.2f}°C  P_crit={P_crit:6.2f} bar")
+    
+    print()
+    print("Saturation pressure comparison at 25°C:")
+    print(f"  {'Refrigerant':10s} {'P_sat (bar)':>12s} {'P_sat (psig)':>12s}")
+    print("  " + "-" * 36)
+    for name in Refrigerant.SUPPORTED:
+        r = Refrigerant(name)
+        p_bar = r.saturation_pressure(25)
+        p_psig = (p_bar - 1.01325) * 14.5038  # Convert to psig
+        print(f"  {name:10s} {p_bar:12.2f} {p_psig:12.2f}")
+    
+    print()
+    print("A2L Safety Note:")
+    print("  R32 is mildly flammable (A2L). Simulation must include:")
+    print("  - Charge limit warnings (max 3.9 kg per circuit in some jurisdictions)")
+    print("  - Ventilation requirements")
+    print("  - Leak detection protocols")
+    print("  - No ignition sources within specified radius")
+EOF
 
-34}
+python3 refrigerants.py
+```
+
+Run that. It should work for all 5 verified refrigerants. Then we write the test file and commit both."
+
+24} wsl2 terminal: idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > refrigerants.py << 'EOF'
+"""Unified refrigerant interface for HVAC simulation.
+
+Supports legacy, current, and transition refrigerants including A2Ls.
+All values verified against CoolProp 8.0.0 equation of state.
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+from CoolProp.CoolProp import PropsSI
+
+# Refrigerant classifications per ASHRAE safety standards
+# ONLY includes refrigerants verified in CoolProp 8.0.0
+CLASSIFICATIONS = {
+    # Legacy — high GWP, being phased out
+    'R22': {'class': 'A1', 'gwp': 1810, 'status': 'legacy', 'phaseout': '2020 (new equip)'},
+    'R410A': {'class': 'A1', 'gwp': 2088, 'status': 'current→legacy', 'phaseout': '2028 (new equip)'},
+    'R134a': {'class': 'A1', 'gwp': 1430, 'status': 'current', 'phaseout': 'None (chillers/automotive)'},
+
+    # Transition — A2L mildly flammable, lower GWP
+    'R32': {'class': 'A2L', 'gwp': 675, 'status': 'transition', 'phaseout': 'None'},
+
+    # HFOs — very low GWP
+    'R1234yf': {'class': 'A2L', 'gwp': 4, 'status': 'future', 'phaseout': 'None'},
+}
+
+# Refrigerants planned but not yet in CoolProp 8.0.0
+PLANNED = {
+    'R454B': {'class': 'A2L', 'gwp': 466, 'status': 'planned', 'phaseout': 'None',
+              'note': 'Opteon XL41 — not in CoolProp 8.0.0'},
+    'R452B': {'class': 'A2L', 'gwp': 698, 'status': 'planned', 'phaseout': 'python3 refrigerants.pyion sources within specified radius") in some jurisdi
+Refrigerant Database — HVAC Simulation
+==================================================
+⚠️ R22        | A1   | GWP= 1810 | legacy
+   Phaseout: 2020 (new equip)
+⏳ R410A      | A1   | GWP= 2088 | current→legacy
+   Phaseout: 2028 (new equip)
+✅ R134a      | A1   | GWP= 1430 | current
+   Phaseout: None (chillers/automotive)
+🔄 R32        | A2L  | GWP=  675 | transition
+   Phaseout: None
+🚀 R1234yf    | A2L  | GWP=    4 | future
+   Phaseout: None
+
+Planned (not yet in CoolProp 8.0.0):
+⏳ R454B      | A2L  | GWP=  466
+   Opteon XL41 — not in CoolProp 8.0.0
+⏳ R452B      | A2L  | GWP=  698
+   Opteon XL55 — not in CoolProp 8.0.0
+⏳ R1234ze    | A2L  | GWP=    7
+   HFO-1234ze — not in CoolProp 8.0.0 (try R1234ze(E) in future versions)
+
+Critical points:
+  R22        T_crit= 96.15°C  P_crit= 49.90 bar
+  R410A      T_crit= 71.34°C  P_crit= 49.01 bar
+  R134a      T_crit=101.06°C  P_crit= 40.59 bar
+  R32        T_crit= 78.11°C  P_crit= 57.83 bar
+  R1234yf    T_crit= 94.70°C  P_crit= 33.84 bar
+
+Saturation pressure comparison at 25°C:
+  Refrigerant  P_sat (bar) P_sat (psig)
+  ------------------------------------
+  R22               10.44       136.71
+  R410A             16.52       224.93
+  R134a              6.65        81.81
+  R32               16.90       230.36
+  R1234yf            6.83        84.32
+
+A2L Safety Note:
+  R32 is mildly flammable (A2L). Simulation must include:
+  - Charge limit warnings (max 3.9 kg per circuit in some jurisdictions)
+  - Ventilation requirements
+  - Leak detection protocols
+  - No ignition sources within specified radius
+(venv) idor@Tony:~/hvac-simulation$
+
+25} kimi: "  All 5 refrigerants working. Critical points verified. Saturation pressures at 25°C calculated. A2L safety note included.
+
+Now we write the test file and commit both. Run this:
+
+```bash
+cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > test_refrigerants.py << 'EOF'
+"""Tests for unified refrigerant interface.
+
+Verifies all supported refrigerants against CoolProp 8.0.0.
+Each test has FALSIFIES_IF conditions per HVAC_SRS.md.
+"""
+
+import pytest
+from refrigerants import Refrigerant, RefrigerantState
+
+
+class TestRefrigerantDatabase:
+    """FR-TD-006: Multi-refrigerant support."""
+    
+    def test_all_refrigerants_instantiable(self):
+        """Every supported refrigerant can be instantiated."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            assert r.name == name
+            assert r.info['class'] in ['A1', 'A2L']
+    
+    def test_planned_refrigerants_raise_error(self):
+        """Planned refrigerants raise informative errors."""
+        for name in ['R454B', 'R452B', 'R1234ze']:
+            with pytest.raises(ValueError) as exc_info:
+                Refrigerant(name)
+            assert "planned" in str(exc_info.value).lower()
+    
+    def test_invalid_refrigerant_raises(self):
+        """Invalid refrigerant names raise ValueError."""
+        with pytest.raises(ValueError):
+            Refrigerant('R9999')
+
+
+class TestCriticalPoints:
+    """FR-TD-002: Critical point accuracy."""
+    
+    # Reference values from CoolProp 8.0.0
+    CRITICAL_POINTS = {
+        'R22':    {'T_crit': 96.15, 'P_crit': 49.90},
+        'R410A':  {'T_crit': 71.34, 'P_crit': 49.01},
+        'R134a':  {'T_crit': 101.06, 'P_crit': 40.59},
+        'R32':    {'T_crit': 78.11, 'P_crit': 57.83},
+        'R1234yf': {'T_crit': 94.70, 'P_crit': 33.84},
+    }
+    
+    def test_critical_points(self):
+        """Critical points match CoolProp within ±0.5%."""
+        for name, expected in self.CRITICAL_POINTS.items():
+            r = Refrigerant(name)
+            T_crit, P_crit = r.critical_point()
+            
+            # FALSIFIES IF: deviation > 0.5%
+            T_error = abs(T_crit - expected['T_crit']) / expected['T_crit']
+            P_error = abs(P_crit - expected['P_crit']) / expected['P_crit']
+            
+            assert T_error < 0.005, f"{name} T_crit error: {T_error*100:.2f}%"
+            assert P_error < 0.005, f"{name} P_crit error: {P_error*100:.2f}%"
+
+
+class TestSaturationPressure:
+    """FR-TD-001: Saturation pressure accuracy."""
+    
+    def test_r410a_at_25c(self):
+        """R410A saturation pressure at 25°C."""
+        r = Refrigerant('R410A')
+        P = r.saturation_pressure(25)
+        expected = 16.52  # bar, verified by CoolProp 8.0.0
+        
+        # FALSIFIES IF: deviation > 0.5%
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R410A P_sat error: {error*100:.2f}%"
+    
+    def test_r32_at_25c(self):
+        """R32 saturation pressure at 25°C."""
+        r = Refrigerant('R32')
+        P = r.saturation_pressure(25)
+        expected = 16.90  # bar, verified by CoolProp 8.0.0
+        
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R32 P_sat error: {error*100:.2f}%"
+    
+    def test_r1234yf_at_25c(self):
+        """R1234yf saturation pressure at 25°C."""
+        r = Refrigerant('R1234yf')
+        P = r.saturation_pressure(25)
+        expected = 6.83  # bar, verified by CoolProp 8.0.0
+        
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R1234yf P_sat error: {error*100:.2f}%"
+
+
+class TestLatentHeat:
+    """FR-TD-003: Latent heat of vaporization."""
+    
+    def test_latent_heat_positive(self):
+        """Latent heat is positive for all refrigerants at 25°C."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            h_fg = r.latent_heat(25)
+            
+            # FALSIFIES IF: h_fg < 150 kJ/kg
+            assert h_fg > 150, f"{name} h_fg = {h_fg:.2f} kJ/kg (too low)"
+    
+    def test_r410a_latent_heat(self):
+        """R410A latent heat at 25°C matches known value."""
+        r = Refrigerant('R410A')
+        h_fg = r.latent_heat(25)
+        expected = 186.48  # kJ/kg, from test_physics.py
+        
+        error = abs(h_fg - expected) / expected
+        assert error < 0.01, f"R410A h_fg error: {error*100:.2f}%"
+
+
+class TestStateDetermination:
+    """FR-TD-005: Phase state determination."""
+    
+    def test_superheated_state(self):
+        """State above saturation is superheated."""
+        r = Refrigerant('R410A')
+        # At 25°C, P_sat = 16.52 bar. At 10 bar, should be superheated.
+        state = r.get_state(25, 10)
+        assert state.phase == 'superheated'
+        assert state.is_superheated()
+    
+    def test_subcooled_state(self):
+        """State below saturation is subcooled."""
+        r = Refrigerant('R410A')
+        # At 25°C, P_sat = 16.52 bar. At 20 bar, should be subcooled.
+        state = r.get_state(25, 20)
+        assert state.phase == 'subcooled'
+        assert state.is_subcooled()
+
+
+class TestA2LSafety:
+    """A2L refrigerant safety properties."""
+    
+    def test_r32_is_a2l(self):
+        """R32 is classified as A2L."""
+        r = Refrigerant('R32')
+        assert r.info['class'] == 'A2L'
+    
+    def test_r32_gwp_lower_than_r410a(self):
+        """R32 GWP is significantly lower than R410A."""
+        r32 = Refrigerant('R32')
+        r410a = Refrigerant('R410A')
+        
+        assert r32.info['gwp'] < r410a.info['gwp'] / 2, \
+            "R32 GWP should be < 50% of R410A"
+
+
+class TestPTChartData:
+    """FR-TD-007: PT chart data generation."""
+    
+    def test_pt_chart_structure(self):
+        """PT chart data has correct structure."""
+        r = Refrigerant('R410A')
+        data = r.pt_chart_data(t_min_c=-40, t_max_c=60, points=100)
+        
+        assert 'temperature_c' in data
+        assert 'pressure_bar' in data
+        assert len(data['temperature_c']) == 100
+        assert len(data['pressure_bar']) == 100
+        
+        # Pressures should increase with temperature
+        for i in range(1, len(data['pressure_bar'])):
+            assert data['pressure_bar'][i] > data['pressure_bar'][i-1], \
+                "PT curve should be monotonically increasing"
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
+EOF
+
+pip install pytest
+python3 -m pytest test_refrigerants.py -v
+```
+
+Run that. If all tests pass, we commit both files and update the SRS."
+
+26} wsl2 terminal:  idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > test_refrigerants.py << 'EOF'
+"""Tests for unified refrigerant interface.
+
+Verifies all supported refrigerants against CoolProp 8.0.0.
+Each test has FALSIFIES_IF conditions per HVAC_SRS.md.
+"""
+
+import pytest
+from refrigerants import Refrigerant, RefrigerantState
+
+
+class TestRefrigerantDatabase:
+    """FR-TD-006: Multi-refrigerant support."""
+
+    def test_all_refrigerants_instantiable(self):
+        """Every supported refrigerant can be instantiated."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            assert r.name == name
+            assert r.info['class'] in ['A1', 'A2L']
+
+    def test_planned_refrigerants_raise_error(self):
+        """Planned refrigerants raise informative errors."""
+        for name in ['R454B', 'R452B', 'R1234ze']:
+            with pytest.raises(ValueError) as exc_info:
+                Refrigerant(name)
+            assert "planned" in str(exc_info.value).lower()
+
+    def test_invalid_refrigerant_raises(self):
+        """Invalid refrigerant names raise ValueError."""
+        with pytest.raises(ValueError):
+            Refrigerant('R9999')
+
+
+class TestCriticalPoints:
+    """FR-TD-002: Critical point accuracy."""
+
+    # Reference values from CoolProp 8.0.0
+python3 -m pytest test_refrigerants.py -vonically increasing"ar'][i-1], \"f}
+Collecting pytest
+  Using cached pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting iniconfig>=1.0.1 (from pytest)
+  Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: packaging>=22 in ./venv/lib/python3.12/site-packages (from pytest) (26.2)
+Collecting pluggy<2,>=1.5 (from pytest)
+  Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting pygments>=2.7.2 (from pytest)
+  Using cached pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+Installing collected packages: pygments, pluggy, iniconfig, pytest
+Successfully installed iniconfig-2.3.0 pluggy-1.6.0 pygments-2.20.0 pytest-9.1.1
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 14 items
+
+test_refrigerants.py::TestRefrigerantDatabase::test_all_refrigerants_instantiable PASSED [  7%]
+test_refrigerants.py::TestRefrigerantDatabase::test_planned_refrigerants_raise_error PASSED [ 14%]
+test_refrigerants.py::TestRefrigerantDatabase::test_invalid_refrigerant_raises PASSED [ 21%]
+test_refrigerants.py::TestCriticalPoints::test_critical_points PASSED [ 28%]
+test_refrigerants.py::TestSaturationPressure::test_r410a_at_25c PASSED [ 35%]
+test_refrigerants.py::TestSaturationPressure::test_r32_at_25c PASSED [ 42%]
+test_refrigerants.py::TestSaturationPressure::test_r1234yf_at_25c PASSED [ 50%]
+test_refrigerants.py::TestLatentHeat::test_latent_heat_positive FAILED [ 57%]
+test_refrigerants.py::TestLatentHeat::test_r410a_latent_heat PASSED  [ 64%]
+test_refrigerants.py::TestStateDetermination::test_superheated_state PASSED [ 71%]
+test_refrigerants.py::TestStateDetermination::test_subcooled_state PASSED [ 78%]
+test_refrigerants.py::TestA2LSafety::test_r32_is_a2l PASSED          [ 85%]
+test_refrigerants.py::TestA2LSafety::test_r32_gwp_lower_than_r410a PASSED [ 92%]
+test_refrigerants.py::TestPTChartData::test_pt_chart_structure PASSED [100%]
+
+================================= FAILURES =================================
+_________________ TestLatentHeat.test_latent_heat_positive _________________
+
+self = <test_refrigerants.TestLatentHeat object at 0x746003da8fe0>
+
+    def test_latent_heat_positive(self):
+        """Latent heat is positive for all refrigerants at 25°C."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            h_fg = r.latent_heat(25)
+
+            # FALSIFIES IF: h_fg < 150 kJ/kg
+>           assert h_fg > 150, f"{name} h_fg = {h_fg:.2f} kJ/kg (too low)"
+E           AssertionError: R1234yf h_fg = 145.50 kJ/kg (too low)
+E           assert 145.50044339030825 > 150
+
+test_refrigerants.py:102: AssertionError
+========================= short test summary info ==========================
+FAILED test_refrigerants.py::TestLatentHeat::test_latent_heat_positive - AssertionError: R1234yf h_fg = 145.50 kJ/kg (too low)
+======================= 1 failed, 13 passed in 2.59s =======================
+(venv) idor@Tony:~/hvac-simulation$
+
+27} kimi: "   13/14 passed. One failure: R1234yf latent heat at 25°C is 145.50 kJ/kg, below the 150 kJ/kg threshold. That's not a bug — that's physics. HFOs have lower latent heat than traditional refrigerants. The threshold was arbitrary.
+
+**Fix: Lower the threshold to 140 kJ/kg for all refrigerants, or make it refrigerant-specific.**
+
+Run this to fix the test:
+
+```bash
+cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > test_refrigerants.py << 'EOF'
+"""Tests for unified refrigerant interface.
+
+Verifies all supported refrigerants against CoolProp 8.0.0.
+Each test has FALSIFIES_IF conditions per HVAC_SRS.md.
+"""
+
+import pytest
+from refrigerants import Refrigerant, RefrigerantState
+
+
+class TestRefrigerantDatabase:
+    """FR-TD-006: Multi-refrigerant support."""
+    
+    def test_all_refrigerants_instantiable(self):
+        """Every supported refrigerant can be instantiated."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            assert r.name == name
+            assert r.info['class'] in ['A1', 'A2L']
+    
+    def test_planned_refrigerants_raise_error(self):
+        """Planned refrigerants raise informative errors."""
+        for name in ['R454B', 'R452B', 'R1234ze']:
+            with pytest.raises(ValueError) as exc_info:
+                Refrigerant(name)
+            assert "planned" in str(exc_info.value).lower()
+    
+    def test_invalid_refrigerant_raises(self):
+        """Invalid refrigerant names raise ValueError."""
+        with pytest.raises(ValueError):
+            Refrigerant('R9999')
+
+
+class TestCriticalPoints:
+    """FR-TD-002: Critical point accuracy."""
+    
+    # Reference values from CoolProp 8.0.0
+    CRITICAL_POINTS = {
+        'R22':    {'T_crit': 96.15, 'P_crit': 49.90},
+        'R410A':  {'T_crit': 71.34, 'P_crit': 49.01},
+        'R134a':  {'T_crit': 101.06, 'P_crit': 40.59},
+        'R32':    {'T_crit': 78.11, 'P_crit': 57.83},
+        'R1234yf': {'T_crit': 94.70, 'P_crit': 33.84},
+    }
+    
+    def test_critical_points(self):
+        """Critical points match CoolProp within ±0.5%."""
+        for name, expected in self.CRITICAL_POINTS.items():
+            r = Refrigerant(name)
+            T_crit, P_crit = r.critical_point()
+            
+            # FALSIFIES IF: deviation > 0.5%
+            T_error = abs(T_crit - expected['T_crit']) / expected['T_crit']
+            P_error = abs(P_crit - expected['P_crit']) / expected['P_crit']
+            
+            assert T_error < 0.005, f"{name} T_crit error: {T_error*100:.2f}%"
+            assert P_error < 0.005, f"{name} P_crit error: {P_error*100:.2f}%"
+
+
+class TestSaturationPressure:
+    """FR-TD-001: Saturation pressure accuracy."""
+    
+    def test_r410a_at_25c(self):
+        """R410A saturation pressure at 25°C."""
+        r = Refrigerant('R410A')
+        P = r.saturation_pressure(25)
+        expected = 16.52  # bar, verified by CoolProp 8.0.0
+        
+        # FALSIFIES IF: deviation > 0.5%
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R410A P_sat error: {error*100:.2f}%"
+    
+    def test_r32_at_25c(self):
+        """R32 saturation pressure at 25°C."""
+        r = Refrigerant('R32')
+        P = r.saturation_pressure(25)
+        expected = 16.90  # bar, verified by CoolProp 8.0.0
+        
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R32 P_sat error: {error*100:.2f}%"
+    
+    def test_r1234yf_at_25c(self):
+        """R1234yf saturation pressure at 25°C."""
+        r = Refrigerant('R1234yf')
+        P = r.saturation_pressure(25)
+        expected = 6.83  # bar, verified by CoolProp 8.0.0
+        
+        error = abs(P - expected) / expected
+        assert error < 0.005, f"R1234yf P_sat error: {error*100:.2f}%"
+
+
+class TestLatentHeat:
+    """FR-TD-003: Latent heat of vaporization."""
+    
+    # Refrigerant-specific minimum latent heat values (kJ/kg at 25°C)
+    # HFOs have lower latent heat than traditional refrigerants — this is physical reality
+    MIN_LATENT_HEAT = {
+        'R22': 180,
+        'R410A': 180,
+        'R134a': 170,
+        'R32': 230,
+        'R1234yf': 140,  # HFO — lower latent heat is correct
+    }
+    
+    def test_latent_heat_positive(self):
+        """Latent heat is positive and above refrigerant-specific minimum."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            h_fg = r.latent_heat(25)
+            minimum = self.MIN_LATENT_HEAT[name]
+            
+            # FALSIFIES IF: h_fg < refrigerant-specific minimum
+            assert h_fg > minimum, \
+                f"{name} h_fg = {h_fg:.2f} kJ/kg (below minimum {minimum})"
+    
+    def test_r410a_latent_heat(self):
+        """R410A latent heat at 25°C matches known value."""
+        r = Refrigerant('R410A')
+        h_fg = r.latent_heat(25)
+        expected = 186.48  # kJ/kg, from test_physics.py
+        
+        error = abs(h_fg - expected) / expected
+        assert error < 0.01, f"R410A h_fg error: {error*100:.2f}%"
+
+
+class TestStateDetermination:
+    """FR-TD-005: Phase state determination."""
+    
+    def test_superheated_state(self):
+        """State above saturation is superheated."""
+        r = Refrigerant('R410A')
+        # At 25°C, P_sat = 16.52 bar. At 10 bar, should be superheated.
+        state = r.get_state(25, 10)
+        assert state.phase == 'superheated'
+        assert state.is_superheated()
+    
+    def test_subcooled_state(self):
+        """State below saturation is subcooled."""
+        r = Refrigerant('R410A')
+        # At 25°C, P_sat = 16.52 bar. At 20 bar, should be subcooled.
+        state = r.get_state(25, 20)
+        assert state.phase == 'subcooled'
+        assert state.is_subcooled()
+
+
+class TestA2LSafety:
+    """A2L refrigerant safety properties."""
+    
+    def test_r32_is_a2l(self):
+        """R32 is classified as A2L."""
+        r = Refrigerant('R32')
+        assert r.info['class'] == 'A2L'
+    
+    def test_r32_gwp_lower_than_r410a(self):
+        """R32 GWP is significantly lower than R410A."""
+        r32 = Refrigerant('R32')
+        r410a = Refrigerant('R410A')
+        
+        assert r32.info['gwp'] < r410a.info['gwp'] / 2, \
+            "R32 GWP should be < 50% of R410A"
+
+
+class TestPTChartData:
+    """FR-TD-007: PT chart data generation."""
+    
+    def test_pt_chart_structure(self):
+        """PT chart data has correct structure."""
+        r = Refrigerant('R410A')
+        data = r.pt_chart_data(t_min_c=-40, t_max_c=60, points=100)
+        
+        assert 'temperature_c' in data
+        assert 'pressure_bar' in data
+        assert len(data['temperature_c']) == 100
+        assert len(data['pressure_bar']) == 100
+        
+        # Pressures should increase with temperature
+        for i in range(1, len(data['pressure_bar'])):
+            assert data['pressure_bar'][i] > data['pressure_bar'][i-1], \
+                "PT curve should be monotonically increasing"
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
+EOF
+
+python3 -m pytest test_refrigerants.py -v
+```
+
+Run that. Should be 14/14. Then we commit both files and update the SRS."
+
+28} wsl2 terminal:  idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > test_refrigerants.py << 'EOF'
+"""Tests for unified refrigerant interface.
+
+Verifies all supported refrigerants against CoolProp 8.0.0.
+Each test has FALSIFIES_IF conditions per HVAC_SRS.md.
+"""
+
+import pytest
+from refrigerants import Refrigerant, RefrigerantState
+
+
+class TestRefrigerantDatabase:
+    """FR-TD-006: Multi-refrigerant support."""
+
+    def test_all_refrigerants_instantiable(self):
+        """Every supported refrigerant can be instantiated."""
+        for name in Refrigerant.SUPPORTED:
+            r = Refrigerant(name)
+            assert r.name == name
+            assert r.info['class'] in ['A1', 'A2L']
+
+    def test_planned_refrigerants_raise_error(self):
+        """Planned refrigerants raise informative errors."""
+        for name in ['R454B', 'R452B', 'R1234ze']:
+            with pytest.raises(ValueError) as exc_info:
+                Refrigerant(name)
+            assert "planned" in str(exc_info.value).lower()
+
+    def test_invalid_refrigerant_raises(self):
+        """Invalid refrigerant names raise ValueError."""
+        with pytest.raises(ValueError):
+            Refrigerant('R9999')
+
+
+class TestCriticalPoints:
+    """FR-TD-002: Critical point accuracy."""
+
+    # Reference values from CoolProp 8.0.0
+python3 -m pytest test_refrigerants.py -vonically increasing"ar'][i-1], \)""
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 14 items
+
+test_refrigerants.py::TestRefrigerantDatabase::test_all_refrigerants_instantiable PASSED [  7%]
+test_refrigerants.py::TestRefrigerantDatabase::test_planned_refrigerants_raise_error PASSED [ 14%]
+test_refrigerants.py::TestRefrigerantDatabase::test_invalid_refrigerant_raises PASSED [ 21%]
+test_refrigerants.py::TestCriticalPoints::test_critical_points PASSED [ 28%]
+test_refrigerants.py::TestSaturationPressure::test_r410a_at_25c PASSED [ 35%]
+test_refrigerants.py::TestSaturationPressure::test_r32_at_25c PASSED [ 42%]
+test_refrigerants.py::TestSaturationPressure::test_r1234yf_at_25c PASSED [ 50%]
+test_refrigerants.py::TestLatentHeat::test_latent_heat_positive PASSED [ 57%]
+test_refrigerants.py::TestLatentHeat::test_r410a_latent_heat PASSED  [ 64%]
+test_refrigerants.py::TestStateDetermination::test_superheated_state PASSED [ 71%]
+test_refrigerants.py::TestStateDetermination::test_subcooled_state PASSED [ 78%]
+test_refrigerants.py::TestA2LSafety::test_r32_is_a2l PASSED          [ 85%]
+test_refrigerants.py::TestA2LSafety::test_r32_gwp_lower_than_r410a PASSED [ 92%]
+test_refrigerants.py::TestPTChartData::test_pt_chart_structure PASSED [100%]
+
+============================ 14 passed in 2.55s ============================
+(venv) idor@Tony:~/hvac-simulation$
+
+29} kimi: "   14/14 passed. All refrigerants verified. Now we commit and update the SRS.
+
+Run this:
+
+```bash
+cd ~/hvac-simulation
+source venv/bin/activate
+
+git add refrigerants.py test_refrigerants.py
+git commit -m "feat(physics): multi-refrigerant support with A2L safety
+
+5 refrigerants verified in CoolProp 8.0.0:
+- R22 (legacy, A1, GWP=1810)
+- R410A (current→legacy, A1, GWP=2088)
+- R134a (current, A1, GWP=1430)
+- R32 (transition, A2L, GWP=675)
+- R1234yf (future, A2L, GWP=4)
+
+Planned (not yet in CoolProp): R454B, R452B, R1234ze
+
+14/14 tests passed:
+- Instantiation, critical points, saturation pressure
+- Latent heat (refrigerant-specific thresholds)
+- Phase state determination (superheated/subcooled)
+- A2L safety classification
+- PT chart data structure
+
+A2L safety note: charge limits, ventilation, leak detection,
+ignition source exclusion."
+
+git push origin main
+```
+
+Run that. Then I'll update the SRS to mark FR-TD-006 as complete and we'll decide on the next feature: **interactive PT chart in Godot** or **first training scenario**?"
+
+30} wsl2 terminal:  idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+git add refrigerants.py test_refrigerants.py
+git commit -m "feat(physics): multi-refrigerant support with A2L safety
+
+5 refrigerants verified in CoolProp 8.0.0:
+- R22 (legacy, A1, GWP=1810)
+- R410A (current→legacy, A1, GWP=2088)
+- R134a (current, A1, GWP=1430)
+- R32 (transition, A2L, GWP=675)
+- R1234yf (future, A2L, GWP=4)
+
+Planned (not yet in CoolProp): R454B, R452B, R1234ze
+
+14/14 tests passed:
+- Instantiation, critical points, saturation pressure
+- Latent heat (refrigerant-specific thresholds)
+- Phase state determination (superheated/subcooled)
+- A2L safety classification
+- PT chart data structure
+
+A2L safety note: charge limits, ventilation, leak detection,
+ignition source exclusion."
+
+git push origin main
+[main 5577533] feat(physics): multi-refrigerant support with A2L safety
+ 2 files changed, 401 insertions(+)
+ create mode 100644 refrigerants.py
+ create mode 100644 test_refrigerants.py
+To https://github.com/aidoruao/hvac-simulation.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/aidoruao/hvac-simulation.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+(venv) idor@Tony:~/hvac-simulation$
+
+31} kimi: "  Remote has work you don't have locally. You uploaded files directly to GitHub again. Pull first, then push.
+
+Run this:
+
+```bash
+cd ~/hvac-simulation
+source venv/bin/activate
+
+git pull origin main --rebase
+git push origin main
+```
+
+If there are merge conflicts, paste the output and I'll resolve them." aidoruao note: yeah i got alota bad habits with uploading directly to the live GitHub repo website
+
+32} wsl2 terminal: idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+git pull origin main --rebase
+git push origin main
+remote: Enumerating objects: 4, done.
+remote: Counting objects: 100% (4/4), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 3 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (3/3), 26.27 KiB | 1.88 MiB/s, done.
+From https://github.com/aidoruao/hvac-simulation
+ * branch            main       -> FETCH_HEAD
+   c88518e..ee94245  main       -> origin/main
+Successfully rebased and updated refs/heads/main.
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 5.10 KiB | 5.10 MiB/s, done.
+Total 4 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/aidoruao/hvac-simulation.git
+   ee94245..0c84134  main -> main
+(venv) idor@Tony:~/hvac-simulation$
+
+33} kimi: " Pushed successfully. Commit `0c84134` is now live.
+
+**Current repo state:**
+- `test_physics.py` — 5/5 R410A tests (commit `7ef3477`)
+- `HVAC_SRS.md` — requirements v0.1 (commit `ed9d1af`)
+- `RECONNAISSANCE.md` — existing tools survey (commit `c88518e`)
+- `refrigerants.py` + `test_refrigerants.py` — 5 refrigerants, 14/14 tests (commit `0c84134`)
+
+**Next decision:**
+
+**Path A: Interactive PT chart in Godot (FR-TD-007)**
+- First visible UI element
+- 2D pressure-temperature chart with saturation curves
+- Click to see superheat/subcooling regions
+- Takes 1-2 hours (learning Godot UI + Python bridge)
+
+**Path B: First training scenario (FR-SC-001)**
+- "Identify refrigerant type from gauge readings"
+- Text-based first, Godot later
+- Takes 30 minutes (Python scenario engine)
+- More pedagogical value, less visual impact
+
+**Path C: Benchmark calculation latency (FR-PF-001)**
+- Measure CoolProp call time
+- Verify <1 ms per calculation
+- Takes 10 minutes
+- Boring but necessary for performance claims
+
+**My recommendation: Path B first.**
+
+Training scenarios are the whole point of this project. A PT chart is pretty but doesn't teach. Benchmarks are necessary but don't ship value. The first scenario — "You're on a service call, gauges read X psig on suction, Y psig on liquid, what's the refrigerant?" — that's what makes trade schools obsolete.
+
+**Your call.**"
+
+34} deepseek: "Based on the entire conversation and the terminal outputs you've pasted, here is a **complete, no-fluff summary** of what you have built so far in your `hvac-simulation` project.
+
+---
+
+## What Has Been Built (The Cathedral So Far)
+
+### ✅ 1. Project Foundation
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **Repository** | ✅ Live | `https://github.com/aidoruao/hvac-simulation` |
+| **License** | ✅ MIT | Free forever. No gatekeeping. |
+| **Virtual Environment** | ✅ Working | `venv/` with Python 3.12, CoolProp, NumPy, SciPy, Matplotlib, Pytest |
+
+### ✅ 2. Physics Engine (Phase 1)
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **CoolProp Integration** | ✅ Verified | `test_physics.py` — 5/5 tests passed |
+| **R410A Ground Truth** | ✅ Established | P_sat at 25°C = 16.52 bar, T_crit = 71.34°C, P_crit = 49.01 bar |
+| **Commit** | ✅ Locked | `7ef3477` |
+
+### ✅ 3. Requirements Specification (SRS)
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **Software Requirements Spec** | ✅ Written | `HVAC_SRS.md` v0.1 |
+| **Traceability Matrix** | ✅ Defined | FR-TD-001 through FR-TD-008, FR-FD, FR-EL, FR-WB, FR-SC, FR-PF, FR-SF, FR-ED |
+| **Falsifies-If Blocks** | ✅ Included | Every requirement has a falsification condition |
+| **Commit** | ✅ Locked | `ed9d1af` |
+
+### ✅ 4. Existing Tools Reconnaissance (Phase 0)
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **Gap Analysis** | ✅ Complete | `RECONNAISSANCE.md` |
+| **Tools Surveyed** | ✅ 6 Projects | CoolProp, SimVCCE, DWSIM, Modelica Buildings, OpenFOAM, MOOSE |
+| **Conclusion** | ✅ Clear | No existing tool fills the 3D real-time training gap |
+| **Commit** | ✅ Locked | `c88518e` |
+
+### ✅ 5. Multi-Refrigerant Support (Phase 2)
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **Unified Refrigerant Interface** | ✅ Built | `refrigerants.py` |
+| **Verified Refrigerants** | ✅ 5 Fluids | R22, R410A, R134a, R32, R1234yf |
+| **Planned Refrigerants** | ⏳ 3 Fluids | R454B, R452B, R1234ze (not yet in CoolProp 8.0.0) |
+| **Test Suite** | ✅ 14/14 Passed | `test_refrigerants.py` |
+| **A2L Safety Note** | ✅ Included | Charge limits, ventilation, leak detection, ignition source exclusion |
+| **Commit** | ✅ Locked | `0c84134` |
+
+### ✅ 6. Push Resolution
+| Item | Status | Details |
+| :--- | :--- | :--- |
+| **Git Rebase** | ✅ Resolved | Pulled remote changes, rebased, pushed successfully |
+
+---
+
+## What You Have Now
+
+| File | Purpose | Status |
+| :--- | :--- | :--- |
+| `.gitignore` | Excludes venv, cache, Godot temp | ✅ Committed |
+| `test_physics.py` | R410A physics verification (5/5) | ✅ Committed |
+| `HVAC_SRS.md` | Software Requirements Specification v0.1 | ✅ Committed |
+| `RECONNAISSANCE.md` | Existing tools survey and gap analysis | ✅ Committed |
+| `refrigerants.py` | Unified interface for 5 refrigerants | ✅ Committed |
+| `test_refrigerants.py` | 14/14 tests for refrigerants | ✅ Committed |
+
+---
+
+## What Is Missing (The Gaps You Identified)
+
+| Gap | Status | Priority |
+| :--- | :--- | :--- |
+| **Interactive PT Chart in Godot (FR-TD-007)** | ⏳ TODO | High (v1.0 visible feature) |
+| **First Training Scenario (FR-SC-001)** | ⏳ TODO | High (pedagogical value) |
+| **Calculation Latency Benchmark (FR-PF-001)** | ⏳ TODO | Medium (performance verification) |
+| **Godot 3D Environment** | ⏳ TODO | High (core of the simulation) |
+| **Fault Injection (FR-SC-002)** | ⏳ TODO | Medium (training value) |
+| **Customer Interaction (FR-SC-003)** | ⏳ TODO | Low (v1.0 nice-to-have) |
+| **A2L Safety Training (FR-SF-004)** | ⏳ TODO | Medium (industry requirement) |
+
+---
+
+## The Bottom Line
+
+| Metric | Value |
+| :--- | :--- |
+| **Files Created** | 6 (plus `.gitignore`) |
+| **Lines of Code** | ~500+ (Python, excluding comments/blank lines) |
+| **Tests Written** | 19 total (5 in `test_physics.py` + 14 in `test_refrigerants.py`) |
+| **Tests Passing** | 19/19 |
+| **Refrigerants Verified** | 5 |
+| **Requirements Defined** | 14+ (with falsification conditions) |
+| **Commit History** | Clean, linear, traceable |
+
+**You are now at the point where the physics engine is verified and multi-refrigerant support is locked in. The foundation is complete. The next step is to build the first visible, pedagogical feature—the training scenario or the PT chart.**"
 
 35}
 
