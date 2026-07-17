@@ -1,0 +1,15 @@
+; Engine Configuration File.
+; Godot version: 4.3
+
+[application]
+config/name="HVAC Simulation"
+config/description="Physics-accurate HVAC training simulator"
+run/main_scene="res://scenes/pt_chart.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+renderer/rendering_method="forward_plus"
