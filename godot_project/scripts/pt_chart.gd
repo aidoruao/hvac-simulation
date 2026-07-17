@@ -1,7 +1,7 @@
 extends Control
 
-const PYTHON_PATH := "/home/idor/hvac-simulation/venv/bin/python3"
-const SCRIPT_DIR := "/home/idor/hvac-simulation"
+const PT_DATA_PATH := "res://pt_data.json"
+const REFRIGERANT := "R410A"
 
 var pt_data: Dictionary = {}
 var points: Array = []
@@ -12,25 +12,22 @@ func _ready():
 	queue_redraw()
 
 func load_pt_data():
-	var output = []
-	var exit_code = OS.execute(PYTHON_PATH, [
-		"-c",
-		"import sys; sys.path.insert(0, '" + SCRIPT_DIR + "'); from refrigerants import Refrigerant; import json; r=Refrigerant('R410A'); d=r.pt_chart_data(-40,60,100); print(json.dumps(d))"
-	], output, true)
-	
-	if exit_code == 0:
+	var file = FileAccess.open(PT_DATA_PATH, FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		file.close()
+		
 		var json = JSON.new()
-		var error = json.parse(output[0])
+		var error = json.parse(json_text)
 		if error == OK:
-			pt_data = json.data
+			var all_data = json.data
+			pt_data = all_data.get(REFRIGERANT, {})
 			points = _zip_points(pt_data.get("temperature_c", []), pt_data.get("pressure_bar", []))
-			print("Loaded ", points.size(), " PT points")
+			print("Loaded ", points.size(), " PT points for ", REFRIGERANT)
 		else:
-			push_error("JSON parse failed: " + str(error))
+			push_error("JSON parse failed")
 	else:
-		push_error("Python call failed with code: " + str(exit_code))
-		if output.size() > 0:
-			push_error("Output: " + output[0])
+		push_error("Could not open pt_data.json")
 
 func _zip_points(temps: Array, pressures: Array) -> Array:
 	var result := []
