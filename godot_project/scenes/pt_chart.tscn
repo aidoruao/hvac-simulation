@@ -11,18 +11,31 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_8j1jq")
 
-[node name="Label" type="Label" parent="."]
+[node name="RefrigerantDropdown" type="OptionButton" parent="."]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -200.0
-offset_right = 200.0
-offset_bottom = 30.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 20
-text = "R410A Pressure-Temperature Chart"
-horizontal_alignment = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 51.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 14
+
+[node name="ReadoutLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -80.0
+offset_right = 300.0
+offset_bottom = -20.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 14
+text = "Click on curve to read values"
+autowrap_mode = 2
 
 [node name="InfoLabel" type="Label" parent="."]
 layout_mode = 1
@@ -31,13 +44,13 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -300.0
+offset_left = -200.0
 offset_top = -60.0
-offset_right = -10.0
-offset_bottom = -10.0
+offset_right = -20.0
+offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_font_sizes/font_size = 14
-text = "Green dot = 25C reference
+theme_override_font_sizes/font_size = 12
+text = "Green dot = 25°C reference
 Blue curve = saturation"
 horizontal_alignment = 2
