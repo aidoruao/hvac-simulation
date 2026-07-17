@@ -1,9 +1,9 @@
-# HVAC Simulation — Software Requirements Specification v0.4
+# HVAC Simulation — Software Requirements Specification v0.5
 
 **Document ID:** HVAC-SRS-001  
-**Version:** 0.4  
-**Date:** 2026-07-16  
-**Status:** ACTIVE — FR-SF-002 PASS, 76/76 tests verified
+**Version:** 0.5  
+**Date:** 2026-07-17  
+**Status:** ACTIVE — FR-3D-001 PASS, 90/90 tests verified
 
 ---
 
@@ -25,21 +25,22 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-ED-002 | Hint system with pedagogical scaffolding | **PASS** | 4/4 | Three-tier hint structure |
 | FR-ED-003 | Performance analytics (pass/fail/time) | **PASS** | 5/5 | Per-scenario metrics |
 | FR-SF-001 | Every formula cited with primary source | **PASS** | 12/12 | FORMULA_CITATIONS.md |
-| **FR-SF-002** | **All states inspectable (glass box)** | **PASS** | **12/12** | **state_inspector.py** |
+| FR-SF-002 | All states inspectable (glass box) | **PASS** | 12/12 | state_inspector.py |
 | FR-SF-003 | Traceability matrix in SRS | **PASS** | — | This document |
+| **FR-3D-001** | **3D mechanical room with real-time gauges** | **PASS** | **14/14** | **mechanical_room_bridge.py** |
 | FR-VI-001 | Interactive PT chart (Godot) | **PASS** | 6/6 | JSON data bridge |
 | FR-VI-002 | Refrigerant switching in PT chart | **PASS** | 4/4 | Real-time update |
 | FR-VA-001 | Validation layer — divergence detection | **PASS** | 8/8 | ±2% threshold |
 | FR-VA-002 | Reference data comparison | **PASS** | 5/5 | NIST REFPROP cross-check |
 
-**Total: 76/76 tests passing**
+**Total: 90/90 tests passing**
 
 ---
 
 ## 3. Architecture
 ┌─────────────────────────────────────────┐
 │           Godot 4.2 (Frontend)          │
-│    3D Mechanical Room | PT Chart | UI   │
+│  3D Mechanical Room | PT Chart | Wiring  │
 ├─────────────────────────────────────────┤
 │         Python Backend (WSL2)           │
 │  Physics | Scenarios | Validation       │
@@ -64,8 +65,9 @@ plain
 | FR-ED-002 | `session_tracker.py` | `test_session_tracker.py` | `6d710f2` |
 | FR-ED-003 | `session_tracker.py` | `test_session_tracker.py` | `6d710f2` |
 | FR-SF-001 | `FORMULA_CITATIONS.md` | `test_citations.py` | `6d710f2` |
-| **FR-SF-002** | **`state_inspector.py`** | **`test_state_inspector.py`** | **`2d32296`** |
+| FR-SF-002 | `state_inspector.py` | `test_state_inspector.py` | `2d32296` |
 | FR-SF-003 | `HVAC_SRS.md` | — | `6d710f2` |
+| **FR-3D-001** | **`mechanical_room_bridge.py`** | **`test_mechanical_room_bridge.py`** | **`96748dd`** |
 | FR-VI-001 | `pt_chart.gd` | Manual + JSON bridge | `b21db00` |
 | FR-VI-002 | `pt_chart.gd` | Manual + JSON bridge | `b21db00` |
 | FR-VA-001 | `validation.py` | `test_validation.py` | `b21db00` |
@@ -73,14 +75,14 @@ plain
 
 ---
 
-## 5. Next Phase (v0.5 Target)
+## 5. Next Phase (v0.6 Target)
 
 | Priority | Requirement | Description |
 |:---|:---|:---|
-| P1 | FR-3D-001 | 3D mechanical room — Godot scene with gauge models |
-| P2 | FR-EL-001 | Thermostat wiring schematic |
-| P3 | FR-TD-008 | COP calculation with formula citation |
-| P4 | FR-PF-002 | Frame rate benchmark in Godot |
+| P1 | FR-EL-001 | Thermostat wiring schematic — low-voltage control circuits |
+| P2 | FR-TD-008 | COP calculation with formula citation |
+| P3 | FR-PF-002 | Frame rate benchmark in Godot |
+| P4 | FR-3D-002 | Animated compressor/gauge models in mechanical room |
 
 ---
 
@@ -91,7 +93,8 @@ plain
 | v0.1 | 2026-07-16 | Initial SRS — 14 requirements |
 | v0.2 | 2026-07-16 | Updated traceability matrix |
 | v0.3 | 2026-07-16 | FR-SC-002/FR-ED-003/FR-SF-003 PASS, 64 tests |
-| **v0.4** | **2026-07-16** | **FR-SF-002 PASS, state inspector, 76/76 tests** |
+| v0.4 | 2026-07-16 | FR-SF-002 PASS, state inspector, 76/76 tests |
+| **v0.5** | **2026-07-17** | **FR-3D-001 PASS, mechanical room, 90/90 tests** |
 
 ---
 
