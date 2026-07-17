@@ -1,0 +1,154 @@
+[gd_scene load_steps=3 format=3 uid="uid://mechanical_room_001"]
+
+[ext_resource type="Script" path="res://scripts/mechanical_room/mechanical_room.gd" id="1_mechanical"]
+
+[sub_resource type="Environment" id="Environment_001"]
+background_mode = 1
+background_color = Color(0.1, 0.1, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="MechanicalRoom" type="Node3D"]
+script = ExtResource("1_mechanical")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_001")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.866, 0.5, 0, -0.5, 0.866, 0, 2.5, 4)
+fov = 60.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 4, 6, 4)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="Gauges" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="PressureGauge" type="Node3D" parent="Gauges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Gauges/PressureGauge"]
+radius = 0.4
+height = 0.1
+sides = 32
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Gauges/PressureGauge"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0.05)
+radius = 0.02
+height = 0.35
+
+[node name="Label3D" type="Label3D" parent="Gauges/PressureGauge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.6, 0)
+text = "PSI"
+font_size = 64
+outline_size = 8
+
+[node name="TempGauge" type="Node3D" parent="Gauges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Gauges/TempGauge"]
+radius = 0.4
+height = 0.1
+sides = 32
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Gauges/TempGauge"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0.05)
+radius = 0.02
+height = 0.35
+
+[node name="Label3D" type="Label3D" parent="Gauges/TempGauge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.6, 0)
+text = "°F"
+font_size = 64
+outline_size = 8
+
+[node name="SightGlass" type="Node3D" parent="Gauges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Gauges/SightGlass"]
+radius = 0.25
+height = 0.6
+sides = 16
+
+[node name="Label3D" type="Label3D" parent="Gauges/SightGlass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "Sight Glass"
+font_size = 48
+outline_size = 6
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatePanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 300.0
+grow_horizontal = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/StatePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="Title" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "STATE INSPECTOR"
+horizontal_alignment = 1
+
+[node name="Refrigerant" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Refrigerant: —"
+
+[node name="Pressure" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Pressure: — PSI"
+
+[node name="Temperature" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Temperature: — °F"
+
+[node name="Superheat" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Superheat: — °F"
+
+[node name="Subcooling" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Subcooling: — °F"
+
+[node name="Phase" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Phase: —"
+
+[node name="HSeparator" type="HSeparator" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="Scenario" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Scenario: —"
+
+[node name="Faults" type="Label" parent="UI/StatePanel/VBoxContainer"]
+layout_mode = 2
+text = "Faults: —"
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 0.5
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
