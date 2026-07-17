@@ -1,4 +1,4 @@
-# HVAC Simulation — Software Requirements Specification v0.2
+# HVAC Simulation — Software Requirements Specification v0.3
 
 ## 1. Purpose
 Physics-accurate, real-time 3D HVAC training simulator. Free forever. Glass box.
@@ -48,9 +48,9 @@ Replaces trade school with verifiable, inspectable, open-source training.
 | ID | Requirement | Verification | Falsifies If | Status | Commit |
 |---|---|---|---|---|---|
 | FR-SC-001 | "First day as a tech" walkthrough | scenarios.py + test_scenarios.py | User cannot complete in 30 min | ✅ PASS | 834afff |
-| FR-SC-002 | 20+ unique fault injections | fault_matrix.md | <20 faults implemented | ⏳ 5/20 | 834afff |
+| FR-SC-002 | 20+ unique fault injections | scenarios_extended.py + test | <20 faults | ✅ PASS | 4272b88 |
 | FR-SC-003 | Customer interaction simulation | scenarios.py dialogue | Customer response nonsensical | ⚠️ PARTIAL | 834afff |
-| FR-SC-004 | Progressive difficulty (5 levels) | test_scenarios.py | Level 1 requires expert knowledge | ✅ PASS | 834afff |
+| FR-SC-004 | Progressive difficulty (5 levels) | test_scenarios.py + extended | Level 1 requires expert knowledge | ✅ PASS | 834afff |
 
 ### 3.6 Performance (FR-PF)
 | ID | Requirement | Target | Falsifies If | Status | Commit |
@@ -64,7 +64,7 @@ Replaces trade school with verifiable, inspectable, open-source training.
 |---|---|---|---|---|---|
 | FR-SF-001 | Warn if simulation diverges >5% from NIST REFPROP | Prevent false confidence | Divergence >5% not flagged | ✅ PASS | d8a866c |
 | FR-SF-002 | All states inspectable | Glass box principle | Any state hidden | ⚠️ PARTIAL | 7f912dd |
-| FR-SF-003 | Every formula cited | No hidden assumptions | Formula without source | ⏳ TODO | — |
+| FR-SF-003 | Every formula cited | No hidden assumptions | Formula without source | ✅ PASS | 6e90ccc |
 | FR-SF-004 | A2L safety training | Charge limits, ventilation | A2L hazard not flagged | ⚠️ PARTIAL | 0c84134 |
 
 ### 3.8 Educational (FR-ED)
@@ -72,7 +72,7 @@ Replaces trade school with verifiable, inspectable, open-source training.
 |---|---|---|---|---|---|
 | FR-ED-001 | Progressive difficulty | 5 levels: basic → expert | Level 1 requires expert knowledge | ✅ PASS | 834afff |
 | FR-ED-002 | Pass/fail with reasoning | Explain why answer is wrong | Wrong answer accepted | ✅ PASS | 834afff |
-| FR-ED-003 | Time-tracked sessions | Log time per scenario | Time not recorded | ⏳ TODO | — |
+| FR-ED-003 | Time-tracked sessions | Log time per scenario | Time not recorded | ✅ PASS | 6d710f2 |
 
 ## 4. Architecture
 ┌─────────────────────────────────────────┐
@@ -82,10 +82,11 @@ Replaces trade school with verifiable, inspectable, open-source training.
 │  ├── Interactive wiring schematic      │ ⏳
 │  └── Assessment dashboard              │ ⏳
 ├─────────────────────────────────────────┤
-│  LAYER 3: Integration (Python)           │
+│  LAYER 3: Integration (Python)         │
 │  ├── CoolProp wrapper                  │ ✅
 │  ├── Validation layer                  │ ✅
 │  ├── Scenario engine                   │ ✅
+│  ├── Session tracker                   │ ✅
 │  ├── OpenFOAM bridge                   │ ⏳
 │  └── MOOSE bridge                      │ ⏳
 ├─────────────────────────────────────────┤
@@ -108,17 +109,21 @@ plain
 | test_refrigerants.py | 14 | 14 | 0c84134 |
 | test_scenarios.py | 13 | 13 | 834afff |
 | test_validation.py | 9 | 9 | d8a866c |
-| **Total** | **41** | **41** | — |
+| test_session_tracker.py | 11 | 11 | 6d710f2 |
+| test_scenarios_extended.py | 12 | 12 | 4272b88 |
+| **Total** | **64** | **64** | — |
 
 ## 6. Changelog
 | Version | Date | Changes |
 |---|---|---|
 | v0.1 | 2026-07-16 | Initial SRS. 5/5 FR-TD verified. |
-| v0.2 | 2026-07-16 | Added validation layer, interactive PT chart, scenario engine. 41/41 tests passing. |
+| v0.2 | 2026-07-16 | Added validation layer, interactive PT chart, scenario engine. 41/41 tests. |
+| v0.3 | 2026-07-16 | Added session tracking, 20+ faults, formula citations. 64/64 tests. FR-SC-002, FR-ED-003, FR-SF-003 PASS. |
 
-## 7. Next Steps
-1. FR-SF-003: Cite every formula (source traceability)
-2. FR-ED-003: Time-tracked sessions
-3. FR-SC-002: Expand to 20+ faults (currently 3)
-4. 3D mechanical room (Godot)
-5. FR-EL-001: Thermostat wiring schematic
+## 7. Next Steps (Prioritized)
+1. **FR-SF-002:** Full state inspectability — integrate session tracker with scenarios
+2. **3D mechanical room:** Godot 3D scene with gauge models
+3. **FR-EL-001:** Thermostat wiring schematic
+4. **FR-TD-008:** COP calculation
+5. **FR-PF-002:** Frame rate benchmark in Godot
+
