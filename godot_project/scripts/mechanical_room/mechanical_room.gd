@@ -1,12 +1,15 @@
 extends Node3D
 
-## Mechanical Room — 3D visualization of HVAC system state
-## FR-3D-001: 3D mechanical room with real-time gauge updates
-## Connects to Python backend via JSON bridge (same as PT chart)
+## Mechanical Room — 3D visualization with animated compressor and fan
+## FR-3D-002: Animated compressor/gauge models
 
-@onready var pressure_needle = $Gauges/PressureGauge/CSGCylinder3D2
-@onready var temp_needle = $Gauges/TempGauge/CSGCylinder3D2
-@onready var sight_glass = $Gauges/SightGlass/CSGCylinder3D
+@onready var pressure_needle = $Gauges/PressureGauge/Needle
+@onready var temp_needle = $Gauges/TempGauge/Needle
+@onready var sight_glass = $Gauges/SightGlass/Body
+
+@onready var compressor_pulley = $Compressor/Pulley
+@onready var motor_pulley = $Compressor/MotorPulley
+@onready var condenser_fan = $CondenserFan
 
 @onready var refrigerant_label = $UI/StatePanel/VBoxContainer/Refrigerant
 @onready var pressure_label = $UI/StatePanel/VBoxContainer/Pressure
@@ -21,9 +24,14 @@ var current_state = {}
 var target_pressure_angle = 0.0
 var target_temp_angle = 0.0
 
+# Animation state
+var compressor_rpm := 0.0
+var fan_rpm := 0.0
+var compressor_angle := 0.0
+var fan_angle := 0.0
+
 func _ready():
-	print("Mechanical Room initialized")
-	# Initial data fetch
+	print("Mechanical Room initialized (FR-3D-002)")
 	_fetch_state()
 
 func _process(delta):
@@ -31,44 +39,63 @@ func _process(delta):
 	pressure_needle.rotation.z = lerp(pressure_needle.rotation.z, target_pressure_angle, delta * 5)
 	temp_needle.rotation.z = lerp(temp_needle.rotation.z, target_temp_angle, delta * 5)
 
+	# Compressor animation (RPM from system state)
+	if compressor_rpm > 0:
+		compressor_angle += compressor_rpm * delta * 0.1047
+		compressor_pulley.rotation.x = compressor_angle
+		motor_pulley.rotation.x = compressor_angle * 1.75
+
+	# Condenser fan animation
+	if fan_rpm > 0:
+		fan_angle += fan_rpm * delta * 0.1047
+		condenser_fan.rotation.y = fan_angle
+
 func _on_timer_timeout():
 	_fetch_state()
 
 func _fetch_state():
-	# Read state from JSON bridge (same mechanism as PT chart)
 	var file = FileAccess.open("user://hvac_state.json", FileAccess.READ)
 	if file:
 		var json = JSON.new()
 		var error = json.parse(file.get_as_text())
 		file.close()
-		
+
 		if error == OK:
 			current_state = json.get_data()
 			_update_gauges()
 			_update_ui()
+			_update_animation_state()
 		else:
 			push_error("Failed to parse HVAC state JSON")
 
 func _update_gauges():
-	# Pressure gauge: 0-500 PSI mapped to -135 to +135 degrees
 	var pressure_psi = current_state.get("pressure_psi", 0.0)
 	target_pressure_angle = clamp(deg_to_rad((pressure_psi / 500.0) * 270.0 - 135.0), deg_to_rad(-135), deg_to_rad(135))
-	
-	# Temperature gauge: 0-150°F mapped to -135 to +135 degrees
+
 	var temp_f = current_state.get("temperature_f", 0.0)
 	target_temp_angle = clamp(deg_to_rad((temp_f / 150.0) * 270.0 - 135.0), deg_to_rad(-135), deg_to_rad(135))
-	
-	# Sight glass color based on phase
+
 	var phase = current_state.get("phase", "unknown")
 	match phase:
 		"subcooled":
-			sight_glass.material_override = _make_color_material(Color(0.2, 0.2, 0.8))  # Blue liquid
+			sight_glass.material_override = _make_color_material(Color(0.2, 0.2, 0.8))
 		"superheated":
-			sight_glass.material_override = _make_color_material(Color(0.9, 0.9, 0.9))  # Clear gas
+			sight_glass.material_override = _make_color_material(Color(0.9, 0.9, 0.9))
 		"two-phase":
-			sight_glass.material_override = _make_color_material(Color(0.5, 0.5, 0.9))  # Bubbly
+			sight_glass.material_override = _make_color_material(Color(0.5, 0.5, 0.9))
 		_:
-			sight_glass.material_override = _make_color_material(Color(0.3, 0.3, 0.3))  # Dark
+			sight_glass.material_override = _make_color_material(Color(0.3, 0.3, 0.3))
+
+func _update_animation_state():
+	var system_on = current_state.get("compressor_running", false)
+	var load_percent = current_state.get("load_percent", 0.0)
+
+	if system_on:
+		compressor_rpm = 1800.0 * (load_percent / 100.0)
+		fan_rpm = 1200.0 * (load_percent / 100.0)
+	else:
+		compressor_rpm = 0.0
+		fan_rpm = 0.0
 
 func _update_ui():
 	refrigerant_label.text = "Refrigerant: %s" % current_state.get("refrigerant", "—")
