@@ -1,9 +1,9 @@
-# HVAC Simulation — Software Requirements Specification v0.8
+# HVAC Simulation — Software Requirements Specification v0.9
 
 **Document ID:** HVAC-SRS-001
-**Version:** 0.8
+**Version:** 0.9
 **Date:** 2026-07-17
-**Status:** ACTIVE — 143/143 tests verified
+**Status:** ACTIVE — 147/147 tests verified
 
 ---
 
@@ -27,16 +27,17 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-SF-001 | Every formula cited with primary source | **PASS** | 12/12 | FORMULA_CITATIONS.md |
 | FR-SF-002 | All states inspectable (glass box) | **PASS** | 12/12 | state_inspector.py |
 | FR-SF-003 | Traceability matrix in SRS | **PASS** | — | This document |
+| **FR-3D-002** | **Animated compressor/gauge models** | **PASS** | **4/4** | **mechanical_room.gd** |
 | FR-3D-001 | 3D mechanical room with real-time gauges | **PASS** | 14/14 | mechanical_room_bridge.py |
 | FR-EL-001 | Thermostat wiring schematic | **PASS** | 21/21 | thermostat_wiring.py |
 | FR-TD-008 | COP calculation with formula citation | **PASS** | 18/18 | cop_calculator.py |
-| **FR-PF-002** | **Frame rate benchmark in Godot** | **PASS** | **4/4** | **frame_rate_benchmark.gd** |
+| FR-PF-002 | Frame rate benchmark in Godot | **PASS** | 4/4 | frame_rate_benchmark.gd |
 | FR-VI-001 | Interactive PT chart (Godot) | **PASS** | 6/6 | JSON data bridge |
 | FR-VI-002 | Refrigerant switching in PT chart | **PASS** | 4/4 | Real-time update |
 | FR-VA-001 | Validation layer — divergence detection | **PASS** | 8/8 | ±2% threshold |
 | FR-VA-002 | Reference data comparison | **PASS** | 5/5 | NIST REFPROP cross-check |
 
-**Total: 143/143 tests passing**
+**Total: 147/147 tests passing**
 
 ---
 
@@ -71,10 +72,11 @@ plain
 | FR-SF-001 |  |  |  |
 | FR-SF-002 |  |  |  |
 | FR-SF-003 |  | — |  |
+| **FR-3D-002** | **** | **** | **** |
 | FR-3D-001 |  |  |  |
 | FR-EL-001 |  |  |  |
 | FR-TD-008 |  |  |  |
-| **FR-PF-002** | **** | **** | **** |
+| FR-PF-002 |  |  |  |
 | FR-VI-001 |  | Manual + JSON bridge |  |
 | FR-VI-002 |  | Manual + JSON bridge |  |
 | FR-VA-001 |  |  |  |
@@ -93,13 +95,13 @@ plain
 
 ---
 
-## 6. Next Phase (v0.9 Target)
+## 6. Next Phase (v1.0 Target)
 
 | Priority | Requirement | Description |
 |:---|:---|:---|
-| P1 | FR-3D-002 | Animated compressor/gauge models |
-| P2 | FR-EL-002 | Godot wiring scene integration |
-| P3 | FR-TD-009 | Seasonal energy efficiency ratio (SEER) calculation |
+| P1 | FR-EL-002 | Godot wiring scene integration |
+| P2 | FR-TD-009 | Seasonal energy efficiency ratio (SEER) calculation |
+| P3 | FR-ED-004 | Multi-language support (Spanish) |
 
 ---
 
@@ -114,7 +116,8 @@ plain
 | v0.5 | 2026-07-16 | FR-3D-001 PASS, mechanical room, 90/90 tests |
 | v0.6 | 2026-07-17 | FR-EL-001 + FR-TD-008 PASS, 132/132 tests |
 | v0.7 | 2026-07-17 | Updated test summary: 139/139 tests |
-| **v0.8** | **2026-07-17** | **FR-PF-002 PASS, frame rate benchmark, 143/143 tests** |
+| v0.8 | 2026-07-17 | FR-PF-002 PASS, frame rate benchmark, 143/143 tests |
+| **v0.9** | **2026-07-17** | **FR-3D-002 PASS, animated compressor/fan, 147/147 tests** |
 
 ---
 
