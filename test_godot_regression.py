@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FR-VA-003: Godot Regression Test Runner
+FR-VA-003 + FR-ED-004: Godot Regression Test Runner
 Runs all Godot scene tests and reports PASS/FAIL.
 Usage: python3 test_godot_regression.py
 """
@@ -24,6 +24,10 @@ TEST_SUITES = {
     "FR-VI-001/002": {
         "script": "scripts/test_helper_ptchart.gd",
         "tests": ["test_load", "test_dropdown", "test_switch", "test_reference"],
+    },
+    "FR-ED-004": {
+        "script": "scripts/test_helper_locale.gd",
+        "tests": ["test_load_es", "test_label_es"],
     },
 }
 
@@ -60,7 +64,7 @@ def run_test(script: str, test_name: str) -> bool:
 
 def main():
     print("=" * 60)
-    print("FR-VA-003: Godot Regression Test Runner")
+    print("FR-VA-003/FR-ED-004: Godot Regression Test Runner")
     print(f"Godot binary: {GODOT_BIN}")
     print(f"Project dir:  {PROJECT_DIR}")
     print("=" * 60)
