@@ -1,9 +1,9 @@
-# HVAC Simulation — Software Requirements Specification v1.1
+# HVAC Simulation — Software Requirements Specification v1.2
 
 **Document ID:** HVAC-SRS-001
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-07-18
-**Status:** ACTIVE — 158/158 tests verified
+**Status:** ACTIVE — 158 Python tests + 10 Godot tests verified
 
 ---
 
@@ -33,31 +33,24 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-EL-001 | Thermostat wiring schematic | **PASS** | 21/21 | thermostat_wiring.py |
 | **FR-TD-009** | **SEER calculation with formula citation** | **PASS** | **9/9** | **seer_calculator.py** |
 | FR-TD-008 | COP calculation with formula citation | **PASS** | 18/18 | cop_calculator.py |
-| FR-PF-002 | Frame rate benchmark in Godot | **PASS** | 4/4 | frame_rate_benchmark.gd |
-| FR-VI-001 | Interactive PT chart (Godot) | **PASS** | 6/6 | JSON data bridge |
-| FR-VI-002 | Refrigerant switching in PT chart | **PASS** | 4/4 | Real-time update |
-| FR-VA-001 | Validation layer — divergence detection | **PASS** | 8/8 | ±2% threshold |
-| FR-VA-002 | Reference data comparison | **PASS** | 5/5 | NIST REFPROP cross-check |
+| FR-PF-002 | Frame rate benchmark (≥60 FPS) | **PASS** | 4/4 | frame_rate_benchmark.gd |
+| FR-VI-002 | Refrigerant switching in PT chart | **PASS** | 4/4 | pt_chart.gd |
+| FR-VI-001 | Interactive PT chart (Godot) | **PASS** | 6/6 | pt_chart.gd + JSON bridge |
+| FR-VA-002 | NIST REFPROP cross-check | **PASS** | 5/5 | validation.py |
+| FR-VA-001 | Divergence detection (±2% threshold) | **PASS** | 8/8 | validation.py |
+| **FR-VA-003** | **Automated Godot regression test suite** | **PASS** | **10/10** | **test_godot_regression.py** |
 
-**Total: 158/158 tests passing**
+**TOTAL: 22/22 requirements PASS — 158 Python + 10 Godot tests**
 
 ---
 
-## 3. Architecture
-┌─────────────────────────────────────────┐
-│           Godot 4.3 (Frontend)          │
-│  3D Mechanical Room | PT Chart | Wiring │
-├─────────────────────────────────────────┤
-│         Python Backend (WSL2)           │
-│  Physics | Scenarios | Validation       │
-│  Session | State Inspector | Audit      │
-│  COP Calculator | SEER Calculator       │
-│  Wiring Simulator                       │
-├─────────────────────────────────────────┤
-│         CoolProp 8.0.0 (EOS)            │
-│      Helmholtz Equations of State       │
-└─────────────────────────────────────────┘
-plain
+## 3. Test Summary
+
+| Suite | Count | Status |
+|:---|:---|:---|
+| Python (pytest) | 158 | **PASS** |
+| Godot (headless) | 10 | **PASS** |
+| **Combined** | **168** | **PASS** |
 
 ---
 
@@ -65,27 +58,28 @@ plain
 
 | Requirement | Source File | Test File | Commit |
 |:---|:---|:---|:---|
-| FR-PH-001 |  |  |  |
-| FR-PH-002 |  |  |  |
-| FR-SC-001 |  |  |  |
-| FR-SC-002 |  |  |  |
-| FR-ED-001 |  |  |  |
-| FR-ED-002 |  |  |  |
-| FR-ED-003 |  |  |  |
-| FR-SF-001 |  |  |  |
-| FR-SF-002 |  |  |  |
-| FR-SF-003 |  | — |  |
-| FR-3D-002 |  |  |  |
-| FR-3D-001 |  |  |  |
-| FR-EL-002 |  |  |  |
-| FR-EL-001 |  |  |  |
-| **FR-TD-009** | **** | **** | **** |
-| FR-TD-008 |  |  |  |
-| FR-PF-002 |  |  |  |
-| FR-VI-001 |  | Manual + JSON bridge |  |
-| FR-VI-002 |  | Manual + JSON bridge |  |
-| FR-VA-001 |  |  |  |
-| FR-VA-002 |  |  |  |
+| FR-PH-001 | refrigerants.py | test_physics.py | — |
+| FR-PH-002 | refrigerants.py | test_physics.py | — |
+| FR-SC-001 | scenarios.py | test_scenarios.py | — |
+| FR-SC-002 | validation.py | test_scenarios.py | — |
+| FR-ED-001 | session_tracker.py | test_scenarios.py | — |
+| FR-ED-002 | scenarios.py | test_scenarios.py | — |
+| FR-ED-003 | session_tracker.py | test_scenarios.py | — |
+| FR-SF-001 | FORMULA_CITATIONS.md | — | — |
+| FR-SF-002 | state_inspector.py | test_scenarios.py | — |
+| FR-SF-003 | HVAC_SRS.md | — | — |
+| FR-3D-002 | mechanical_room.gd | test_helper_3d002.gd | d4d2581 |
+| FR-3D-001 | mechanical_room_bridge.py | test_physics.py | — |
+| FR-EL-002 | wiring_scene.gd | test_helper_wiring.gd | d4d2581 |
+| FR-EL-001 | thermostat_wiring.py | test_scenarios.py | — |
+| FR-TD-009 | seer_calculator.py | test_scenarios.py | — |
+| FR-TD-008 | cop_calculator.py | test_scenarios.py | — |
+| FR-PF-002 | frame_rate_benchmark.gd | test_helper_3d002.gd | d4d2581 |
+| FR-VI-002 | pt_chart.gd | test_helper_ptchart.gd | d4d2581 |
+| FR-VI-001 | pt_chart.gd | test_helper_ptchart.gd | d4d2581 |
+| FR-VA-002 | validation.py | test_physics.py | — |
+| FR-VA-001 | validation.py | test_physics.py | — |
+| FR-VA-003 | test_godot_regression.py | test_godot_regression.py | d4d2581 |
 
 ---
 
@@ -97,16 +91,15 @@ plain
 | Mechanical Room | 145 | 144 | 145 | 60 | **PASS** |
 | Wiring Scene | — | — | — | 60 | **PASS** |
 
-*Measured on RTX 4050, Godot 4.3 headless, Forward Plus renderer.*
+*Measured on RTX 4050, Godot 4.7.1 headless, Forward Plus renderer.*
 
 ---
 
-## 6. Next Phase (v1.2 Target)
+## 6. Next Phase (v1.3 Target)
 
 | Priority | Requirement | Description |
 |:---|:---|:---|
 | P1 | FR-ED-004 | Multi-language support (Spanish) |
-| P2 | FR-VA-003 | Automated regression test suite for Godot scenes |
 
 ---
 
@@ -124,7 +117,8 @@ plain
 | v0.8 | 2026-07-17 | FR-PF-002 PASS, frame rate benchmark, 143/143 tests |
 | v0.9 | 2026-07-17 | FR-3D-002 PASS, animated compressor/fan, 147/147 tests |
 | v1.0 | 2026-07-18 | FR-EL-002 PASS, wiring scene integration, 149/149 tests |
-| **v1.1** | **2026-07-18** | **FR-TD-009 PASS, SEER calculation, 158/158 tests** |
+| v1.1 | 2026-07-18 | FR-TD-009 PASS, SEER calculation, 158/158 tests |
+| **v1.2** | **2026-07-18** | **FR-VA-003 PASS, Godot regression harness, 168/168 tests** |
 
 ---
 
