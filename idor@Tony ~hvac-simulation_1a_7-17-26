@@ -1,0 +1,319 @@
+idor@Tony:~$ cd ~/hvac-simulation
+
+# Copy the main campaign file (2a)
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/HVAC_free_non-propietary_simulation_campaign_TradeSchoolAlternative_2a_7-16_26.md" .
+
+# Copy the screenshots (for reference/visuals in the docs)
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/Screenshot 2026-07-16 214630.png" .
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/Screenshot 2026-07-16 214417.png" .
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/Screenshot 2026-07-16 204702.png" .
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/Screenshot 2026-07-16 204630.png" .
+cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac sim repo/Screenshot 2026-07-16 203731.png" .
+idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+git add HVAC_free_non-propietary_simulation_campaign_TradeSchoolAlternative_2a_7-16_26.md
+git add Screenshot*.png
+
+git commit -m "docs: add campaign document 2a 7-16-26 and screenshots
+
+- Consolidates full session history (entries 1-129)
+- Documents 76/76 tests passing, state inspector, session tracker
+- Includes reference screenshots of Godot PT chart and Windows testing
+- Serves as onboarding guide for AI agents to resume development
+
+This is the authoritative campaign document for the HVAC simulation.
+Next: Resume from where Kimi died — retrace steps with 2a as reference."
+[main 332a374] docs: add campaign document 2a 7-16-26 and screenshots
+ 6 files changed, 10348 insertions(+)
+ create mode 100755 HVAC_free_non-propietary_simulation_campaign_TradeSchoolAlternative_2a_7-16_26.md
+ create mode 100755 Screenshot 2026-07-16 203731.png
+ create mode 100755 Screenshot 2026-07-16 204630.png
+ create mode 100755 Screenshot 2026-07-16 204702.png
+ create mode 100755 Screenshot 2026-07-16 214417.png
+ create mode 100755 Screenshot 2026-07-16 214630.png
+(venv) idor@Tony:~/hvac-simulation$ git push origin main
+Enumerating objects: 9, done.
+Counting objects: 100% (9/9), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 1005.35 KiB | 16.21 MiB/s, done.
+Total 8 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/aidoruao/hvac-simulation.git
+   2d32296..332a374  main -> main
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > HVAC_SRS.md << 'EOF'
+# HVAC Simulation — Software Requirements Specification v0.4
+
+**Document ID:** HVAC-SRS-001
+**Version:** 0.4
+**Date:** 2026-07-16
+**Status:** ACTIVE — FR-SF-002 PASS, 76/76 tests verified
+
+---
+
+## 1. Purpose
+
+Free, non-proprietary HVAC simulation for trade school alternative. No vendor lock-in. Every formula cited with primary sources. Glass box enforced at code level.
+
+git push origin mainefore 3D visualization phase"01), thermostat wiring (FR-
+[main f85874c] docs: SRS v0.4 — FR-SF-002 PASS, 76/76 tests, state inspector verified
+ 1 file changed, 86 insertions(+), 117 deletions(-)
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 2.07 KiB | 2.07 MiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/aidoruao/hvac-simulation.git
+   332a374..f85874c  main -> main
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+mkdir -p godot_project/scenes/mechanical_room
+mkdir -p godot_project/scripts/mechanical_room
+mkdir -p godot_project/assets/gauges
+
+cat > godot_project/scenes/mechanical_room/mechanical_room.tscn << 'EOF'
+[gd_scene load_steps=3 format=3 uid="uid://mechanical_room_001"]
+
+[ext_resource type="Script" path="res://scripts/mechanical_room/mechanical_room.gd" id="1_mechanical"]
+
+[sub_resource type="Environment" id="Environment_001"]
+background_mode = 1
+background_color = Color(0.1, 0.1, 0.15, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.3, 0.35, 1)
+
+echo "Next: Create Python bridge to write state JSON, then test in Godot."ul
+3D Mechanical Room scene files created.
+
+Files:
+  godot_project/scenes/mechanical_room/mechanical_room.tscn
+  godot_project/scripts/mechanical_room/mechanical_room.gd
+  godot_project/scripts/mechanical_room/state_bridge.gd
+
+Next: Create Python bridge to write state JSON, then test in Godot.
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > mechanical_room_bridge.py << 'EOF'
+"""Mechanical Room Bridge — writes HVAC state to JSON for Godot 3D scene.
+
+FR-3D-001: 3D mechanical room with real-time gauge updates.
+Connects Python backend to Godot frontend via JSON file bridge.
+Same pattern as PT chart bridge.
+"""
+
+from __future__ import annotations
+import json
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
+from dataclasses import dataclass, asdict
+
+from refrigerants import Refrigerant
+python3 mechanical_room_bridge.pystate(), indent=2))"""())son())tetime.now()
+Mechanical Room Bridge — FR-3D-001
+==================================================
+State written to: /tmp/hvac_state.json
+
+Current state:
+{
+  "refrigerant": "R410A",
+  "pressure_psi": 239.602776,
+  "temperature_f": 77.0,
+  "superheat_f": 0.0,
+  "subcooling_f": 0.0,
+  "phase": "two-phase",
+  "scenario_id": "SC-001",
+  "difficulty": "BASIC",
+  "faults": [
+    "overcharge"
+  ],
+  "hints_used": 0,
+  "session_id": "demo_session_001",
+  "attempts_total": 5,
+  "attempts_passed": 3,
+  "attempts_failed": 2,
+  "validation_status": "PASS",
+  "divergence_percent": 0.008,
+  "timestamp": "2026-07-16T23:54:25.852441"
+}
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > test_mechanical_room_bridge.py << 'EOF'
+"""Tests for mechanical room bridge.
+
+Verifies JSON state bridge between Python backend and Godot 3D scene.
+Maps to FR-3D-001 in HVAC_SRS.md.
+"""
+
+import pytest
+import json
+import tempfile
+from pathlib import Path
+
+from mechanical_room_bridge import MechanicalRoomBridge, MechanicalRoomState
+python3 -m pytest test_mechanical_room_bridge.py -v410A")me)ete=False) as f:
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 13 items
+
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_default_statePASSED [  7%]
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_to_dict PASSED [ 15%]
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_to_json PASSED [ 23%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_bridge_initializes FAILED [ 30%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_from_refrigerant PASSED [ 38%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_state_written_to_file PASSED [ 46%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_from_scenario PASSED [ 53%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_full_state PASSED [ 61%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_bar_to_psi_conversion PASSED [ 69%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_c_to_f_conversion PASSED [ 76%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_k_to_f_conversion PASSED [ 84%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_read_empty_state FAILED [ 92%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_timestamp_present PASSED [100%]
+
+================================= FAILURES =================================
+_____________ TestMechanicalRoomBridge.test_bridge_initializes _____________
+
+self = <test_mechanical_room_bridge.TestMechanicalRoomBridge object at 0x739595b28b90>
+
+    def test_bridge_initializes(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            bridge = MechanicalRoomBridge(state_file=f.name)
+>           assert bridge.state_file.exists() is False  # Not written yet
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert True is False
+E            +  where True = exists()
+E            +    where exists = PosixPath('/tmp/tmp4nofkl1r.json').exists
+E            +      where PosixPath('/tmp/tmp4nofkl1r.json') = <mechanical_room_bridge.MechanicalRoomBridge object at 0x739595cafd70>.state_file
+
+test_mechanical_room_bridge.py:45: AssertionError
+______________ TestMechanicalRoomBridge.test_read_empty_state ______________
+
+self = <test_mechanical_room_bridge.TestMechanicalRoomBridge object at 0x739595acaea0>
+
+    def test_read_empty_state(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            bridge = MechanicalRoomBridge(state_file=f.name)
+>           data = bridge.read_state()
+                   ^^^^^^^^^^^^^^^^^^^
+
+test_mechanical_room_bridge.py:123:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+mechanical_room_bridge.py:130: in read_state
+    return json.loads(self.state_file.read_text())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <json.decoder.JSONDecoder object at 0x739596079010>, s = '', idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+
+        """
+        try:
+            obj, end = self.scan_once(s, idx)
+        except StopIteration as err:
+>           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+/usr/lib/python3.12/json/decoder.py:355: JSONDecodeError
+========================= short test summary info ==========================
+FAILED test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_bridge_initializes - AssertionError: assert True is False
+FAILED test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_read_empty_state - json.decoder.JSONDecodeError: Expecting value: line 1 column 1(char 0)
+======================= 2 failed, 11 passed in 2.22s =======================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+cat > mechanical_room_bridge.py << 'EOF'
+"""Mechanical Room Bridge — writes HVAC state to JSON for Godot 3D scene.
+
+FR-3D-001: 3D mechanical room with real-time gauge updates.
+Connects Python backend to Godot frontend via JSON file bridge.
+Same pattern as PT chart bridge.
+"""
+
+from __future__ import annotations
+import json
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
+from dataclasses import dataclass, asdict
+
+python3 -m pytest test_mechanical_room_bridge.py -v410A")path))nser"]D'})()e
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 14 items
+
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_default_statePASSED [  7%]
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_to_dict PASSED [ 14%]
+test_mechanical_room_bridge.py::TestMechanicalRoomState::test_to_json PASSED [ 21%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_bridge_initializes_no_file_yet PASSED [ 28%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_from_refrigerant PASSED [ 35%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_state_written_to_file PASSED [ 42%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_from_scenario PASSED [ 50%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_update_full_state PASSED [ 57%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_bar_to_psi_conversion PASSED [ 64%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_c_to_f_conversion PASSED [ 71%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_k_to_f_conversion PASSED [ 78%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_read_empty_file PASSED [ 85%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_read_missing_file PASSED [ 92%]
+test_mechanical_room_bridge.py::TestMechanicalRoomBridge::test_timestamp_present PASSED [100%]
+
+============================ 14 passed in 2.05s ============================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+source venv/bin/activate
+
+git add mechanical_room_bridge.py test_mechanical_room_bridge.py
+git add godot_project/scenes/mechanical_room/mechanical_room.tscn
+git add godot_project/scripts/mechanical_room/mechanical_room.gd
+git add godot_project/scripts/mechanical_room/state_bridge.gd
+
+git commit -m "feat(3d): mechanical room — FR-3D-001 real-time gauge visualization
+
+- Godot 4.2 3D scene with pressure/temperature gauges and sight glass
+- CSG-based gauge models with animated needle rotation
+- Sight glass color changes based on refrigerant phase
+- State inspector panel (UI) showing all thermodynamic/scenario/session data
+- Python bridge: MechanicalRoomBridge writes JSON state to /tmp/hvac_state.json
+- Unit conversions: bar→PSI, °C→°F, K→°F delta
+git push origin maint with JSON bridge, then FR-EL-001 thermostat wiring."
+[main 96748dd] feat(3d): mechanical room — FR-3D-001 real-time gauge visualization
+ 5 files changed, 567 insertions(+)
+ create mode 100644 godot_project/scenes/mechanical_room/mechanical_room.tscn
+ create mode 100644 godot_project/scripts/mechanical_room/mechanical_room.gd
+ create mode 100644 godot_project/scripts/mechanical_room/state_bridge.gd
+ create mode 100644 mechanical_room_bridge.py
+ create mode 100644 test_mechanical_room_bridge.py
+Enumerating objects: 16, done.
+Counting objects: 100% (16/16), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (11/11), done.
+Writing objects: 100% (12/12), 6.56 KiB | 6.56 MiB/s, done.
+Total 12 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/aidoruao/hvac-simulation.git
+   f85874c..96748dd  main -> main
+(venv) idor@Tony:~/hvac-simulation$
