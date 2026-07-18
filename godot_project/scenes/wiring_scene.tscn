@@ -1,0 +1,211 @@
+[gd_scene load_steps=3 format=3 uid="uid://wiring_scene_001"]
+
+[ext_resource type="Script" path="res://scripts/wiring_scene.gd" id="1_wiring"]
+
+[sub_resource type="Environment" id="Environment_wiring"]
+background_mode = 1
+background_color = Color(0.08, 0.08, 0.12, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.25, 0.25, 0.3, 1)
+
+[node name="WiringScene" type="Node3D"]
+script = ExtResource("1_wiring")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_wiring")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.866, 0.5, 0, -0.5, 0.866, 0, 3, 5)
+fov = 60.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 4, 6, 4)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="WireNodes" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="R" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/R"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/R"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "R — 24V"
+font_size = 48
+outline_size = 6
+
+[node name="W" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/W"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/W"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "W — Heat"
+font_size = 48
+outline_size = 6
+
+[node name="Y" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/Y"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/Y"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "Y — Cool"
+font_size = 48
+outline_size = 6
+
+[node name="G" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/G"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/G"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "G — Fan"
+font_size = 48
+outline_size = 6
+
+[node name="C" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/C"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/C"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "C — Common"
+font_size = 48
+outline_size = 6
+
+[node name="O" type="Node3D" parent="WireNodes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="Mesh" type="CSGSphere3D" parent="WireNodes/O"]
+radius = 0.25
+
+[node name="Label3D" type="Label3D" parent="WireNodes/O"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+text = "O — Rev Valve"
+font_size = 48
+outline_size = 6
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SystemPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -120.0
+offset_right = 300.0
+offset_bottom = -20.0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/SystemPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="Title" type="Label" parent="UI/SystemPanel/VBoxContainer"]
+layout_mode = 2
+text = "SYSTEM TYPE"
+horizontal_alignment = 1
+
+[node name="SystemType" type="OptionButton" parent="UI/SystemPanel/VBoxContainer"]
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "conventional"
+popup/item_1/text = "heat_pump"
+popup/item_2/text = "dual_fuel"
+
+[node name="Stages" type="OptionButton" parent="UI/SystemPanel/VBoxContainer"]
+layout_mode = 2
+item_count = 2
+selected = 0
+popup/item_0/text = "1 stage"
+popup/item_1/text = "2 stage"
+
+[node name="FaultPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -200.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/FaultPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="Title" type="Label" parent="UI/FaultPanel/VBoxContainer"]
+layout_mode = 2
+text = "INJECT FAULT"
+horizontal_alignment = 1
+
+[node name="FaultList" type="ItemList" parent="UI/FaultPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatusPanel" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 200.0
+grow_horizontal = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/StatusPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="Title" type="Label" parent="UI/StatusPanel/VBoxContainer"]
+layout_mode = 2
+text = "WIRE STATUS"
+horizontal_alignment = 1
+
+[node name="StatusText" type="Label" parent="UI/StatusPanel/VBoxContainer"]
+layout_mode = 2
+text = "All wires OK"

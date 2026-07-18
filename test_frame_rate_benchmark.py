@@ -57,7 +57,7 @@ def test_benchmark_runs():
     assert "godot_version" in data
     assert "date" in data
     assert "results" in data
-    assert len(data["results"]) == 2  # PT chart + mechanical room
+    assert len(data["results"]) == 3  # PT chart + mechanical room
     
     for r in data["results"]:
         assert "scene" in r

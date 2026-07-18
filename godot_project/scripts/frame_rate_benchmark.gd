@@ -10,7 +10,8 @@ const RESULTS_PATH := "user://benchmark_results.json"
 
 var scene_paths := [
 	"res://scenes/pt_chart.tscn",
-	"res://scenes/mechanical_room/mechanical_room.tscn"
+	"res://scenes/mechanical_room/mechanical_room.tscn",
+	"res://scenes/wiring_scene.tscn"
 ]
 
 var bench_results := []
