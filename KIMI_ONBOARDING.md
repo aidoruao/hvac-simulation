@@ -1,40 +1,36 @@
 # KIMI ONBOARDING — HVAC Simulation
 
-**Last Updated:** 2026-07-18 (Campaign 5a)
+**Last Updated:** 2026-07-18 (Campaign 5a, Entry 24)
 **Status:** LOCKED
+**Current Commit:** 8b1d706
 
 ## Headless Mode
 - Godot runs without a display window: `godot --headless --script <script.gd> <arg>`
 - Used because WSL2 has no X11 server
-- Output captured via Python `subprocess.run()`, stdout/stderr combined
+- Output captured via Python subprocess, stdout/stderr combined
 - `quit()` terminates the process; `print("PASS"/"FAIL")` is the test signal
 
 ## Shell Escaping Rule
-- **NEVER** use heredoc for GDScript. Shell eats `$`, `\n`, `"`, `##`.
-- **ALWAYS** use Python intermediate file:
-  ```bash
-  cat > /tmp/write_file.py << 'PYEOF'
-  content = r"""...[raw string]..."""
-  with open("target/file.gd", "w") as f:
-      f.write(content)
-  PYEOF
-  python3 /tmp/write_file.py
-  ```
+- **NEVER** use heredoc for GDScript. Shell eats special characters.
+- **ALWAYS** use Python intermediate file approach (see 5a campaign entry 24)
 
 ## Godot Version Mismatch
-- Repo binary: `~/hvac-simulation/godot` (4.3.stable, Linux, not tracked)
-- Test runner may invoke Windows binary (4.7.1) from `~/Downloads`
-- GDScript parser strictness differs between versions
-- Fix: Match signatures to the binary being invoked, or pin to one version
+- Repo binary: ~/hvac-simulation/godot (4.3.stable, Linux)
+- Test runner may use different version
+- GDScript parser differs between versions
+- Fix: Match signatures or pin version
 
 ## Current State (Campaign 5a)
-- Pytest: 158/158 PASS ✅
-- Godot regression: 10/10 PASS ✅ (FR-VA-003 complete)
-- SRS: v1.2, 168/168 total tests verified
-- Next: FR-ED-004 (Spanish localization) or FR-VA-004 (visual regression)
+- Pytest: 158/158 PASS
+- Godot regression (FR-VA-003): In progress
+  - test_helper_3d002.gd — DONE
+  - test_helper_wiring.gd — DONE
+  - test_helper_ptchart.gd — DONE (entry 24)
+  - Python harness (test_godot_regression.py) — NEXT
+- SRS: v1.2 target
+- Next: Complete Python harness, run all Godot tests
 
-## What Headless CAN Test
-- Scene loading, node existence, state variables, method calls
+## What Headless CAN/CANNOT Test
+- CAN: Scene loading, node existence, state variables, method calls
+- CANNOT: Visual rendering, animation timing, pixel-perfect output
 
-## What Headless CANNOT Test
-- Visual rendering, animation smoothness, pixel-perfect output (future FR-VA-004)
