@@ -1,0 +1,112 @@
+{
+  "python": {
+    "scenarios": {
+      "SC-001": {
+        "title": "Primer Día: ¿Qué hay en el Sistema?",
+        "description": "Estás en tu primera llamada en solitario. El dueño de casa dice que el aire no enfría. Conectas tus manómetros. ¿Qué refrigerante es este?",
+        "customer_complaint": null,
+        "hints": [
+          "Mira la presión del líquido. R410A opera a mayor presión que R22.",
+          "La presión de saturación de R410A a 25°C es aproximadamente 225 psig."
+        ]
+      },
+      "SC-002": {
+        "title": "La Transición a R32",
+        "description": "Instalación de equipo nuevo. La etiqueta dice R32. Verifica con los manómetros.",
+        "customer_complaint": null,
+        "hints": [
+          "Las presiones de R32 son ligeramente más altas que R410A a la misma temperatura.",
+          "Verifica el punto crítico: R32 tiene P_crit más alto que R410A."
+        ]
+      },
+      "SC-003": {
+        "title": "El Sobrecargo",
+        "description": "El sistema funciona pero la factura de luz es alta. Los manómetros se ven altos en ambos lados. ¿Qué está mal?",
+        "customer_complaint": "Mi factura de electricidad se duplicó este mes.",
+        "hints": [
+          "Ambas presiones están altas. Eso no es una restricción.",
+          "Calcula el sobrecalentamiento. Si es bajo, el líquido está retrocediendo."
+        ]
+      },
+      "SC-004": {
+        "title": "El Subcarga",
+        "description": "El sistema funciona constantemente pero no puede mantener la temperatura. La presión de succión es baja. ¿Qué está mal?",
+        "customer_complaint": "Nunca se apaga y la casa sigue caliente.",
+        "hints": [
+          "Presiones bajas en ambos lados usualmente significan carga baja o restricción.",
+          "Sobrecalentamiento alto + subenfriamiento bajo = subcarga."
+        ]
+      },
+      "SC-005": {
+        "title": "El Condensador Sucio",
+        "description": "El sistema se apaga por alta presión. Reinícialo, revisa los manómetros. ¿Múltiples problemas?",
+        "customer_complaint": "Se apaga constantemente y hace un ruido fuerte.",
+        "hints": [
+          "Presión del líquido sobre 300 psig en R410A es peligrosa.",
+          "Revisa el ambiente. 35°C ambiente + condensador sucio = alta presión de cabeza."
+        ]
+      }
+    },
+    "difficulty": {
+      "BASIC": "BÁSICO",
+      "INTERMEDIATE": "INTERMEDIO",
+      "ADVANCED": "AVANZADO"
+    },
+    "cli": {
+      "prompt": "Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o 'pista': ",
+      "hint_command": "pista",
+      "hint_header": "\n💡 PISTAS (escribe 'pista' para la siguiente):",
+      "no_more_hints": "   No hay más pistas.",
+      "hint_format": "   Pista {idx}: {text}",
+      "difficulty_label": "Dificultad: {difficulty}",
+      "description_label": "\n{description}",
+      "status_pass": "✅ APROBADO",
+      "status_fail": "❌ REPROBADO",
+      "status_pending": "⏳ PENDIENTE",
+      "scenario_header": "ESCENARIO: {title}",
+      "gauge_readings": "\n📊 LECTURAS DE MANÓMETROS:",
+      "customer_says": "\n🗣️  El cliente dice: \"{complaint}\"",
+      "not_found": "Escenario {scenario_id} no encontrado."
+    }
+  },
+  "godot": {
+    "mechanical_room": {
+      "refrigerant": "Refrigerante",
+      "pressure": "Presión",
+      "temperature": "Temperatura",
+      "superheat": "Sobrecalentamiento",
+      "subcooling": "Subenfriamiento",
+      "phase": "Fase",
+      "scenario": "Escenario",
+      "faults": "Fallas",
+      "unit_psi": "PSI",
+      "unit_f": "°F"
+    },
+    "pt_chart": {
+      "refrigerant": "Refrigerante",
+      "click_instruction": "Haz clic en la curva para leer valores",
+      "temperature_axis": "Temperatura (°C)",
+      "pressure_axis": "Presión (bar)",
+      "temperature_label": "Temperatura: {temp}°C",
+      "pressure_label": "Presión: {pressure} bar",
+      "saturation_label": "Saturación: {status}",
+      "saturation_yes": "SÍ",
+      "saturation_no": "NO"
+    },
+    "wiring": {
+      "all_wires_ok": "Todos los cables OK",
+      "fault": "FALLA",
+      "disconnected": "DESCONECTADO",
+      "voltage_active": "24V ACTIVO",
+      "ok": "OK",
+      "wire_functions": {
+        "R": "Potencia 24V",
+        "W": "Llamada de calefacción",
+        "Y": "Llamada de refrigeración",
+        "G": "Llamada de ventilador",
+        "C": "Común",
+        "O": "Válvula inversora"
+      }
+    }
+  }
+}

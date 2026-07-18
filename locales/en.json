@@ -1,0 +1,112 @@
+{
+  "python": {
+    "scenarios": {
+      "SC-001": {
+        "title": "First Day: What's in the System?",
+        "description": "You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+        "customer_complaint": null,
+        "hints": [
+          "Look at the liquid pressure. R410A runs higher pressure than R22.",
+          "R410A saturation pressure at 25°C is about 225 psig."
+        ]
+      },
+      "SC-002": {
+        "title": "The R32 Transition",
+        "description": "New equipment install. The label says R32. Verify with gauges.",
+        "customer_complaint": null,
+        "hints": [
+          "R32 pressures are slightly higher than R410A at the same temperature.",
+          "Check the critical point: R32 has higher P_crit than R410A."
+        ]
+      },
+      "SC-003": {
+        "title": "The Overcharge",
+        "description": "System running but high power bills. Gauges look high on both sides. What's wrong?",
+        "customer_complaint": "My electric bill doubled this month.",
+        "hints": [
+          "Both pressures are high. That's not a restriction.",
+          "Calculate superheat. If it's low, liquid is flooding back."
+        ]
+      },
+      "SC-004": {
+        "title": "The Undercharge",
+        "description": "System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+        "customer_complaint": "It never shuts off and the house is still warm.",
+        "hints": [
+          "Low pressures on both sides usually means low charge or restriction.",
+          "High superheat + low subcooling = undercharge."
+        ]
+      },
+      "SC-005": {
+        "title": "The Dirty Condenser",
+        "description": "System trips on high pressure. Reset it, check gauges. Multiple issues?",
+        "customer_complaint": "It keeps shutting off and making a loud noise.",
+        "hints": [
+          "Liquid pressure over 300 psig on R410A is dangerous.",
+          "Check ambient. 35°C ambient + dirty condenser = high head pressure."
+        ]
+      }
+    },
+    "difficulty": {
+      "BASIC": "BASIC",
+      "INTERMEDIATE": "INTERMEDIATE",
+      "ADVANCED": "ADVANCED"
+    },
+    "cli": {
+      "prompt": "Your answer (refrigerant,diagnosis,superheat,subcooling) or 'hint': ",
+      "hint_command": "hint",
+      "hint_header": "\n💡 HINTS (type 'hint' for next hint):",
+      "no_more_hints": "   No more hints.",
+      "hint_format": "   Hint {idx}: {text}",
+      "difficulty_label": "Difficulty: {difficulty}",
+      "description_label": "\n{description}",
+      "status_pass": "✅ PASSED",
+      "status_fail": "❌ FAILED",
+      "status_pending": "⏳ PENDING",
+      "scenario_header": "SCENARIO: {title}",
+      "customer_says": "\n🗣️  Customer says: \"{complaint}\"",
+      "gauge_readings": "\n📊 GAUGE READINGS:",
+      "not_found": "Scenario {scenario_id} not found."
+    }
+  },
+  "godot": {
+    "mechanical_room": {
+      "refrigerant": "Refrigerant",
+      "pressure": "Pressure",
+      "temperature": "Temperature",
+      "superheat": "Superheat",
+      "subcooling": "Subcooling",
+      "phase": "Phase",
+      "scenario": "Scenario",
+      "faults": "Faults",
+      "unit_psi": "PSI",
+      "unit_f": "°F"
+    },
+    "pt_chart": {
+      "refrigerant": "Refrigerant",
+      "click_instruction": "Click on curve to read values",
+      "temperature_axis": "Temperature (°C)",
+      "pressure_axis": "Pressure (bar)",
+      "temperature_label": "Temperature: {temp}°C",
+      "pressure_label": "Pressure: {pressure} bar",
+      "saturation_label": "Saturation: {status}",
+      "saturation_yes": "YES",
+      "saturation_no": "NO"
+    },
+    "wiring": {
+      "all_wires_ok": "All wires OK",
+      "fault": "FAULT",
+      "disconnected": "DISCONNECTED",
+      "voltage_active": "24V ACTIVE",
+      "ok": "OK",
+      "wire_functions": {
+        "R": "24V power",
+        "W": "Heat call",
+        "Y": "Cool call",
+        "G": "Fan call",
+        "C": "Common",
+        "O": "Reversing valve"
+      }
+    }
+  }
+}
