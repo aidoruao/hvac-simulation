@@ -4,14 +4,12 @@ extends SceneTree
 ## Usage: godot --headless --script scripts/test_helper_3d002.gd <test_name>
 
 var test_name := ""
-var frame_count := 0
-var target_frames := 10
 var test_instance: Node = null
 
-func _initialize():
+func _initialize() -> void:
 	var args = OS.get_cmdline_args()
 	test_name = args[args.size() - 1] if args.size() > 0 else ""
-	
+
 	match test_name:
 		"has_compressor":
 			_test_has_compressor()
@@ -25,14 +23,15 @@ func _initialize():
 			print("FAIL: Unknown test: ", test_name)
 			print("Args: ", args)
 			quit()
+	return
 
-func _test_has_compressor():
+func _test_has_compressor() -> void:
 	var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
 	if scene == null:
 		print("FAIL: Could not load scene")
 		quit()
 		return
-	
+
 	var instance = scene.instantiate()
 	var compressor = instance.find_child("Compressor", true, false)
 	if compressor:
@@ -40,14 +39,15 @@ func _test_has_compressor():
 	else:
 		print("FAIL: Compressor node not found")
 	quit()
+	return
 
-func _test_has_fan():
+func _test_has_fan() -> void:
 	var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
 	if scene == null:
 		print("FAIL: Could not load scene")
 		quit()
 		return
-	
+
 	var instance = scene.instantiate()
 	var fan = instance.find_child("CondenserFan", true, false)
 	if fan:
@@ -55,8 +55,9 @@ func _test_has_fan():
 	else:
 		print("FAIL: CondenserFan node not found")
 	quit()
+	return
 
-func _test_animation_on():
+func _test_animation_on() -> void:
 	_write_state({
 		"refrigerant": "R410A",
 		"pressure_psi": 250.0,
@@ -69,14 +70,20 @@ func _test_animation_on():
 		"compressor_running": true,
 		"load_percent": 75.0
 	})
-	
+
 	var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
 	test_instance = scene.instantiate()
 	root.add_child(test_instance)
-	# Let _ready and _fetch_state run, then check next frames
-	frame_count = 0
 
-func _test_animation_off():
+	# Wait for _ready and state fetch
+	for i in range(5):
+		await create_timer(0.01).timeout
+
+	_check_animation()
+	quit()
+	return
+
+func _test_animation_off() -> void:
 	_write_state({
 		"refrigerant": "R410A",
 		"pressure_psi": 150.0,
@@ -89,26 +96,27 @@ func _test_animation_off():
 		"compressor_running": false,
 		"load_percent": 0.0
 	})
-	
+
 	var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
 	test_instance = scene.instantiate()
 	root.add_child(test_instance)
-	frame_count = 0
 
-func _write_state(state: Dictionary):
+	# Wait for _ready and state fetch
+	for i in range(5):
+		await create_timer(0.01).timeout
+
+	_check_animation()
+	quit()
+	return
+
+func _write_state(state: Dictionary) -> void:
 	var f = FileAccess.open("user://hvac_state.json", FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(state))
 		f.close()
+	return
 
-func _process(_delta):
-	if test_name == "animation_on" or test_name == "animation_off":
-		frame_count += 1
-		if frame_count >= target_frames:
-			_check_animation()
-			quit()
-
-func _check_animation():
+func _check_animation() -> void:
 	if test_name == "animation_on":
 		if test_instance.compressor_rpm > 0 and test_instance.fan_rpm > 0:
 			print("PASS: Animation RPM set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
@@ -119,3 +127,4 @@ func _check_animation():
 			print("PASS: Animation stopped - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
 		else:
 			print("FAIL: Animation still running - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+	return
