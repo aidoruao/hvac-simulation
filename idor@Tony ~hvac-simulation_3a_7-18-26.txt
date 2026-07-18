@@ -1,0 +1,2052 @@
+idor@Tony:~$ cd ~/hvac-simulation && source venv/bin/activate && python3 -mpytest --tb=short -q && git log --oneline -5 && echo "---" && ls godot_project/
+.................................................................... [ 43%]
+.................................................................... [ 86%]
+......................                                               [100%]
+158 passed in 63.09s (0:01:03)
+2ae6b43 (HEAD -> main, origin/main) chore: remove godot binary and zip fromrepo (exceeds GitHub 100MB limit)
+a889533 docs: add campaign files 1a_7-18-26, 2a_7-17-26, 4a_7-17-26
+c183147 docs: SRS v1.1 — FR-TD-009 PASS, 158/158 tests
+96f9131 feat(thermodynamics): FR-TD-009 SEER calculation
+28539ac docs: SRS v1.0 — FR-EL-002 PASS, 149/149 tests
+---
+assets  project.godot  pt_data.json  scenes  scripts
+(venv) idor@Tony:~/hvac-simulation$ ls -la godot_project/scenes/ && echo "---" && ls -la godot_project/scripts/ && echo "---" && cat godot_project/project.godot | grep -A5 "run"
+total 24
+drwxr-xr-x 3 idor idor 4096 Jul 18 10:23 .
+drwxr-xr-x 6 idor idor 4096 Jul 16 23:52 ..
+drwxr-xr-x 2 idor idor 4096 Jul 16 23:52 mechanical_room
+-rw-r--r-- 1 idor idor 1324 Jul 16 21:43 pt_chart.tscn
+-rw-r--r-- 1 idor idor 5759 Jul 18 10:23 wiring_scene.tscn
+---
+total 40
+drwxr-xr-x 3 idor idor 4096 Jul 18 10:31 .
+drwxr-xr-x 6 idor idor 4096 Jul 16 23:52 ..
+-rw-r--r-- 1 idor idor 3301 Jul 18 10:31 frame_rate_benchmark.gd
+drwxr-xr-x 2 idor idor 4096 Jul 17 13:53 mechanical_room
+-rw-r--r-- 1 idor idor 6106 Jul 16 21:43 pt_chart.gd
+-rw-r--r-- 1 idor idor 3402 Jul 17 13:53 test_helper_3d002.gd
+-rw-r--r-- 1 idor idor 1407 Jul 18 10:28 test_helper_wiring.gd
+-rw-r--r-- 1 idor idor 4521 Jul 18 10:23 wiring_scene.gd
+---
+run/main_scene="res://scenes/pt_chart.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+(venv) idor@Tony:~/hvac-simulation$ ls -la godot_project/scenes/mechanical_room/ && echo "---" && ls -la godot_project/scripts/mechanical_room/ && echo"---" && cat godot_project/scripts/test_helper_3d002.gd && echo "---" && cat godot_project/scripts/test_helper_wiring.gd
+total 16
+drwxr-xr-x 2 idor idor 4096 Jul 16 23:52 .
+drwxr-xr-x 3 idor idor 4096 Jul 18 10:23 ..
+-rw-r--r-- 1 idor idor 7308 Jul 17 13:41 mechanical_room.tscn
+---
+total 20
+drwxr-xr-x 2 idor idor 4096 Jul 17 13:53 .
+drwxr-xr-x 3 idor idor 4096 Jul 18 10:31 ..
+-rw-r--r-- 1 idor idor 4242 Jul 17 14:00 mechanical_room.gd
+-rw-r--r-- 1 idor idor  655 Jul 16 23:52 state_bridge.gd
+---
+extends SceneTree
+
+## Test helper for FR-3D-002
+## Usage: godot --headless --script scripts/test_helper_3d002.gd <test_name>
+
+var test_name := ""
+var frame_count := 0
+var target_frames := 10
+var test_instance: Node = null
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        test_name = args[args.size() - 1] if args.size() > 0 else ""
+
+        match test_name:
+                "has_compressor":
+                        _test_has_compressor()
+                "has_fan":
+                        _test_has_fan()
+                "animation_on":
+                        _test_animation_on()
+                "animation_off":
+                        _test_animation_off()
+                _:
+                        print("FAIL: Unknown test: ", test_name)
+                        print("Args: ", args)
+                        quit()
+
+func _test_has_compressor():
+        var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+        if scene == null:
+                print("FAIL: Could not load scene")
+                quit()
+                return
+
+        var instance = scene.instantiate()
+        var compressor = instance.find_child("Compressor", true, false)
+        if compressor:
+                print("PASS: Compressor node found")
+        else:
+                print("FAIL: Compressor node not found")
+        quit()
+
+func _test_has_fan():
+        var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+        if scene == null:
+                print("FAIL: Could not load scene")
+                quit()
+                return
+
+        var instance = scene.instantiate()
+        var fan = instance.find_child("CondenserFan", true, false)
+        if fan:
+                print("PASS: CondenserFan node found")
+        else:
+                print("FAIL: CondenserFan node not found")
+        quit()
+
+func _test_animation_on():
+        _write_state({
+                "refrigerant": "R410A",
+                "pressure_psi": 250.0,
+                "temperature_f": 85.0,
+                "superheat_f": 10.0,
+                "subcooling_f": 5.0,
+                "phase": "two-phase",
+                "scenario_id": "TEST_001",
+                "faults": [],
+                "compressor_running": true,
+                "load_percent": 75.0
+        })
+
+        var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+        test_instance = scene.instantiate()
+        root.add_child(test_instance)
+        # Let _ready and _fetch_state run, then check next frames
+        frame_count = 0
+
+func _test_animation_off():
+        _write_state({
+                "refrigerant": "R410A",
+                "pressure_psi": 150.0,
+                "temperature_f": 75.0,
+                "superheat_f": 0.0,
+                "subcooling_f": 0.0,
+                "phase": "subcooled",
+                "scenario_id": "TEST_002",
+                "faults": ["compressor_off"],
+                "compressor_running": false,
+                "load_percent": 0.0
+        })
+
+        var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+        test_instance = scene.instantiate()
+        root.add_child(test_instance)
+        frame_count = 0
+
+func _write_state(state: Dictionary):
+        var f = FileAccess.open("user://hvac_state.json", FileAccess.WRITE)
+        if f:
+                f.store_string(JSON.stringify(state))
+                f.close()
+
+func _process(_delta):
+        if test_name == "animation_on" or test_name == "animation_off":
+                frame_count += 1
+                if frame_count >= target_frames:
+                        _check_animation()
+                        quit()
+
+func _check_animation():
+        if test_name == "animation_on":
+                if test_instance.compressor_rpm > 0 and test_instance.fan_rpm > 0:
+                        print("PASS: Animation RPM set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+                else:
+                        print("FAIL: Animation RPM not set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+        elif test_name == "animation_off":
+                if test_instance.compressor_rpm == 0 and test_instance.fan_rpm == 0:
+                        print("PASS: Animation stopped - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+                else:
+                        print("FAIL: Animation still running - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+---
+extends SceneTree
+
+## Test helper for FR-EL-002
+## Usage: godot --headless --script scripts/test_helper_wiring.gd <test_name>
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        var test_name = args[args.size() - 1] if args.size() > 0 else ""
+
+        match test_name:
+                "test_load":
+                        _test_load()
+                "test_nodes":
+                        _test_nodes()
+                _:
+                        print("FAIL: Unknown test: ", test_name)
+                        quit()
+
+func _test_load():
+        var scene = load("res://scenes/wiring_scene.tscn")
+        if scene == null:
+                print("FAIL: Could not load wiring_scene.tscn")
+                quit()
+                return
+
+        var instance = scene.instantiate()
+        root.add_child(instance)
+
+        # Wait a few frames for _ready
+        for i in range(5):
+                await create_timer(0.01).timeout
+
+        if instance.has_method("_ready"):
+                print("PASS: Wiring Scene initialized and_ready called")
+        else:
+                print("FAIL: _ready not found")
+
+        quit()
+
+func _test_nodes():
+        var scene = load("res://scenes/wiring_scene.tscn")
+        var instance = scene.instantiate()
+        root.add_child(instance)
+
+        var required_nodes = ["R", "W", "Y", "G", "C", "O"]
+        var found = 0
+        var wire_nodes = instance.get_node("WireNodes")
+
+        for n in required_nodes:
+                if wire_nodes.has_node(n):
+                        found += 1
+                else:
+                        print("MISSING: ", n)
+
+        if found == required_nodes.size():
+                print("PASS: All wire nodes found (", found, "/", required_nodes.size(), ")")
+        else:
+                print("FAIL: Only ", found, "/", required_nodes.size(), " nodes found")
+
+        quit()
+(venv) idor@Tony:~/hvac-simulation$ cat godot_project/scripts/pt_chart.gd
+extends Control
+
+const PT_DATA_PATH := "res://pt_data.json"
+
+var pt_data: Dictionary = {}
+var all_refrigerants: Array = []
+var current_refrigerant: String = "R410A"
+var points: Array = []
+
+# UI references
+@onready var dropdown: OptionButton = $RefrigerantDropdown
+@onready var readout: Label = $ReadoutLabel
+
+func _ready():
+        print("HVAC PT Chart — Loading data...")
+        load_all_data()
+        setup_dropdown()
+        switch_refrigerant("R410A")
+
+func load_all_data():
+        var file = FileAccess.open(PT_DATA_PATH, FileAccess.READ)
+        if file:
+                var json_text = file.get_as_text()
+                file.close()
+
+                var json = JSON.new()
+                var error = json.parse(json_text)
+                if error == OK:
+                        pt_data = json.data
+                        all_refrigerants = pt_data.keys()
+                        print("Loaded ", all_refrigerants.size(), " refrigerants: ", all_refrigerants)
+                else:
+                        push_error("JSON parse failed")
+        else:
+                push_error("Could not open pt_data.json")
+
+func setup_dropdown():
+        dropdown.clear()
+        for r in all_refrigerants:
+                dropdown.add_item(r)
+
+        # Set default
+        for i in range(dropdown.item_count):
+                if dropdown.get_item_text(i) == current_refrigerant:
+                        dropdown.select(i)
+                        break
+
+        dropdown.item_selected.connect(_on_refrigerant_changed)
+
+func _on_refrigerant_changed(index: int):
+        var selected = dropdown.get_item_text(index)
+        switch_refrigerant(selected)
+
+func switch_refrigerant(name: String):
+        current_refrigerant = name
+        var r_data = pt_data.get(name, {})
+        points = _zip_points(r_data.get("temperature_c", []), r_data.get("pressure_bar", []))
+        readout.text = "Refrigerant: " + name + "\nClick on curve to read values"
+        queue_redraw()
+
+func _zip_points(temps: Array, pressures: Array) -> Array:
+        var result := []
+        for i in range(min(temps.size(), pressures.size())):
+                result.append(Vector2(temps[i], pressures[i]))
+        return result
+
+func _draw():
+        if points.is_empty():
+                draw_string(ThemeDB.fallback_font, Vector2(100, 100), "No data loaded", HORIZONTAL_ALIGNMENT_LEFT)
+                return
+
+        var size = get_size()
+        var margin = 80.0
+
+        var min_t = -40.0
+        var max_t = 60.0
+        var min_p = 0.0
+        var max_p = _get_max_pressure() * 1.1
+
+        # Background
+        draw_rect(Rect2(Vector2.ZERO, size), Color(0.1, 0.1, 0.12))
+
+        # Grid lines
+        for t in range(-40, 61, 20):
+                var x = _data_to_screen(Vector2(t, 0), min_t, max_t, min_p,max_p, size, margin).x
+                draw_line(Vector2(x, margin), Vector2(x, size.y - margin), Color(0.2, 0.2, 0.2), 1)
+                draw_string(ThemeDB.fallback_font, Vector2(x - 10, size.y -margin + 20), str(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.GRAY)
+
+        # Axes
+        draw_line(Vector2(margin, size.y - margin), Vector2(size.x - margin, size.y - margin), Color.WHITE, 2)
+        draw_line(Vector2(margin, margin), Vector2(margin, size.y - margin), Color.WHITE, 2)
+
+        # Axis labels
+        draw_string(ThemeDB.fallback_font, Vector2(size.x / 2 - 60, size.y - 10), "Temperature (°C)", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.GRAY)
+        draw_string(ThemeDB.fallback_font, Vector2(20, size.y / 2), "Pressure (bar)", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.GRAY, 90)
+
+        # PT curve
+        for i in range(points.size() - 1):
+                var p1 = _data_to_screen(points[i], min_t, max_t, min_p, max_p, size, margin)
+                var p2 = _data_to_screen(points[i + 1], min_t, max_t, min_p, max_p, size, margin)
+                draw_line(p1, p2, Color(0.18, 0.53, 0.67), 2)
+
+        # Reference point at 25°C
+        var ref_p = _get_pressure_at_temp(25.0)
+        if ref_p > 0:
+                var ref_screen = _data_to_screen(Vector2(25.0, ref_p), min_t, max_t, min_p, max_p, size, margin)
+                draw_circle(ref_screen, 6, Color(0.29, 0.87, 0.31))
+                draw_string(ThemeDB.fallback_font, ref_screen + Vector2(10,-10), "25°C: " + str(snapped(ref_p, 0.01)) + " bar", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.GREEN)
+
+func _data_to_screen(point: Vector2, min_t, max_t, min_p, max_p, size, margin) -> Vector2:
+        var x = margin + (point.x - min_t) / (max_t - min_t) * (size.x - 2 * margin)
+        var y = size.y - margin - (point.y - min_p) / (max_p - min_p) * (size.y - 2 * margin)
+        return Vector2(x, y)
+
+func _screen_to_data(screen_pos: Vector2, min_t, max_t, min_p, max_p, size,margin) -> Vector2:
+        var x = min_t + (screen_pos.x - margin) / (size.x - 2 * margin) * (max_t - min_t)
+        var y = min_p + (size.y - margin - screen_pos.y) / (size.y - 2 * margin) * (max_p - min_p)
+        return Vector2(x, y)
+
+func _get_max_pressure() -> float:
+        var max_p = 0.0
+        for p in points:
+                if p.y > max_p:
+                        max_p = p.y
+        return max_p
+
+func _get_pressure_at_temp(target_temp: float) -> float:
+        var temps = pt_data.get(current_refrigerant, {}).get("temperature_c", [])
+        var pressures = pt_data.get(current_refrigerant, {}).get("pressure_bar", [])
+        for i in range(temps.size()):
+                if abs(temps[i] - target_temp) < 0.5:
+                        return pressures[i]
+        return 0.0
+
+func _get_pressure_at_screen_x(screen_x: float) -> float:
+        var size = get_size()
+        var margin = 80.0
+        var min_t = -40.0
+        var max_t = 60.0
+        var min_p = 0.0
+        var max_p = _get_max_pressure() * 1.1
+
+        var data_pos = _screen_to_data(Vector2(screen_x, 0), min_t, max_t, min_p, max_p, size, margin)
+        var target_temp = data_pos.x
+
+        # Find closest point
+        var closest_idx = 0
+        var closest_dist = 999.0
+        var temps = pt_data.get(current_refrigerant, {}).get("temperature_c", [])
+
+        for i in range(temps.size()):
+                var dist = abs(temps[i] - target_temp)
+                if dist < closest_dist:
+                        closest_dist = dist
+                        closest_idx = i
+
+        var pressures = pt_data.get(current_refrigerant, {}).get("pressure_bar", [])
+        return pressures[closest_idx]
+
+func _gui_input(event):
+        if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+                var screen_x = event.position.x
+                var size = get_size()
+                var margin = 80.0
+
+                if screen_x < margin or screen_x > size.x - margin:
+                        return
+
+                var temp = _screen_to_data(Vector2(screen_x, 0), -40, 60, 0, _get_max_pressure() * 1.1, size, margin).x
+                var pressure = _get_pressure_at_screen_x(screen_x)
+
+                readout.text = "Refrigerant: " + current_refrigerant + "\n"
+                readout.text += "Temperature: " + str(snapped(temp, 0.1)) +"°C\n"
+                readout.text += "Pressure: " + str(snapped(pressure, 0.01))+ " bar\n"
+                readout.text += "Saturation: " + ("YES" if pressure > 0 else "NO")
+
+                queue_redraw()
+(venv) idor@Tony:~/hvac-simulation$ cat > godot_project/scripts/test_helper_ptchart.gd << 'EOF'
+extends SceneTree
+
+## Test helper for FR-VI-001 / FR-VI-002
+## Usage: godot --headless --script scripts/test_helper_ptchart.gd <test_name>
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        var test_name = args[args.size() - 1] if args.size() > 0 else ""
+
+        match test_name:
+                "test_load":
+                        _test_load()
+                "test_dropdown":
+                        _test_dropdown()
+                "test_switch":
+                        _test_switch()
+EOF     quit()  print("FAIL: Reference pressure not found") snapped(ref_p, 0
+(venv) idor@Tony:~/hvac-simulation$ cat > godot_project/scripts/test_helper_ptchart.gd << 'ENDOFFILE'
+extends SceneTree
+
+## Test helper for FR-VI-001 / FR-VI-002
+## Usage: godot --headless --script scripts/test_helper_ptchart.gd <test_name>
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        var test_name = args[args.size() - 1] if args.size() > 0 else ""
+
+        match test_name:
+                "test_load":
+                        _test_load()
+                "test_dropdown":
+                        _test_dropdown()
+                "test_switch":
+                        _test_switch()
+ENDOFFILEuit()  print("FAIL: Reference pressure not found") snapped(ref_p, 0
+(venv) idor@Tony:~/hvac-simulation$ python3 -c "
+content = '''extends SceneTree
+
+## Test helper for FR-VI-001 / FR-VI-002
+## Usage: godot --headless --script scripts/test_helper_ptchart.gd <test_name>
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        var test_name = args[args.size() - 1] if args.size() > 0 else \"\"
+
+        match test_name:
+                \"test_load\":
+                        _test_load()
+                \"test_dropdown\":
+                        _test_dropdown()
+                \"test_switch\":
+                        _test_switch()
+                \"test_reference\":
+"rint('written')ent)ject/scripts/test_helper_ptchart.gd', 'w') as f:d(ref_p,
+written
+(venv) idor@Tony:~/hvac-simulation$ cat > /tmp/write_pt.py << 'PYEOF'
+content = r"""extends SceneTree
+
+## Test helper for FR-VI-001 / FR-VI-002
+## Usage: godot --headless --script scripts/test_helper_ptchart.gd <test_name>
+
+func _initialize():
+        var args = OS.get_cmdline_args()
+        var test_name = args[args.size() - 1] if args.size() > 0 else ""
+
+        match test_name:
+                "test_load":
+                        _test_load()
+                "test_dropdown":
+                        _test_dropdown()
+                "test_switch":
+                        _test_switch()
+                "test_reference":
+python3 /tmp/write_pt.py/scripts/test_helper_ptchart.gd", "w") as f:ref_p, 0
+written
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_godot_regression.py" ~/hvac-simulation/test_godot_regression.py && cp "/mnt/c/Users/Aidor/Downloads/test_helper_ptchart.gd" ~/hvac-simulation/godot_project/scripts/test_helper_ptchart.gd && cp "/mnt/c/Users/Aidor/Downloads/test_godot_regression (1).py" ~/hvac-simulation/test_godot_regression.py 2>/dev/null; ls -la ~/hvac-simulation/test_godot_regression.py ~/hvac-simulation/godot_project/scripts/test_helper_ptchart.gd
+-rw-r--r-- 1 idor idor 2416 Jul 18 11:58 /home/idor/hvac-simulation/godot_project/scripts/test_helper_ptchart.gd
+-rwxr-xr-x 1 idor idor 2448 Jul 18 11:58 /home/idor/hvac-simulation/test_godot_regression.py
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [FAIL] has_compressor
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:104)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] has_fan
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:104)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_on
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:104)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_off
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:104)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 6/10 tests passed
+SOME TESTS FAILED
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cat -n godot_project/scripts/test_helper_3d002.gd | tail -20
+   102                  f.close()
+   103
+   104  func _process(_delta):
+   105          if test_name == "animation_on" or test_name == "animation_off":
+   106                  frame_count += 1
+   107                  if frame_count >= target_frames:
+   108                          _check_animation()
+   109                          quit()
+   110
+   111  func _check_animation():
+   112          if test_name == "animation_on":
+   113                  if test_instance.compressor_rpm > 0 and test_instance.fan_rpm > 0:
+   114                          print("PASS: Animation RPM set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   115                  else:
+   116                          print("FAIL: Animation RPM not set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   117          elif test_name == "animation_off":
+   118                  if test_instance.compressor_rpm == 0 and test_instance.fan_rpm == 0:
+   119                          print("PASS: Animation stopped - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   120                  else:
+   121                          print("FAIL: Animation still running - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+(venv) idor@Tony:~/hvac-simulation$ cat -n godot_project/scripts/test_helper_3d002.gd | head -60
+     1  extends SceneTree
+     2
+     3  ## Test helper for FR-3D-002
+     4  ## Usage: godot --headless --script scripts/test_helper_3d002.gd <test_name>
+     5
+     6  var test_name := ""
+     7  var frame_count := 0
+     8  var target_frames := 10
+     9  var test_instance: Node = null
+    10
+    11  func _initialize():
+    12          var args = OS.get_cmdline_args()
+    13          test_name = args[args.size() - 1] if args.size() > 0 else ""
+    14
+    15          match test_name:
+    16                  "has_compressor":
+    17                          _test_has_compressor()
+    18                  "has_fan":
+    19                          _test_has_fan()
+    20                  "animation_on":
+    21                          _test_animation_on()
+    22                  "animation_off":
+    23                          _test_animation_off()
+    24                  _:
+    25                          print("FAIL: Unknown test: ", test_name)
+    26                          print("Args: ", args)
+    27                          quit()
+    28
+    29  func _test_has_compressor():
+    30          var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+    31          if scene == null:
+    32                  print("FAIL: Could not load scene")
+    33                  quit()
+    34                  return
+    35
+    36          var instance = scene.instantiate()
+    37          var compressor = instance.find_child("Compressor", true, false)
+    38          if compressor:
+    39                  print("PASS: Compressor node found")
+    40          else:
+    41                  print("FAIL: Compressor node not found")
+    42          quit()
+    43
+    44  func _test_has_fan():
+    45          var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+    46          if scene == null:
+    47                  print("FAIL: Could not load scene")
+    48                  quit()
+    49                  return
+    50
+    51          var instance = scene.instantiate()
+    52          var fan = instance.find_child("CondenserFan", true, false)
+    53          if fan:
+    54                  print("PASS: CondenserFan node found")
+    55          else:
+    56                  print("FAIL: CondenserFan node not found")
+    57          quit()
+    58
+    59  func _test_animation_on():
+    60          _write_state({
+(venv) idor@Tony:~/hvac-simulation$ sed -i 's/quit()$/quit()\n\treturn/' godot_project/scripts/test_helper_3d002.gd
+(venv) idor@Tony:~/hvac-simulation$ cat -n godot_project/scripts/test_helper_3d002.gd | head -45
+     1  extends SceneTree
+     2
+     3  ## Test helper for FR-3D-002
+     4  ## Usage: godot --headless --script scripts/test_helper_3d002.gd <test_name>
+     5
+     6  var test_name := ""
+     7  var frame_count := 0
+     8  var target_frames := 10
+     9  var test_instance: Node = null
+    10
+    11  func _initialize():
+    12          var args = OS.get_cmdline_args()
+    13          test_name = args[args.size() - 1] if args.size() > 0 else ""
+    14
+    15          match test_name:
+    16                  "has_compressor":
+    17                          _test_has_compressor()
+    18                  "has_fan":
+    19                          _test_has_fan()
+    20                  "animation_on":
+    21                          _test_animation_on()
+    22                  "animation_off":
+    23                          _test_animation_off()
+    24                  _:
+    25                          print("FAIL: Unknown test: ", test_name)
+    26                          print("Args: ", args)
+    27                          quit()
+    28          return
+    29
+    30  func _test_has_compressor():
+    31          var scene = load("res://scenes/mechanical_room/mechanical_room.tscn")
+    32          if scene == null:
+    33                  print("FAIL: Could not load scene")
+    34                  quit()
+    35          return
+    36                  return
+    37
+    38          var instance = scene.instantiate()
+    39          var compressor = instance.find_child("Compressor", true, false)
+    40          if compressor:
+    41                  print("PASS: Compressor node found")
+    42          else:
+    43                  print("FAIL: Compressor node not found")
+    44          quit()
+    45          return
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git checkout godot_project/scripts/test_helper_3d002.gd
+Updated 1 path from the index
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_helper_3d002_fixed.gd" ~/hvac-simulation/godot_project/scripts/test_helper_3d002.gd && cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [FAIL] has_compressor
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Cannot return value of type "null" because the function return type is "bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:114)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] has_fan
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Cannot return value of type "null" because the function return type is "bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:114)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_on
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Cannot return value of type "null" because the function return type is "bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:114)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_off
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Cannot return value of type "null" because the function return type is "bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:114)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 6/10 tests passed
+SOME TESTS FAILED
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cat -n godot_project/scripts/test_helper_3d002.gd | sed -n '105,125p'
+   105                  f.store_string(JSON.stringify(state))
+   106                  f.close()
+   107
+   108  func _process(_delta):
+   109          if test_name == "animation_on" or test_name == "animation_off":
+   110                  frame_count += 1
+   111                  if frame_count >= target_frames:
+   112                          _check_animation()
+   113                          quit()
+   114          return
+   115
+   116  func _check_animation():
+   117          if test_name == "animation_on":
+   118                  if test_instance.compressor_rpm > 0 and test_instance.fan_rpm > 0:
+   119                          print("PASS: Animation RPM set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   120                  else:
+   121                          print("FAIL: Animation RPM not set - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   122          elif test_name == "animation_off":
+   123                  if test_instance.compressor_rpm == 0 and test_instance.fan_rpm == 0:
+   124                          print("PASS: Animation stopped - compressor=", test_instance.compressor_rpm, " fan=", test_instance.fan_rpm)
+   125                  else:
+(venv) idor@Tony:~/hvac-simulation$ grep -n "-> bool" godot_project/scripts/test_helper_3d002.gd
+grep: invalid option -- '>'
+Usage: grep [OPTION]... PATTERNS [FILE]...
+Try 'grep --help' for more information.
+(venv) idor@Tony:~/hvac-simulation$ grep -n "\-> bool" godot_project/scripts/test_helper_3d002.gd
+(venv) idor@Tony:~/hvac-simulation$ grep -n "bool" godot_project/scripts/mechanical_room/mechanical_room.gd | head -20
+(venv) idor@Tony:~/hvac-simulation$ grep -n "script" godot_project/scenes/mechanical_room/mechanical_room.tscn
+3:[ext_resource type="Script" path="res://scripts/mechanical_room/mechanical_room.gd" id="1_mechanical"]
+22:script = ExtResource("1_mechanical")
+(venv) idor@Tony:~/hvac-simulation$ wc -l godot_project/scripts/test_helper_3d002.gd && head -5 godot_project/scripts/test_helper_3d002.gd
+127 godot_project/scripts/test_helper_3d002.gd
+extends SceneTree
+
+## Test helper for FR-3D-002
+## Usage: godot --headless --script scripts/test_helper_3d002.gd <test_name>
+
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_helper_3d002_v2.gd" ~/hvac-simulation/godot_project/scripts/test_helper_3d002.gd && cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [FAIL] has_compressor
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:101)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] has_fan
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:101)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_on
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:101)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_off
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: Not all code paths return a value.
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:101)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 6/10 tests passed
+SOME TESTS FAILED
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cat -n godot_project/scripts/test_helper_3d002.gd | sed -n '95,110p'
+    95  func _write_state(state: Dictionary):
+    96          var f = FileAccess.open("user://hvac_state.json", FileAccess.WRITE)
+    97          if f:
+    98                  f.store_string(JSON.stringify(state))
+    99                  f.close()
+   100
+   101  func _process(_delta):
+   102          if test_name == "animation_on" or test_name == "animation_off":
+   103                  frame_count += 1
+   104                  if frame_count >= target_frames:
+   105                          _check_animation()
+   106                          quit()
+   107
+   108  func _check_animation():
+   109          if test_name == "animation_on":
+   110                  if test_instance.compressor_rpm > 0 and test_instance.fan_rpm > 0:
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_helper_3d002_v3.gd" ~/hvac-simulation/godot_project/scripts/test_helper_3d002.gd && cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [FAIL] has_compressor
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: The function signature doesn't match the parent. Parent signature is "_process(float) -> bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:109)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] has_fan
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: The function signature doesn't match the parent. Parent signature is "_process(float) -> bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:109)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_on
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: The function signature doesn't match the parent. Parent signature is "_process(float) -> bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:109)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+  [FAIL] animation_off
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    SCRIPT ERROR: Parse Error: The function signature doesn't match the parent. Parent signature is "_process(float) -> bool".
+       at: GDScript::reload (res://scripts/test_helper_3d002.gd:109)
+    ERROR: Failed to load script "res://scripts/test_helper_3d002.gd" with error "Parse error".
+       at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 6/10 tests passed
+SOME TESTS FAILED
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_helper_3d002_v4.gd" ~/hvac-simulation/godot_project/scripts/test_helper_3d002.gd && cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [PASS] has_compressor
+  [PASS] has_fan
+  [FAIL] animation_on
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    Mechanical Room initialized (FR-3D-002)
+  [FAIL] animation_off
+    Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+    Mechanical Room initialized (FR-3D-002)
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 8/10 tests passed
+SOME TESTS FAILED
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cat godot_project/scripts/mechanical_room/mechanical_room.gd
+extends Node3D
+
+## Mechanical Room — 3D visualization with animated compressor and fan
+## FR-3D-002: Animated compressor/gauge models
+
+@onready var pressure_needle = $Gauges/PressureGauge/Needle
+@onready var temp_needle = $Gauges/TempGauge/Needle
+@onready var sight_glass = $Gauges/SightGlass/Body
+
+@onready var compressor_pulley = $Compressor/Pulley
+@onready var motor_pulley = $Compressor/MotorPulley
+@onready var condenser_fan = $CondenserFan
+
+@onready var refrigerant_label = $UI/StatePanel/VBoxContainer/Refrigerant
+@onready var pressure_label = $UI/StatePanel/VBoxContainer/Pressure
+@onready var temperature_label = $UI/StatePanel/VBoxContainer/Temperature
+@onready var superheat_label = $UI/StatePanel/VBoxContainer/Superheat
+@onready var subcooling_label = $UI/StatePanel/VBoxContainer/Subcooling
+@onready var phase_label = $UI/StatePanel/VBoxContainer/Phase
+@onready var scenario_label = $UI/StatePanel/VBoxContainer/Scenario
+@onready var faults_label = $UI/StatePanel/VBoxContainer/Faults
+
+var current_state = {}
+var target_pressure_angle = 0.0
+var target_temp_angle = 0.0
+
+# Animation state
+var compressor_rpm := 0.0
+var fan_rpm := 0.0
+var compressor_angle := 0.0
+var fan_angle := 0.0
+
+func _ready():
+        print("Mechanical Room initialized (FR-3D-002)")
+        _fetch_state()
+
+func _process(delta):
+        # Smooth needle animation
+        pressure_needle.rotation.z = lerp(pressure_needle.rotation.z, target_pressure_angle, delta * 5)
+        temp_needle.rotation.z = lerp(temp_needle.rotation.z, target_temp_angle, delta * 5)
+
+        # Compressor animation (RPM from system state)
+        if compressor_rpm > 0:
+                compressor_angle += compressor_rpm * delta * 0.1047
+                compressor_pulley.rotation.x = compressor_angle
+                motor_pulley.rotation.x = compressor_angle * 1.75
+
+        # Condenser fan animation
+        if fan_rpm > 0:
+                fan_angle += fan_rpm * delta * 0.1047
+                condenser_fan.rotation.y = fan_angle
+
+func _on_timer_timeout():
+        _fetch_state()
+
+func _fetch_state():
+        var file = FileAccess.open("user://hvac_state.json", FileAccess.READ)
+        if file:
+                var json = JSON.new()
+                var error = json.parse(file.get_as_text())
+                file.close()
+
+                if error == OK:
+                        current_state = json.get_data()
+                        _update_gauges()
+                        _update_ui()
+                        _update_animation_state()
+                else:
+                        push_error("Failed to parse HVAC state JSON")
+
+func _update_gauges():
+        var pressure_psi = current_state.get("pressure_psi", 0.0)
+        target_pressure_angle = clamp(deg_to_rad((pressure_psi / 500.0) * 270.0 - 135.0), deg_to_rad(-135), deg_to_rad(135))
+
+        var temp_f = current_state.get("temperature_f", 0.0)
+        target_temp_angle = clamp(deg_to_rad((temp_f / 150.0) * 270.0 - 135.0), deg_to_rad(-135), deg_to_rad(135))
+
+        var phase = current_state.get("phase", "unknown")
+        match phase:
+                "subcooled":
+                        sight_glass.material_override = _make_color_material(Color(0.2, 0.2, 0.8))
+                "superheated":
+                        sight_glass.material_override = _make_color_material(Color(0.9, 0.9, 0.9))
+                "two-phase":
+                        sight_glass.material_override = _make_color_material(Color(0.5, 0.5, 0.9))
+                _:
+                        sight_glass.material_override = _make_color_material(Color(0.3, 0.3, 0.3))
+
+func _update_animation_state():
+        var system_on = current_state.get("compressor_running", false)
+        var load_percent = current_state.get("load_percent", 0.0)
+
+        if system_on:
+                compressor_rpm = 1800.0 * (load_percent / 100.0)
+                fan_rpm = 1200.0 * (load_percent / 100.0)
+        else:
+                compressor_rpm = 0.0
+                fan_rpm = 0.0
+
+func _update_ui():
+        refrigerant_label.text = "Refrigerant: %s" % current_state.get("refrigerant", "—")
+        pressure_label.text = "Pressure: %.1f PSI" % current_state.get("pressure_psi", 0.0)
+        temperature_label.text = "Temperature: %.1f °F" % current_state.get("temperature_f", 0.0)
+        superheat_label.text = "Superheat: %.1f °F" % current_state.get("superheat_f", 0.0)
+        subcooling_label.text = "Subcooling: %.1f °F" % current_state.get("subcooling_f", 0.0)
+        phase_label.text = "Phase: %s" % current_state.get("phase", "—")
+        scenario_label.text = "Scenario: %s" % current_state.get("scenario_id", "—")
+        faults_label.text = "Faults: %s" % ", ".join(current_state.get("faults", []))
+
+func _make_color_material(color: Color) -> StandardMaterial3D:
+        var mat = StandardMaterial3D.new()
+        mat.albedo_color = color
+        mat.metallic = 0.3
+        mat.roughness = 0.4
+        return mat
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_helper_3d002_v5.gd" ~/hvac-simulation/godot_project/scripts/test_helper_3d002.gd && cd ~/hvac-simulation && python3 test_godot_regression.py
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [PASS] has_compressor
+  [PASS] has_fan
+  [PASS] animation_on
+  [PASS] animation_off
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 10/10 tests passed
+ALL GODOT REGRESSION TESTS PASS
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git add -A && git status
+On branch main
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   godot_project/scripts/test_helper_3d002.gd
+        new file:   godot_project/scripts/test_helper_ptchart.gd
+        new file:   test_godot_regression.py
+
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git commit -m "test(godot): FR-VA-003 regression harness — 10/10 PASS" -m "- Fix test_helper_3d002.gd for Godot 4.7.1 compatibility" -m "  SceneTree._process(float) ->bool signature" -m "  Replace _process frame counting with await timer" -m "- Add test_helper_ptchart.gd for FR-VI-001/002" -m "  test_load, test_dropdown, test_switch, test_reference" -m "- Add test_godot_regression.py Python runner" -m "  Orchestrates all Godot scene tests, reports PASS/FAIL" && git log --oneline -3
+[main d4d2581] test(godot): FR-VA-003 regression harness — 10/10 PASS
+ 3 files changed, 219 insertions(+), 24 deletions(-)
+ create mode 100644 godot_project/scripts/test_helper_ptchart.gd
+ create mode 100755 test_godot_regression.py
+d4d2581 (HEAD -> main) test(godot): FR-VA-003 regression harness — 10/10 PASS
+2ae6b43 (origin/main) chore: remove godot binary and zip from repo (exceedsGitHub 100MB limit)
+a889533 docs: add campaign files 1a_7-18-26, 2a_7-17-26, 4a_7-17-26
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -q && echo "---" && python3 test_godot_regression.py
+.................................................................... [ 43%]
+.................................................................... [ 86%]
+......................                                               [100%]
+158 passed in 60.83s (0:01:00)
+---
+============================================================
+FR-VA-003: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [PASS] has_compressor
+  [PASS] has_fan
+  [PASS] animation_on
+  [PASS] animation_off
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+============================================================
+RESULTS: 10/10 tests passed
+ALL GODOT REGRESSION TESTS PASS
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ tail -40 ~/hvac-simulation/HVAC_SRS.md
+## 5. Performance Baseline (FR-PF-002)
+
+| Scene | Avg FPS | Min FPS | Max FPS | Target | Status |
+|:---|:---|:---|:---|:---|:---|
+| PT Chart | 116 | 1 | 145 | 60 | **PASS** |
+| Mechanical Room | 145 | 144 | 145 | 60 | **PASS** |
+| Wiring Scene | — | — | — | 60 | **PASS** |
+
+*Measured on RTX 4050, Godot 4.3 headless, Forward Plus renderer.*
+
+---
+
+## 6. Next Phase (v1.2 Target)
+
+| Priority | Requirement | Description |
+|:---|:---|:---|
+| P1 | FR-ED-004 | Multi-language support (Spanish) |
+| P2 | FR-VA-003 | Automated regression test suite for Godot scenes |
+
+---
+
+## 7. Changelog
+
+| Version | Date | Changes |
+|:---|:---|:---|
+| v0.1 | 2026-07-16 | Initial SRS — 14 requirements |
+| v0.2 | 2026-07-16 | Updated traceability matrix |
+| v0.3 | 2026-07-16 | FR-SC-002/FR-ED-003/FR-SF-003 PASS, 64 tests |
+| v0.4 | 2026-07-16 | FR-SF-002 PASS, state inspector, 76/76 tests |
+| v0.5 | 2026-07-16 | FR-3D-001 PASS, mechanical room, 90/90 tests |
+| v0.6 | 2026-07-17 | FR-EL-001 + FR-TD-008 PASS, 132/132 tests |
+| v0.7 | 2026-07-17 | Updated test summary: 139/139 tests |
+| v0.8 | 2026-07-17 | FR-PF-002 PASS, frame rate benchmark, 143/143 tests |
+| v0.9 | 2026-07-17 | FR-3D-002 PASS, animated compressor/fan, 147/147 tests |
+| v1.0 | 2026-07-18 | FR-EL-002 PASS, wiring scene integration, 149/149 tests |
+| **v1.1** | **2026-07-18** | **FR-TD-009 PASS, SEER calculation, 158/158 tests** |
+
+---
+
+*Glass box enforced. Every state inspectable. No hidden assumptions.*
+(venv) idor@Tony:~/hvac-simulation$ grep -n -A2 "Traceability" ~/hvac-simulation/HVAC_SRS.md
+29:| FR-SF-003 | Traceability matrix in SRS | **PASS** | — | This document |
+30-| FR-3D-002 | Animated compressor/gauge models | **PASS** | 4/4 | mechanical_room.gd |
+31-| FR-3D-001 | 3D mechanical room with real-time gauges | **PASS** | 14/14 | mechanical_room_bridge.py |
+--
+64:## 4. Traceability Matrix
+65-
+66-| Requirement | Source File | Test File | Commit |
+(venv) idor@Tony:~/hvac-simulation$ grep -n -A2 "Traceability" ~/hvac-simulation/HVAC_SRS.md
+29:| FR-SF-003 | Traceability matrix in SRS | **PASS** | — | This document |
+30-| FR-3D-002 | Animated compressor/gauge models | **PASS** | 4/4 | mechanical_room.gd |
+31-| FR-3D-001 | 3D mechanical room with real-time gauges | **PASS** | 14/14 | mechanical_room_bridge.py |
+--
+64:## 4. Traceability Matrix
+65-
+66-| Requirement | Source File | Test File | Commit |
+(venv) idor@Tony:~/hvac-simulation$ sed -n '64,85p' ~/hvac-simulation/HVAC_SRS.md
+## 4. Traceability Matrix
+
+| Requirement | Source File | Test File | Commit |
+|:---|:---|:---|:---|
+| FR-PH-001 |  |  |  |
+| FR-PH-002 |  |  |  |
+| FR-SC-001 |  |  |  |
+| FR-SC-002 |  |  |  |
+| FR-ED-001 |  |  |  |
+| FR-ED-002 |  |  |  |
+| FR-ED-003 |  |  |  |
+| FR-SF-001 |  |  |  |
+| FR-SF-002 |  |  |  |
+| FR-SF-003 |  | — |  |
+| FR-3D-002 |  |  |  |
+| FR-3D-001 |  |  |  |
+| FR-EL-002 |  |  |  |
+| FR-EL-001 |  |  |  |
+| **FR-TD-009** | **** | **** | **** |
+| FR-TD-008 |  |  |  |
+| FR-PF-002 |  |  |  |
+| FR-VI-001 |  | Manual + JSON bridge |  |
+(venv) idor@Tony:~/hvac-simulation$ sed -n '1,35p' ~/hvac-simulation/HVAC_SRS.md
+# HVAC Simulation — Software Requirements Specification v1.1
+
+**Document ID:** HVAC-SRS-001
+**Version:** 1.1
+**Date:** 2026-07-18
+**Status:** ACTIVE — 158/158 tests verified
+
+---
+
+## 1. Purpose
+
+Free, non-proprietary HVAC simulation for trade school alternative. No vendor lock-in. Every formula cited with primary sources. Glass box enforced at code level.
+
+---
+
+## 2. Requirements
+
+| ID | Requirement | Status | Tests | Verification |
+|:---|:---|:---|:---|:---|
+| FR-PH-001 | Multi-refrigerant physics (R22, R134a, R32, R410A, R1234yf) |**PASS** | 15/15 | CoolProp 8.0.0 Helmholtz EOS |
+| FR-PH-002 | A2L safety classification display | **PASS** | 4/4 | ASHRAE Standard 34-2022 |
+| FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
+| FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
+| FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
+| FR-ED-002 | Hint system with pedagogical scaffolding | **PASS** | 4/4 | Three-tier hint structure |
+| FR-ED-003 | Performance analytics (pass/fail/time) | **PASS** | 5/5 | Per-scenario metrics |
+| FR-SF-001 | Every formula cited with primary source | **PASS** | 12/12 | FORMULA_CITATIONS.md |
+| FR-SF-002 | All states inspectable (glass box) | **PASS** | 12/12 | state_inspector.py |
+| FR-SF-003 | Traceability matrix in SRS | **PASS** | — | This document |
+| FR-3D-002 | Animated compressor/gauge models | **PASS** | 4/4 | mechanical_room.gd |
+| FR-3D-001 | 3D mechanical room with real-time gauges | **PASS** | 14/14 |mechanical_room_bridge.py |
+| FR-EL-002 | Godot wiring scene integration | **PASS** | 2/2 | wiring_scene.gd |
+| FR-EL-001 | Thermostat wiring schematic | **PASS** | 21/21 | thermostat_wiring.py |
+| **FR-TD-009** | **SEER calculation with formula citation** | **PASS** | **9/9** | **seer_calculator.py** |
+| FR-TD-008 | COP calculation with formula citation | **PASS** | 18/18 | cop_calculator.py |
+(venv) idor@Tony:~/hvac-simulation$ sed -n '35,50p' ~/hvac-simulation/HVAC_SRS.md
+| FR-TD-008 | COP calculation with formula citation | **PASS** | 18/18 | cop_calculator.py |
+| FR-PF-002 | Frame rate benchmark in Godot | **PASS** | 4/4 | frame_rate_benchmark.gd |
+| FR-VI-001 | Interactive PT chart (Godot) | **PASS** | 6/6 | JSON data bridge |
+| FR-VI-002 | Refrigerant switching in PT chart | **PASS** | 4/4 | Real-time update |
+| FR-VA-001 | Validation layer — divergence detection | **PASS** | 8/8 | ±2% threshold |
+| FR-VA-002 | Reference data comparison | **PASS** | 5/5 | NIST REFPROP cross-check |
+
+**Total: 158/158 tests passing**
+
+---
+
+## 3. Architecture
+┌─────────────────────────────────────────┐
+│           Godot 4.3 (Frontend)          │
+│  3D Mechanical Room | PT Chart | Wiring │
+├─────────────────────────────────────────┤
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/HVAC_SRS_v1.2.md" ~/hvac-simulation/HVAC_SRS.md && cd ~/hvac-simulation && git addHVAC_SRS.md && git commit -m "docs: SRS v1.2 — FR-VA-003 PASS, 168/168 tests" -m "- Add FR-VA-003 to requirements table (10/10 Godot tests)" -m "- Update traceability matrix with commit d4d2581" -m "- Bump test totals: 158 Python + 10 Godot = 168 combined" -m "- Move FR-ED-004 to sole v1.3 target" && git log --oneline -3
+[main f58c278] docs: SRS v1.2 — FR-VA-003 PASS, 168/168 tests
+ 1 file changed, 43 insertions(+), 49 deletions(-)
+f58c278 (HEAD -> main) docs: SRS v1.2 — FR-VA-003 PASS, 168/168 tests
+d4d2581 test(godot): FR-VA-003 regression harness — 10/10 PASS
+2ae6b43 (origin/main) chore: remove godot binary and zip from repo (exceedsGitHub 100MB limit)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git push originmain
+Enumerating objects: 15, done.
+Counting objects: 100% (15/15), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (10/10), done.
+Writing objects: 100% (10/10), 3.85 KiB | 3.85 MiB/s, done.
+Total 10 (delta 6), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (6/6), completed with 5 local objects.
+To https://github.com/aidoruao/hvac-simulation.git
+   2ae6b43..f58c278  main -> main
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && cat > KIMI_ONBOARDING.md << 'EOF'
+# KIMI ONBOARDING — HVAC Simulation
+
+**Last Updated:** 2026-07-18 (Campaign 5a)
+**Status:** LOCKED
+
+## Headless Mode
+- Godot runs without a display window: `godot --headless --script <script.gd> <arg>`
+- Used because WSL2 has no X11 server
+- Output captured via Python `subprocess.run()`, stdout/stderr combined
+- `quit()` terminates the process; `print("PASS"/"FAIL")` is the test signal
+
+## Shell Escaping Rule
+- **NEVER** use heredoc for GDScript. Shell eats `$`, `\n`, `"`, `##`.
+- **ALWAYS** use Python intermediate file:
+  ```bash
+  python3 /tmp/write_file.py, "w") as f:
+> ^C
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -c "
+content = '''# KIMI ONBOARDING — HVAC Simulation
+
+**Last Updated:** 2026-07-18 (Campaign 5a)
+**Status:** LOCKED
+
+## Headless Mode
+- Godot runs without a display window: `godot --headless --script <script.gd> <arg>`
+- Used because WSL2 has no X11 server
+- Output captured via Python `subprocess.run()`, stdout/stderr combined
+- `quit()` terminates the process; `print(\"PASS\"/\"FAIL\")` is the test signal
+
+## Shell Escaping Rule
+- **NEVER** use heredoc for GDScript. Shell eats `$`, `\\n`, `\"`, `##`.
+- **ALWAYS** use Python intermediate file:
+  ```bash
+  cat > /tmp/write_file.py << 'PYEOF'
+"rint('written')ONBOARDING.md', 'w') as f:xel-perfect output (future FR-VA-0
+> ^C
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/KIMI_ONBOARDING.md" ~/hvac-simulation/KIMI_ONBOARDING.md && cd ~/hvac-simulation && git add KIMI_ONBOARDING.md && git commit -m "docs: KIMI_ONBOARDING.md — headless mode, shell escaping, Godot version mismatch (5a discoveries)" && gitpush origin main
+[main 8b1d706] docs: KIMI_ONBOARDING.md — headless mode, shell escaping, Godot version mismatch (5a discoveries)
+ 1 file changed, 40 insertions(+)
+ create mode 100755 KIMI_ONBOARDING.md
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 1.23 KiB | 1.23 MiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To https://github.com/aidoruao/hvac-simulation.git
+   f58c278..8b1d706  main -> main
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git log --oneline -1 && python3 -m pytest --tb=short -q 2>&1 | tail -3
+8b1d706 (HEAD -> main, origin/main) docs: KIMI_ONBOARDING.md — headless mode, shell escaping, Godot version mismatch (5a discoveries)
+........................................................................ [ 91%]
+..............                                                           [100%]
+158 passed in 60.95s (0:01:00)
+(venv) idor@Tony:~/hvac-simulation$ cat > KIMI_ONBOARDING.md << 'EOF'
+# KIMI ONBOARDING — HVAC Simulation
+
+**Last Updated:** 2026-07-18 (Campaign 5a, Entry 24)
+**Status:** LOCKED
+**Current Commit:** 8b1d706
+
+## Headless Mode
+- Godot runs without a display window: `godot --headless --script <script.gd> <arg>`
+- Used because WSL2 has no X11 server
+- Output captured via Python `subprocess.run()`, stdout/stderr combined
+- `quit()` terminates the process; `print("PASS"/"FAIL")` is the test signal
+
+## Shell Escaping Rule
+- **NEVER** use heredoc for GDScript. Shell eats `$`, `\n`, `"`, `##`.
+- **ALWAYS** use Python intermediate file:
+  ```bash
+h origin main test_helper_ptchart.gd created, FR-VA-003 in progress" git pus
+> ^C
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation
+
+cat > KIMI_ONBOARDING.md << 'ENDMD'
+# KIMI ONBOARDING — HVAC Simulation
+
+**Last Updated:** 2026-07-18 (Campaign 5a, Entry 24)
+**Status:** LOCKED
+**Current Commit:** 8b1d706
+
+## Headless Mode
+- Godot runs without a display window: `godot --headless --script <script.gd> <arg>`
+- Used because WSL2 has no X11 server
+- Output captured via Python subprocess, stdout/stderr combined
+- `quit()` terminates the process; `print("PASS"/"FAIL")` is the test signal
+
+## Shell Escaping Rule
+- **NEVER** use heredoc for GDScript. Shell eats special characters.
+- **ALWAYS** use Python intermediate file approach (see 5a campaign entry 24git push origin mainprogress"OARDING.md — 5a progress, shell escaping rule l
+[main acfb43a] docs: KIMI_ONBOARDING.md — 5a progress, shell escaping rule locked, FR-VA-003 in progress
+ 1 file changed, 20 insertions(+), 24 deletions(-)
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 776 bytes | 776.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To https://github.com/aidoruao/hvac-simulation.git
+   8b1d706..acfb43a  main -> main
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && find . -name "*.py" -o -name "*.gd" | xargs grep -l "print\|text\|label\|hint\|scenario\|fault" | grep -v test | grep -v __pycache__ | head -20
+./state_inspector.py
+./cop_calculator.py
+./scenarios.py
+./seer_calculator.py
+./mechanical_room_bridge.py
+./godot_project/scripts/wiring_scene.gd
+./godot_project/scripts/mechanical_room/mechanical_room.gd
+./godot_project/scripts/mechanical_room/state_bridge.gd
+./godot_project/scripts/frame_rate_benchmark.gd
+./godot_project/scripts/pt_chart.gd
+./session_tracker.py
+./benchmark_latency.py
+./scenarios_extended.py
+./thermostat_wiring.py
+./refrigerants.py
+./venv/lib/python3.12/site-packages/iniconfig/__init__.py
+./venv/lib/python3.12/site-packages/iniconfig/_parse.py
+./venv/lib/python3.12/site-packages/fontTools/ufoLib/errors.py
+./venv/lib/python3.12/site-packages/fontTools/ufoLib/kerning.py
+./venv/lib/python3.12/site-packages/fontTools/ufoLib/converters.py
+xargs: grep: terminated by signal 13
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "hint\|description\|name\|text\|label" scenarios.py | head -40
+26:    description: str
+36:    hints: List[str] = field(default_factory=list)
+73:            description="You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+81:            hints=[
+89:            description="New equipment install. The label says R32. Verify with gauges.",
+97:            hints=[
+106:            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+116:            hints=[
+124:            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+134:            hints=[
+143:            description="System trips on high pressure. Reset it, checkgauges. Multiple issues?",
+153:            hints=[
+246:    print(f"Difficulty: {scenario.difficulty.name}")
+248:    print(f"\n{scenario.description}")
+258:    print(f"\n💡 HINTS (type 'hint' for next hint):")
+260:    hint_idx = 0
+263:        user_input = input("Your answer (refrigerant,diagnosis,superheat,subcooling) or 'hint': ").strip()
+265:        if user_input.lower() == 'hint':
+266:            if hint_idx < len(scenario.hints):
+267:                print(f"   Hint {hint_idx+1}: {scenario.hints[hint_idx]}")
+268:                hint_idx += 1
+270:                print("   No more hints.")
+310:if __name__ == '__main__':
+318:        print(f"  {status} {s.id}: {s.title} ({s.difficulty.name})")
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "description=" scenarios.py | head -30
+73:            description="You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+89:            description="New equipment install. The label says R32. Verify with gauges.",
+106:            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+124:            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+143:            description="System trips on high pressure. Reset it, checkgauges. Multiple issues?",
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "description=" scenarios.py | head -30
+73:            description="You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+89:            description="New equipment install. The label says R32. Verify with gauges.",
+106:            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+124:            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+143:            description="System trips on high pressure. Reset it, checkgauges. Multiple issues?",
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -c "description=" scenarios.py && grep -c "hints=" scenarios.py && echo "---" && grep -n "text =\|text =\|Label\|Button\|hint" godot_project/scripts/mechanical_room/mechanical_room.gd | head -20 && echo "---" && grep -n "text\|label" godot_project/scripts/pt_chart.gd | head -10
+5
+5
+---
+101:    refrigerant_label.text = "Refrigerant: %s" % current_state.get("refrigerant", "—")
+102:    pressure_label.text = "Pressure: %.1f PSI" % current_state.get("pressure_psi", 0.0)
+103:    temperature_label.text = "Temperature: %.1f °F" % current_state.get("temperature_f", 0.0)
+104:    superheat_label.text = "Superheat: %.1f °F" % current_state.get("superheat_f", 0.0)
+105:    subcooling_label.text = "Subcooling: %.1f °F" % current_state.get("subcooling_f", 0.0)
+106:    phase_label.text = "Phase: %s" % current_state.get("phase", "—")
+107:    scenario_label.text = "Scenario: %s" % current_state.get("scenario_id", "—")
+108:    faults_label.text = "Faults: %s" % ", ".join(current_state.get("faults", []))
+---
+23:             var json_text = file.get_as_text()
+27:             var error = json.parse(json_text)
+44:             if dropdown.get_item_text(i) == current_refrigerant:
+51:     var selected = dropdown.get_item_text(index)
+58:     readout.text = "Refrigerant: " + name + "\nClick on curve to read values"
+93:     # Axis labels
+172:            readout.text = "Refrigerant: " + current_refrigerant + "\n"
+173:            readout.text += "Temperature: " + str(snapped(temp, 0.1)) +"°C\n"
+174:            readout.text += "Pressure: " + str(snapped(pressure, 0.01))+ " bar\n"
+175:            readout.text += "Saturation: " + ("YES" if pressure > 0 else "NO")
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -c "description=" scenarios.py && grep -c "hints=" scenarios.py && echo "---" && grep -n "text =\|text =\|Label\|Button\|hint" godot_project/scripts/mechanical_room/mechanical_room.gd | head -20 && echo "---" && grep -n "text\|label" godot_project/scripts/pt_chart.gd | head -10
+5
+5
+---
+101:    refrigerant_label.text = "Refrigerant: %s" % current_state.get("refrigerant", "—")
+102:    pressure_label.text = "Pressure: %.1f PSI" % current_state.get("pressure_psi", 0.0)
+103:    temperature_label.text = "Temperature: %.1f °F" % current_state.get("temperature_f", 0.0)
+104:    superheat_label.text = "Superheat: %.1f °F" % current_state.get("superheat_f", 0.0)
+105:    subcooling_label.text = "Subcooling: %.1f °F" % current_state.get("subcooling_f", 0.0)
+106:    phase_label.text = "Phase: %s" % current_state.get("phase", "—")
+107:    scenario_label.text = "Scenario: %s" % current_state.get("scenario_id", "—")
+108:    faults_label.text = "Faults: %s" % ", ".join(current_state.get("faults", []))
+---
+23:             var json_text = file.get_as_text()
+27:             var error = json.parse(json_text)
+44:             if dropdown.get_item_text(i) == current_refrigerant:
+51:     var selected = dropdown.get_item_text(index)
+58:     readout.text = "Refrigerant: " + name + "\nClick on curve to read values"
+93:     # Axis labels
+172:            readout.text = "Refrigerant: " + current_refrigerant + "\n"
+173:            readout.text += "Temperature: " + str(snapped(temp, 0.1)) +"°C\n"
+174:            readout.text += "Pressure: " + str(snapped(pressure, 0.01))+ " bar\n"
+175:            readout.text += "Saturation: " + ("YES" if pressure > 0 else "NO")
+(venv) idor@Tony:~/hvac-simulation$ grep -n "text\|label\|print" godot_project/scripts/wiring_scene.gd | head -20
+10:@onready var status_text = $UI/StatusPanel/VBoxContainer/StatusText
+37:     print("Wiring Scene initialized (FR-EL-002)")
+52:     current_system = system_type.get_item_text(index)
+71:             var error = json.parse(file.get_as_text())
+83:             {"label": "R", "color": "RED", "function": "24V power", "connected": true, "voltage_present": true, "fault": null},
+84:             {"label": "W", "color": "WHITE", "function": "Heat call", "connected": true, "voltage_present": false, "fault": null},
+85:             {"label": "Y", "color": "YELLOW", "function": "Cool call", "connected": true, "voltage_present": false, "fault": null},
+86:             {"label": "G", "color": "GREEN", "function": "Fan call", "connected": true, "voltage_present": false, "fault": null},
+87:             {"label": "C", "color": "BLUE", "function": "Common", "connected": true, "voltage_present": false, "fault": null}
+94:             wires.append({"label": "O", "color": "ORANGE", "function": "Reversing valve", "connected": true, "voltage_present": false, "fault": null})
+108:            var label = child.name
+110:            var wire_data = _find_wire_data(label)
+113:                    var color = WIRE_COLORS.get(label, Color.GRAY)
+117:                            status_lines.append("%s: FAULT — %s" % [label, wire_data["fault"]])
+120:                            status_lines.append("%s: DISCONNECTED" % label)
+123:                            status_lines.append("%s: 24V ACTIVE" % label)
+125:                            status_lines.append("%s: OK" % label)
+130:            status_text.text = "All wires OK"
+132:            status_text.text = "\n".join(status_lines)
+134:func _find_wire_data(label: String) -> Dictionary:
+(venv) idor@Tony:~/hvac-simulation$ sed -n '60,160p' ~/hvac-simulation/scenarios.py
+    subcooling_calculated: Optional[float]
+    reasoning: str
+    passed: bool
+
+
+class ScenarioEngine:
+    """Generates and runs training scenarios."""
+
+    SCENARIOS = [
+        # Level 1: Basic refrigerant identification
+        Scenario(
+            id="SC-001",
+            title="First Day: What's in the System?",
+            description="You're on your first solo call. The homeowner saysthe AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+            difficulty=Difficulty.BASIC,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=125,
+            liquid_pressure_psig=225,
+            suction_temp_c=15,
+            liquid_temp_c=35,
+            hints=[
+                "Look at the liquid pressure. R410A runs higher pressure than R22.",
+                "R410A saturation pressure at 25°C is about 225 psig.",
+            ]
+        ),
+        Scenario(
+            id="SC-002",
+            title="The R32 Transition",
+            description="New equipment install. The label says R32. Verify with gauges.",
+            difficulty=Difficulty.BASIC,
+            refrigerant="R32",
+            ambient_temp_c=25,
+            suction_pressure_psig=130,
+            liquid_pressure_psig=230,
+            suction_temp_c=15,
+            liquid_temp_c=35,
+            hints=[
+                "R32 pressures are slightly higher than R410A at the same temperature.",
+                "Check the critical point: R32 has higher P_crit than R410A.",
+            ]
+        ),
+        # Level 2: Overcharge/undercharge
+        Scenario(
+            id="SC-003",
+            title="The Overcharge",
+            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+            difficulty=Difficulty.INTERMEDIATE,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=145,  # High suction
+            liquid_pressure_psig=245,  # High liquid
+            suction_temp_c=10,  # Low superheat
+            liquid_temp_c=30,  # Low subcooling
+            faults=["overcharge"],
+            customer_complaint="My electric bill doubled this month.",
+            hints=[
+                "Both pressures are high. That's not a restriction.",
+                "Calculate superheat. If it's low, liquid is flooding back.",
+            ]
+        ),
+        Scenario(
+            id="SC-004",
+            title="The Undercharge",
+            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+            difficulty=Difficulty.INTERMEDIATE,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=105,  # Low suction
+            liquid_pressure_psig=205,  # Low liquid
+            suction_temp_c=20,  # High superheat
+            liquid_temp_c=40,  # High subcooling
+            faults=["undercharge"],
+            customer_complaint="It never shuts off and the house is still warm.",
+            hints=[
+                "Low pressures on both sides usually means low charge or restriction.",
+                "High superheat + low subcooling = undercharge.",
+            ]
+        ),
+        # Level 3: Multiple faults
+        Scenario(
+            id="SC-005",
+            title="The Dirty Condenser",
+            description="System trips on high pressure. Reset it, check gauges. Multiple issues?",
+            difficulty=Difficulty.ADVANCED,
+            refrigerant="R410A",
+            ambient_temp_c=35,  # Hot day
+            suction_pressure_psig=120,
+            liquid_pressure_psig=350,  # Very high liquid
+            suction_temp_c=12,
+            liquid_temp_c=50,  # Very high liquid temp
+            faults=["dirty_condenser", "overcharge_possible"],
+            customer_complaint="It keeps shutting off and making a loud noise.",
+            hints=[
+                "Liquid pressure over 300 psig on R410A is dangerous.",
+                "Check ambient. 35°C ambient + dirty condenser = high head pressure.",
+            ]
+        ),
+    ]
+
+    def __init__(self):
+(venv) idor@Tony:~/hvac-simulation$ sed -n '60,160p' ~/hvac-simulation/scenarios.py
+    subcooling_calculated: Optional[float]
+    reasoning: str
+    passed: bool
+
+
+class ScenarioEngine:
+    """Generates and runs training scenarios."""
+
+    SCENARIOS = [
+        # Level 1: Basic refrigerant identification
+        Scenario(
+            id="SC-001",
+            title="First Day: What's in the System?",
+            description="You're on your first solo call. The homeowner saysthe AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+            difficulty=Difficulty.BASIC,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=125,
+            liquid_pressure_psig=225,
+            suction_temp_c=15,
+            liquid_temp_c=35,
+            hints=[
+                "Look at the liquid pressure. R410A runs higher pressure than R22.",
+                "R410A saturation pressure at 25°C is about 225 psig.",
+            ]
+        ),
+        Scenario(
+            id="SC-002",
+            title="The R32 Transition",
+            description="New equipment install. The label says R32. Verify with gauges.",
+            difficulty=Difficulty.BASIC,
+            refrigerant="R32",
+            ambient_temp_c=25,
+            suction_pressure_psig=130,
+            liquid_pressure_psig=230,
+            suction_temp_c=15,
+            liquid_temp_c=35,
+            hints=[
+                "R32 pressures are slightly higher than R410A at the same temperature.",
+                "Check the critical point: R32 has higher P_crit than R410A.",
+            ]
+        ),
+        # Level 2: Overcharge/undercharge
+        Scenario(
+            id="SC-003",
+            title="The Overcharge",
+            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+            difficulty=Difficulty.INTERMEDIATE,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=145,  # High suction
+            liquid_pressure_psig=245,  # High liquid
+            suction_temp_c=10,  # Low superheat
+            liquid_temp_c=30,  # Low subcooling
+            faults=["overcharge"],
+            customer_complaint="My electric bill doubled this month.",
+            hints=[
+                "Both pressures are high. That's not a restriction.",
+                "Calculate superheat. If it's low, liquid is flooding back.",
+            ]
+        ),
+        Scenario(
+            id="SC-004",
+            title="The Undercharge",
+            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+            difficulty=Difficulty.INTERMEDIATE,
+            refrigerant="R410A",
+            ambient_temp_c=25,
+            suction_pressure_psig=105,  # Low suction
+            liquid_pressure_psig=205,  # Low liquid
+            suction_temp_c=20,  # High superheat
+            liquid_temp_c=40,  # High subcooling
+            faults=["undercharge"],
+            customer_complaint="It never shuts off and the house is still warm.",
+            hints=[
+                "Low pressures on both sides usually means low charge or restriction.",
+                "High superheat + low subcooling = undercharge.",
+            ]
+        ),
+        # Level 3: Multiple faults
+        Scenario(
+            id="SC-005",
+            title="The Dirty Condenser",
+            description="System trips on high pressure. Reset it, check gauges. Multiple issues?",
+            difficulty=Difficulty.ADVANCED,
+            refrigerant="R410A",
+            ambient_temp_c=35,  # Hot day
+            suction_pressure_psig=120,
+            liquid_pressure_psig=350,  # Very high liquid
+            suction_temp_c=12,
+            liquid_temp_c=50,  # Very high liquid temp
+            faults=["dirty_condenser", "overcharge_possible"],
+            customer_complaint="It keeps shutting off and making a loud noise.",
+            hints=[
+                "Liquid pressure over 300 psig on R410A is dangerous.",
+                "Check ambient. 35°C ambient + dirty condenser = high head pressure.",
+            ]
+        ),
+    ]
+
+    def __init__(self):
+(venv) idor@Tony:~/hvac-simulation$ mkdir -p ~/hvac-simulation/locales && cp "/mnt/c/Users/Aidor/Downloads/locales_es.json" ~/hvac-simulation/locales/es.json && cp "/mnt/c/Users/Aidor/Downloads/i18n.py" ~/hvac-simulation/i18n.py && cp "/mnt/c/Users/Aidor/Downloads/locale_generator.py" ~/hvac-simulation/locale_generator.py && cd ~/hvac-simulation && python3 locale_generator.py es && ls -la godot_project/scripts/locale_es.gd
+  File "/home/idor/hvac-simulation/locale_generator.py", line 52
+    f.write("
+            ^
+SyntaxError: unterminated string literal (detected at line 52)
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/locale_generator.py" ~/hvac-simulation/locale_generator.py && cd ~/hvac-simulation&& python3 locale_generator.py es && ls -la godot_project/scripts/locale_es.gd
+  File "/home/idor/hvac-simulation/locale_generator.py", line 52
+    f.write("
+            ^
+SyntaxError: unterminated string literal (detected at line 52)
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/locale_generator_v2.py" ~/hvac-simulation/locale_generator.py && cd ~/hvac-simulation && python3 locale_generator.py es && ls -la godot_project/scripts/locale_es.gd
+FAIL: Locale file not found: /home/idor/hvac-simulation/../locales/es.json
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/locale_generator_v3.py" ~/hvac-simulation/locale_generator.py && cd ~/hvac-simulation && python3 locale_generator.py es && ls -la godot_project/scripts/locale_es.gd
+Generated: /home/idor/hvac-simulation/godot_project/scripts/locale_es.gd
+-rw-r--r-- 1 idor idor 1178 Jul 18 15:39 godot_project/scripts/locale_es.gd
+(venv) idor@Tony:~/hvac-simulation$ cat ~/hvac-simulation/godot_project/scripts/locale_es.gd | head -20 && echo "---" && cd ~/hvac-simulation && python3 -c "from i18n import _, set_language, get_scenario_translation; set_language('es'); print(_('scenarios.SC-001.title')); print(_('cli.prompt')); print(_('mechanical_room.refrigerant', section='godot'))"
+## Auto-generated from locales/es.json
+## Do not edit manually -- run: python3 locale_generator.py es
+
+const LOCALE_ES = {
+        "mechanical_room": {
+                "refrigerant": "Refrigerante",
+                "pressure": "Presión",
+                "temperature": "Temperatura",
+                "superheat": "Sobrecalentamiento",
+                "subcooling": "Subenfriamiento",
+                "phase": "Fase",
+                "scenario": "Escenario",
+                "faults": "Fallas",
+                "unit_psi": "PSI",
+                "unit_f": "°F",
+        },
+        "pt_chart": {
+                "refrigerant": "Refrigerante",
+                "click_instruction": "Haz clic en la curva para leer valores",
+                "temperature_axis": "Temperatura (°C)",
+---
+Primer Día: ¿Qué hay en el Sistema?
+Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o 'pista':
+Refrigerante
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -q
+.................................................................... [ 43%]
+.................................................................... [ 86%]
+......................                                               [100%]
+158 passed in 61.08s (0:01:01)
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_i18n.py" ~/hvac-simulation/test_i18n.py && cd ~/hvac-simulation && python3 -mpytest test_i18n.py -v --tb=short
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 11 items
+
+test_i18n.py::test_default_language_is_en PASSED                     [  9%]
+test_i18n.py::test_spanish_scenario_title PASSED                     [ 18%]
+test_i18n.py::test_spanish_scenario_description PASSED               [ 27%]
+test_i18n.py::test_spanish_cli_prompt PASSED                         [ 36%]
+test_i18n.py::test_spanish_difficulty_labels PASSED                  [ 45%]
+test_i18n.py::test_spanish_godot_mechanical_room PASSED              [ 54%]
+test_i18n.py::test_spanish_godot_pt_chart PASSED                     [ 63%]
+test_i18n.py::test_spanish_godot_wiring PASSED                       [ 72%]
+test_i18n.py::test_get_scenario_translation_full_dict PASSED         [ 81%]
+test_i18n.py::test_fallback_to_key_on_missing PASSED                 [ 90%]
+test_i18n.py::test_english_still_works PASSED                        [100%]
+
+============================ 11 passed in 0.02s ============================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -q
+.................................................................... [ 40%]
+.................................................................... [ 80%]
+.................................                                    [100%]
+169 passed in 61.21s (0:01:01)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "print\|description\|title\|hints\|input(" scenarios.py | head -30
+25:    title: str
+26:    description: str
+36:    hints: List[str] = field(default_factory=list)
+72:            title="First Day: What's in the System?",
+73:            description="You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+81:            hints=[
+88:            title="The R32 Transition",
+89:            description="New equipment install. The label says R32. Verify with gauges.",
+97:            hints=[
+105:            title="The Overcharge",
+106:            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+116:            hints=[
+123:            title="The Undercharge",
+124:            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+134:            hints=[
+142:            title="The Dirty Condenser",
+143:            description="System trips on high pressure. Reset it, checkgauges. Multiple issues?",
+153:            hints=[
+241:        print(f"Scenario {scenario_id} not found.")
+244:    print(f"\n{'='*60}")
+245:    print(f"SCENARIO: {scenario.title}")
+246:    print(f"Difficulty: {scenario.difficulty.name}")
+247:    print(f"{'='*60}")
+248:    print(f"\n{scenario.description}")
+251:        print(f"\n🗣️  Customer says: \"{scenario.customer_complaint}\"")
+253:    print(f"\n📊 GAUGE READINGS:")
+254:    print(f"   Ambient: {scenario.ambient_temp_c}°C")
+255:    print(f"   Suction: {scenario.suction_pressure_psig} psig, {scenario.suction_temp_c}°C")
+256:    print(f"   Liquid:  {scenario.liquid_pressure_psig} psig, {scenario.liquid_temp_c}°C")
+258:    print(f"\n💡 HINTS (type 'hint' for next hint):")
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "title=\|description=\|customer_complaint=\|hints=" scenarios.py | grep -v "^[0-9]*:.*#"
+72:            title="First Day: What's in the System?",
+73:            description="You're on your first solo call. The homeowner says the AC isn't cooling. You hook up your gauges. What refrigerant is this?",
+81:            hints=[
+88:            title="The R32 Transition",
+89:            description="New equipment install. The label says R32. Verify with gauges.",
+97:            hints=[
+105:            title="The Overcharge",
+106:            description="System running but high power bills. Gauges look high on both sides. What's wrong?",
+115:            customer_complaint="My electric bill doubled this month.",
+116:            hints=[
+123:            title="The Undercharge",
+124:            description="System runs constantly but can't keep up. Suction pressure is low. What's wrong?",
+133:            customer_complaint="It never shuts off and the house is still warm.",
+134:            hints=[
+142:            title="The Dirty Condenser",
+143:            description="System trips on high pressure. Reset it, checkgauges. Multiple issues?",
+152:            customer_complaint="It keeps shutting off and making a loudnoise.",
+153:            hints=[
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "print(f\"\\|print(\" scenarios.py | grep -v "gauge\|ambient\|suction\|liquid\|status" | head -20
+> ^C
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && grep -n "Your answer\|HINTS\|Customer says\|SCENARIO\|Difficulty" scenarios.py
+14:class Difficulty(Enum):
+27:    difficulty: Difficulty
+68:    SCENARIOS = [
+74:            difficulty=Difficulty.BASIC,
+90:            difficulty=Difficulty.BASIC,
+107:            difficulty=Difficulty.INTERMEDIATE,
+125:            difficulty=Difficulty.INTERMEDIATE,
+144:            difficulty=Difficulty.ADVANCED,
+163:    def list_scenarios(self, difficulty: Optional[Difficulty] = None) -> List[Scenario]:
+166:            return [s for s in self.SCENARIOS if s.difficulty == difficulty]
+167:        return self.SCENARIOS
+171:        for s in self.SCENARIOS:
+245:    print(f"SCENARIO: {scenario.title}")
+246:    print(f"Difficulty: {scenario.difficulty.name}")
+251:        print(f"\n🗣️  Customer says: \"{scenario.customer_complaint}\"")
+258:    print(f"\n💡 HINTS (type 'hint' for next hint):")
+263:        user_input = input("Your answer (refrigerant,diagnosis,superheat,subcooling) or 'hint': ").strip()
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/locales_en.json" ~/hvac-simulation/locales/en.json && cp "/mnt/c/Users/Aidor/Downloads/scenarios_localized.py" ~/hvac-simulation/scenarios_localized.py && cd ~/hvac-simulation && HVAC_LANG=es python3 scenarios_localized.py SC-001 <<< "hint"$'\n'"hint"$'\n'"R410A"
+
+============================================================
+cli.scenario_header
+Dificultad: BÁSICO
+============================================================
+
+Estás en tu primera llamada en solitario. El dueño de casa dice que el aireno enfría. Conectas tus manómetros. ¿Qué refrigerante es este?
+cli.gauge_readings
+   Ambient: 25°C
+   Suction: 125 psig, 15°C
+   Liquid:  225 psig, 35°C
+
+💡 PISTAS (escribe 'pista' para la siguiente):
+Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/locales_es.json" ~/hvac-simulation/locales/es.json && cd ~/hvac-simulation && HVAC_LANG=es python3 scenarios_localized.py SC-001 <<< "hint"$'\n'"hint"$'\n'"R410A"\n'"R410A"
+
+============================================================
+cli.scenario_header
+Dificultad: BÁSICO
+============================================================
+
+Estás en tu primera llamada en solitario. El dueño de casa dice que el aireno enfría. Conectas tus manómetros. ¿Qué refrigerante es este?
+cli.gauge_readings
+   Ambient: 25°C
+   Suction: 125 psig, 15°C
+   Liquid:  225 psig, 35°C
+
+💡 PISTAS (escribe 'pista' para la siguiente):
+Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o 'pista': (venv) idor@Tony:~/hvac-simulation$ ls -la "/mnt/c/Users/Aidor/Downloads/locales_es*" && cd ~/hvac-simulation && python3 -c "from i18n import_, set_language; set_language('es'); print(repr(_('cli.scenario_header')));print(repr(_('cli.gauge_readings'))); print(repr(_('cli.prompt')))"
+ls: cannot access '/mnt/c/Users/Aidor/Downloads/locales_es*': No such file or directory
+(venv) idor@Tony:~/hvac-simulation$ ls -la ~/hvac-simulation/locales/ && cd~/hvac-simulation && python3 -c "from i18n import _, set_language; set_language('es'); print(repr(_('cli.scenario_header'))); print(repr(_('cli.gauge_readings'))); print(repr(_('cli.prompt')))"
+total 20
+drwxr-xr-x 2 idor idor 4096 Jul 18 15:59 .
+drwxr-xr-x 9 idor idor 4096 Jul 18 15:59 ..
+-rwxr-xr-x 1 idor idor 4084 Jul 18 15:59 en.json
+-rwxr-xr-x 1 idor idor 4249 Jul 18 16:00 es.json
+'cli.scenario_header'
+'cli.gauge_readings'
+"Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento)o 'pista': "
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -c "import json; data = json.load(open('locales/es.json')); print('cli' in data.get('python', {})); print(list(data.get('python', {}).get('cli', {}).keys()))"
+True
+['prompt', 'hint_command', 'hint_header', 'no_more_hints', 'hint_format', 'difficulty_label', 'description_label', 'status_pass', 'status_fail', 'status_pending']
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -c "
+import json
+with open('locales/es.json', 'r') as f:
+    data = json.load(f)
+data['python']['cli']['scenario_header'] = 'ESCENARIO: {title}'
+data['python']['cli']['gauge_readings'] = '\n📊 LECTURAS DE MANÓMETROS:'
+data['python']['cli']['customer_says'] = '\n🗣️  El cliente dice: \"{complaint}\"'
+data['python']['cli']['not_found'] = 'Escenario {scenario_id} no encontrado.'
+with open('locales/es.json', 'w') as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+print('updated')
+"
+updated
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && HVAC_LANG=es python3 scenarios_localized.py SC-001 <<< "hint"$'\n'"hint"$'\n'"R410A"
+
+============================================================
+ESCENARIO: Primer Día: ¿Qué hay en el Sistema?
+Dificultad: BÁSICO
+============================================================
+
+Estás en tu primera llamada en solitario. El dueño de casa dice que el aireno enfría. Conectas tus manómetros. ¿Qué refrigerante es este?
+
+📊 LECTURAS DE MANÓMETROS:
+   Ambient: 25°C
+   Suction: 125 psig, 15°C
+   Liquid:  225 psig, 35°C
+
+💡 PISTAS (escribe 'pista' para la siguiente):
+Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o 'pista': (venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && HVAC_Lcd ~/hvac-simulation && HVAC_LANG=es python3 scenarios_localized.py SC-001 <<< "hint"$'\n'"hint"$'\n'"R410A"
+
+============================================================
+ESCENARIO: Primer Día: ¿Qué hay en el Sistema?
+Dificultad: BÁSICO
+============================================================
+
+Estás en tu primera llamada en solitario. El dueño de casa dice que el aireno enfría. Conectas tus manómetros. ¿Qué refrigerante es este?
+
+📊 LECTURAS DE MANÓMETROS:
+   Ambient: 25°C
+   Suction: 125 psig, 15°C
+   Liquid:  225 psig, 35°C
+
+💡 PISTAS (escribe 'pista' para la siguiente):
+Tu respuesta (refrigerante,diagnóstico,sobrecalentamiento,subenfriamiento) o(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -qb=short -q
+................................F................................... [ 40%]
+.................................................................... [ 80%]
+.................................                                    [100%]
+================================= FAILURES =================================
+_________________________ test_english_still_works _________________________
+test_i18n.py:81: in test_english_still_works
+    assert result == "Fallback"
+E   AssertionError: assert 'First Day: W...n the System?' == 'Fallback'
+E
+E     - Fallback
+E     + First Day: What's in the System?
+========================= short test summary info ==========================
+FAILED test_i18n.py::test_english_still_works - AssertionError: assert 'First Day: W...n the System?' == 'Fallback'
+1 failed, 168 passed in 62.73s (0:01:02)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && sed -i 's/assert result == \"Fallback\"/assert result == \"First Day: What'\\''s in the System?\"/' test_i18n.py && python3 -m pytest test_i18n.py::test_english_still_works -v --tb=short
+> ^C
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -c "
+with open('test_i18n.py', 'r') as f:
+    content = f.read()
+content = content.replace('assert result == \"Fallback\"', 'assert result == \"First Day: What\\'s in the System?\"')
+with open('test_i18n.py', 'w') as f:
+    f.write(content)
+print('fixed')
+" && python3 -m pytest test_i18n.py::test_english_still_works -v --tb=short
+fixed
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 1 item
+
+test_i18n.py::test_english_still_works PASSED                        [100%]
+
+============================ 1 passed in 0.02s =============================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -q
+.................................................................... [ 40%]
+.................................................................... [ 80%]
+.................................                                    [100%]
+169 passed in 62.47s (0:01:02)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git add -A && git status
+On branch main
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   godot_project/scripts/locale_es.gd
+        new file:   i18n.py
+        new file:   locale_generator.py
+        new file:   locales/en.json
+        new file:   locales/es.json
+        new file:   scenarios_localized.py
+        new file:   test_i18n.py
+
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git commit -m "feat(i18n): FR-ED-004 Spanish localization — Python side wired" -m "- Add i18n.py module with _() and get_scenario_translation()" -m "- Add locales/en.json and locales/es.json with full translations" -m "- Add locale_generator.py for GDScript const generation" -m "- Add scenarios_localized.py with HVAC_LANG=es support" -m "- Add test_i18n.py (11 tests, all PASS)" -m "- Generategodot_project/scripts/locale_es.gd" && git log --oneline -3
+[main cd3d891] feat(i18n): FR-ED-004 Spanish localization — Python side wired
+ 7 files changed, 540 insertions(+)
+ create mode 100644 godot_project/scripts/locale_es.gd
+ create mode 100755 i18n.py
+ create mode 100755 locale_generator.py
+ create mode 100755 locales/en.json
+ create mode 100755 locales/es.json
+ create mode 100755 scenarios_localized.py
+ create mode 100755 test_i18n.py
+cd3d891 (HEAD -> main) feat(i18n): FR-ED-004 Spanish localization — Python side wired
+acfb43a (origin/main) docs: KIMI_ONBOARDING.md — 5a progress, shell escaping rule locked, FR-VA-003 in progress
+8b1d706 docs: KIMI_ONBOARDING.md — headless mode, shell escaping, Godot version mismatch (5a discoveries)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 locale_generator.py en && ls -la godot_project/scripts/locale_en.gd
+Generated: /home/idor/hvac-simulation/godot_project/scripts/locale_en.gd
+-rw-r--r-- 1 idor idor 1096 Jul 18 16:17 godot_project/scripts/locale_en.gd
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/test_scenarios_localization.py" ~/hvac-simulation/test_scenarios_localization.py && cp "/mnt/c/Users/Aidor/Downloads/test_helper_locale.gd" ~/hvac-simulation/godot_project/scripts/test_helper_locale.gd && cp "/mnt/c/Users/Aidor/Downloads/test_godot_regression_v3.py" ~/hvac-simulation/test_godot_regression.py && cd ~/hvac-simulation && python3 -m pytest test_scenarios_localization.py -v --tb=short && echo "---" && python3 test_godot_re
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 2 items
+
+test_scenarios_localization.py::test_scenario_spanish_output PASSED  [ 50%]
+test_scenarios_localization.py::test_scenario_english_output PASSED  [100%]
+
+============================ 2 passed in 4.11s =============================
+---
+python3: can't open file '/home/idor/hvac-simulation/test_godot_re': [Errno2] No such file or directory
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest test_scenarios_localization.py -v --tb=short && echo "---" && python3 test_godot_regression.py
+=========================== test session starts ============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /home/idor/hvac-simulation/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/idor/hvac-simulation
+collected 2 items
+
+test_scenarios_localization.py::test_scenario_spanish_output PASSED  [ 50%]
+test_scenarios_localization.py::test_scenario_english_output PASSED  [100%]
+
+============================ 2 passed in 4.08s =============================
+---
+============================================================
+FR-VA-003/FR-ED-004: Godot Regression Test Runner
+Godot binary: /mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe
+Project dir:  /home/idor/hvac-simulation/godot_project
+============================================================
+
+FR-3D-002 (scripts/test_helper_3d002.gd):
+  [PASS] has_compressor
+  [PASS] has_fan
+  [PASS] animation_on
+  [PASS] animation_off
+
+FR-EL-002 (scripts/test_helper_wiring.gd):
+  [PASS] test_load
+  [PASS] test_nodes
+
+FR-VI-001/002 (scripts/test_helper_ptchart.gd):
+  [PASS] test_load
+  [PASS] test_dropdown
+  [PASS] test_switch
+  [PASS] test_reference
+
+FR-ED-004 (scripts/test_helper_locale.gd):
+  [PASS] test_load_es
+  [PASS] test_label_es
+
+============================================================
+RESULTS: 12/12 tests passed
+ALL GODOT REGRESSION TESTS PASS
+============================================================
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && python3 -m pytest --tb=short -q
+.................................................................... [ 39%]
+.................................................................... [ 79%]
+...................................                                  [100%]
+171 passed in 66.25s (0:01:06)
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git add -A && git status
+On branch main
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   godot_project/scripts/locale_en.gd
+        new file:   godot_project/scripts/test_helper_locale.gd
+        modified:   test_godot_regression.py
+        new file:   test_scenarios_localization.py
+
+(venv) idor@Tony:~/hvac-simulation$ cd ~/hvac-simulation && git commit -m "feat(i18n): FR-ED-004 Spanish localization — GDScript wired + integration tests" -m "- Add test_helper_locale.gd (2 tests: load_es, label_es)" -m "- Addtest_scenarios_localization.py (2 integration tests)" -m "- Add locale_en.gd for English fallback in Godot" -m "- Update test_godot_regression.py with FR-ED-004 suite" -m "- Full suite: 171/171 PASS (169 pytest + 2 integration)" -m "- 12/12 Godot tests PASS (10 regression + 2 locale)" && git log --oneline -3
+[main c370d25] feat(i18n): FR-ED-004 Spanish localization — GDScript wired + integration tests
+ 4 files changed, 148 insertions(+), 2 deletions(-)
+ create mode 100644 godot_project/scripts/locale_en.gd
+ create mode 100755 godot_project/scripts/test_helper_locale.gd
+ create mode 100755 test_scenarios_localization.py
+c370d25 (HEAD -> main) feat(i18n): FR-ED-004 Spanish localization — GDScript wired + integration tests
+cd3d891 feat(i18n): FR-ED-004 Spanish localization — Python side wired
+acfb43a (origin/main) docs: KIMI_ONBOARDING.md — 5a progress, shell escaping rule locked, FR-VA-003 in progress
+(venv) idor@Tony:~/hvac-simulation$ cp "/mnt/c/Users/Aidor/Downloads/HVAC_SRS_v1.3.md" ~/hvac-simulation/HVAC_SRS.md && cd ~/hvac-simulation && git addHVAC_SRS.md && git commit -m "docs: SRS v1.3 — FR-ED-004 PASS, 183/183 tests" -m "- Add FR-ED-004 to requirements table (13/13 tests)" -m "- Update test totals: 171 Python + 12 Godot = 183 combined" -m "- Add v1.4 target: FR-VA-004, FR-PH-003, FR-MA-001, FR-AN-001" -m "- Traceability matrix updated with commit c370d25" && git push origin main && git log --oneline -3
+[main a2fbd23] docs: SRS v1.3 — FR-ED-004 PASS, 183/183 tests
+ 1 file changed, 22 insertions(+), 13 deletions(-)
+Enumerating objects: 28, done.
+Counting objects: 100% (28/28), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (23/23), done.
+Writing objects: 100% (23/23), 11.01 KiB | 11.01 MiB/s, done.
+Total 23 (delta 10), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (10/10), completed with 5 local objects.
+To https://github.com/aidoruao/hvac-simulation.git
+   acfb43a..a2fbd23  main -> main
+a2fbd23 (HEAD -> main, origin/main) docs: SRS v1.3 — FR-ED-004 PASS, 183/183 tests
+c370d25 feat(i18n): FR-ED-004 Spanish localization — GDScript wired + integration tests
+cd3d891 feat(i18n): FR-ED-004 Spanish localization — Python side wired
+(venv) idor@Tony:~/hvac-simulation$
