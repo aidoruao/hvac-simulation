@@ -1,0 +1,6 @@
+
+# FR-VA-004: Visual Regression Testing
+# Runtime artifacts - not version controlled
+captures/
+diffs/
+__pycache__/
