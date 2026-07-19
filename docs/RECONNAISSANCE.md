@@ -1,7 +1,8 @@
 # HVAC Simulation — Existing Tools Reconnaissance
 
-## Date: 2026-07-16
-## Scope: Identify all open-source HVAC/thermodynamics simulators, test what works, document gaps
+**Date:** 2026-07-19 (updated from 2026-07-16)  
+**Scope:** Identify all open-source HVAC/thermodynamics simulators, test what works, document gaps  
+**Status:** Campaign 6a complete — new capabilities discovered
 
 ---
 
@@ -12,7 +13,7 @@
 - **License:** MIT
 - **What it does:** Thermophysical properties for 136+ fluids. Equations of state, transport properties, mixtures, humid air.
 - **What it doesn't:** No simulation loop, no UI, no training scenarios.
-- **Our use:** Backend thermodynamics engine. Verified working (test_physics.py, commit 7ef3477).
+- **Our use:** Backend thermodynamics engine. Verified working (`test_physics.py`, commit `7ef3477`).
 - **Verdict:** ✅ ADOPT — proven, accurate, actively maintained
 
 ### 2. SimVCCE
@@ -52,8 +53,8 @@
 - **License:** LGPL
 - **What it does:** Multiphysics including welding heat transfer, phase change.
 - **What it doesn't:** No HVAC integration. Research-focused. No UI.
-- **Our use:** Potential backend for brazing simulation (Phase 4+).
-- **Verdict:** ⏳ DEFER — powerful but overkill for v1.0
+- **Our use:** **ADOPTED as inspiration** — FR-PH-003 implements MOOSE-lite steady-state heat conduction (commit `271a3a3`). Full MOOSE deferred to Phase 4+ (brazing simulation).
+- **Verdict:** ✅ ADOPT (lite) / ⏳ DEFER (full)
 
 ---
 
@@ -69,6 +70,8 @@
 | Glass-box inspectable | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅** |
 | Progressive difficulty | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅** |
 | Cross-domain (elec/weld/CFD) | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | **✅** |
+| **Numerical methods with analytical verification** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (FR-PH-003)** |
+| **Visual regression testing** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (FR-VA-004)** |
 
 **Conclusion:** No existing open-source tool fills the training gap. We are not competing with physics engines — we are the *training layer* that makes them learnable.
 
@@ -79,49 +82,49 @@
 | Decision | Rationale |
 |---|---|
 | **Use CoolProp** | Proven accurate, MIT license, already verified |
-| **Use Godot 4.3** | Best open-source 3D engine, Python bridge possible, exports to all platforms |
+| **Use Godot 4.7.1** | Best open-source 3D engine, Python bridge, exports to all platforms |
+| **MOOSE-lite (FR-PH-003)** | BVP solver for steady-state heat conduction, analytical verification to 1e-9 |
 | **Defer OpenFOAM** | CFD is Phase 4+, not v1.0 |
-| **Defer MOOSE** | Welding is Phase 4+, not v1.0 |
+| **Defer full MOOSE** | Welding is Phase 4+, not v1.0 |
 | **Defer Modelica** | Building-scale is Phase 3+, not v1.0 |
 | **Build own scenario engine** | No existing tool has progressive training with fault injection |
 
 ---
 
-## Next Actions
+## Campaign 6a Discoveries
 
-1. ✅ CoolProp verified (commit 7ef3477)
-2. ⏳ Build interactive PT chart in Godot (FR-TD-007)
-3. ⏳ Add multi-refrigerant support (FR-TD-006)
-4. ⏳ Design first training scenario: "Identify refrigerant type from gauge readings"
-5. ⏳ Benchmark calculation latency (FR-PF-001)
+### FR-VA-004: D3D12-Accelerated Headless Screenshot Capture
+- Windows Godot 4.7.1 renders headlessly via D3D12 Forward+ on RTX 4050 within WSL2
+- `--display-driver windows --rendering-driver d3d12` forces real GPU rendering
+- `wslpath -w` bridges WSL2 Linux paths to Windows Godot write access
+- Pixel-level assurance of Godot UI rendering across 3 scenes
 
-
-
----
-
-## Campaign 6a Reconnaissance (FR-VA-004)
-
-### Capability Discovered: D3D12-Accelerated Headless Screenshot Capture
-- The Windows Godot 4.7.1 exe can render headlessly via D3D12 Forward+ on RTX 4050, within WSL2.
-- The key insight: `--display-driver windows --rendering-driver d3d12` forces real GPU rendering in headless mode.
-  - The "dummy" driver (default in headless) cannot capture viewport textures.
-  - DC6D support is available but untested; D3D12 is the verified path.
-- Path bridge: `wslpath -w` converts WSL2 Linux paths to `f\\wsl.localhost\\Ubuntu-24.04\...` for Windows Godot write access.
-
-### Architectural Impact
-- Traditional trade schools cannot automate "student did it look correct" verification.
-- Our system now has pixel-level assurance of Godot UI rendering across 3 scenes.
-
-### Current State
-- SRS: v1.4
-- Commit: f1e5a8d
-- Tests: 186/186 PASS (174 Python + 12 Godot)
-- Scenes verified visually: mechanical_room, pt_chart, wiring_scene
+### FR-PH-003: MOOSE-Inspired Numerical Methods
+- `scipy.integrate.solve_bvp` for cylindrical steady-state heat conduction
+- Analytical verification: max error < 1e-9 against ln(r) solution
+- Heat flux conservation verified numerically across pipe radius
+- Citation: Gaston et al. 2015 (MOOSE), Incropera et al. 2011 (heat transfer), Kierzenka & Shampine 2008 (BVP)
 
 ---
 
-## Next Actions (v1.4 Targets)
+## Current State (Campaign 6a Complete)
 
-1. ⚡ FR-PH-003: Advanced thermodynamics (MOOSE integration)
-2. ⚒ FR-MA-001: Mathematical modeling (equation of state derivations)
+| Metric | Value |
+|--------|-------|
+| SRS | v1.5 |
+| Tests | 188/188 PASS |
+| Commit | `9cb3c3b` |
+| Scenes verified visually | mechanical_room, pt_chart, wiring_scene |
+| Numerical methods verified | cylindrical heat conduction (analytical) |
 
+---
+
+## Next Actions (v1.5 Targets)
+
+1. ⚡ FR-MA-001 P1: Real R410A coefficients for Helmholtz EOS
+2. ⚒ FR-AN-001: Aerospace-grade animations (physics-based particle systems)
+3. 🔬 FR-FV-001: Formal verification strategy (property-based testing)
+
+---
+
+*Reconnaissance is continuous. Every tool is evaluated. No adoption without verification.*
