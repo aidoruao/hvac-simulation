@@ -1,9 +1,9 @@
-# HVAC Simulation — Software Requirements Specification v1.3
+# HVAC Simulation — Software Requirements Specification v1.4
 
 **Document ID:** HVAC-SRS-001
 **Version:** 1.3
 **Date:** 2026-07-18
-**Status:** ACTIVE — 171 Python tests + 12 Godot tests verified
+**Status:** ACTIVE — 174 Python tests + 12 Godot tests verified
 
 ---
 
@@ -40,6 +40,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-002 | NIST REFPROP cross-check | **PASS** | 5/5 | validation.py |
 | FR-VA-001 | Divergence detection (±2% threshold) | **PASS** | 8/8 | validation.py |
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
+| **FR-VA-004** | **Visual regression testing (screenshot diff)** | **PASS** | **3/3** | **test_screenshot_diff.py + D3D12 headless** |
 
 **TOTAL: 23/23 requirements PASS — 171 Python + 12 Godot tests**
 
@@ -85,6 +86,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-001 | validation.py | test_physics.py | — |
 | FR-VA-003 | test_godot_regression.py | test_godot_regression.py | d4d2581 |
 
+| **FR-VA-004** | **test_screenshot_diff.py, screenshot_capture.gd** | **test_screenshot_diff.py** | **f1e5a8d** |
 ---
 
 ## 5. Performance Baseline (FR-PF-002)
@@ -126,6 +128,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | v1.0 | 2026-07-18 | FR-EL-002 PASS, wiring scene integration, 149/149 tests |
 | v1.1 | 2026-07-18 | FR-TD-009 PASS, SEER calculation, 158/158 tests |
 | v1.2 | 2026-07-18 | FR-VA-003 PASS, Godot regression harness, 168/168 tests |
+| **v1.4** | **2026-07-18** | **FR-VA-004 PASS, visual regression, 186/186 tests** |
 | **v1.3** | **2026-07-18** | **FR-ED-004 PASS, Spanish localization, 183/183 tests** |
 
 ---

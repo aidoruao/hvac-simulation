@@ -95,3 +95,33 @@
 4. ⏳ Design first training scenario: "Identify refrigerant type from gauge readings"
 5. ⏳ Benchmark calculation latency (FR-PF-001)
 
+
+
+---
+
+## Campaign 6a Reconnaissance (FR-VA-004)
+
+### Capability Discovered: D3D12-Accelerated Headless Screenshot Capture
+- The Windows Godot 4.7.1 exe can render headlessly via D3D12 Forward+ on RTX 4050, within WSL2.
+- The key insight: `--display-driver windows --rendering-driver d3d12` forces real GPU rendering in headless mode.
+  - The "dummy" driver (default in headless) cannot capture viewport textures.
+  - DC6D support is available but untested; D3D12 is the verified path.
+- Path bridge: `wslpath -w` converts WSL2 Linux paths to `f\\wsl.localhost\\Ubuntu-24.04\...` for Windows Godot write access.
+
+### Architectural Impact
+- Traditional trade schools cannot automate "student did it look correct" verification.
+- Our system now has pixel-level assurance of Godot UI rendering across 3 scenes.
+
+### Current State
+- SRS: v1.4
+- Commit: f1e5a8d
+- Tests: 186/186 PASS (174 Python + 12 Godot)
+- Scenes verified visually: mechanical_room, pt_chart, wiring_scene
+
+---
+
+## Next Actions (v1.4 Targets)
+
+1. ⚡ FR-PH-003: Advanced thermodynamics (MOOSE integration)
+2. ⚒ FR-MA-001: Mathematical modeling (equation of state derivations)
+
