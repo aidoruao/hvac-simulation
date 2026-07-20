@@ -23,6 +23,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **19/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018), Aly & Lee (1999)** |
 | **FR-MA-001-L1** | **Liquid-region error reduction — resolved via CoolProp fallback** | **PASS** | **—** | **Option 3: removed liquid coefficient branch** |
 | **FR-MA-001-L2** | **Unified CoolProp fallback policy for all refrigerants** | **PASS** | **—** | **R410A: T≥350; others: T∈[350,500]; all: ρ<0.9·ρ_c → vapour; else CoolProp** |
+| **FR-MA-001-L3** | **Expanded term count (20P/10E/6G) for non-R410A fluids** | **PASS** | **—** | **All <1% mean; max errors 0.1-6.6% persist (model structure limitation)** |
 | **FR-MA-002** | **R32 Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.0035% mean error vs CoolProp** |
 | **FR-MA-003** | **R134a Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.28% mean error vs CoolProp** |
 | **FR-MA-004** | **R1234yf Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.14% mean error vs CoolProp** |
@@ -58,7 +59,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 39/39 requirements PASS — 267 Python passed + 12 Godot tests**
+**TOTAL: 40/40 requirements PASS — 267 Python passed + 12 Godot tests**
 
 ---
 
