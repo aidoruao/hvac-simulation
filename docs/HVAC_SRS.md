@@ -3,7 +3,7 @@
 **Document ID:** HVAC-SRS-001
 **Version:** 1.6
 **Date:** 2026-07-20
-**Status:** ACTIVE — 186 Python passed + 9 xfailed (195 total) + 12 Godot tests verified
+**Status:** ACTIVE — 195 Python passed, 0 xfailed (195 total) + 12 Godot tests verified
 
 ---
 
@@ -21,6 +21,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-PH-002 | A2L safety classification display | **PASS** | 4/4 | ASHRAE Standard 34-2022 |
 | **FR-PH-003** | **Advanced thermodynamics — MOOSE-inspired steady-state heat conduction solver** | **PASS** | **2/2** | **scipy BVP solver, analytical verification** |
 | **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **19/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018), Aly & Lee (1999)** |
+| **FR-MA-001-L1** | **Liquid-region error reduction for R410A Helmholtz EOS (target <1% from 6%)** | **IN PROGRESS** | **0/0** | **Expand training data or multi-region spline; see §7 implementation approach** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -44,7 +45,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 25/25 requirements PASS — 186 Python passed + 9 xfailed (195 total) + 12 Godot tests**
+**TOTAL: 25/26 requirements (25 PASS + 1 IN PROGRESS) — 195 Python passed + 12 Godot tests**
 
 ---
 
@@ -88,6 +89,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | test_godot_regression.py | test_godot_regression.py | d4d2581 |
 | FR-VA-004 | test_screenshot_diff.py, screenshot_capture.gd | test_screenshot_diff.py | f1e5a8d |
 | **FR-MA-001** | **math_model/helmholtz_eos.py** | **math_model/test_helmholtz_eos.py** | **9934a9d** |
+| **FR-MA-001-L1** | **math_model/regress_r410a_v4.py** | **math_model/test_helmholtz_eos.py** | **— (IN PROGRESS)** |
 
 ---
 
@@ -95,7 +97,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | ID | Limitation | Impact | Mitigation |
 |:---|:---|:---|:---|
-| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | **ACCEPTED** — v1.6 baseline; revisit in v1.7 with expanded training data or multi-region spline |
+| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | **IN PROGRESS** — see §7 implementation approach; target <1% mean relative error |
 
 ---
 
@@ -111,14 +113,33 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 ---
 
-## 7. Next Phase (v1.6 Target)
+## 7. Next Phase (v1.6 Active)
 
-| Priority | Requirement | Description |
-|:---|:---|:---|
-| P1 | FR-MA-002 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) |
-| P2 | FR-MA-001-L1 | Liquid-region 6% error reduction (expanded training data or spline) |
-| P3 | FR-AN-001 | Aerospace-grade animations (physics-based particle systems) |
-| P4 | FR-FV-001 | Formal verification strategy (Lean 4 / Coq / TLA+) |
+| Priority | Requirement | Description | Status |
+|:---|:---|:---|:---|
+| **P1** | **FR-MA-001-L1** | **Liquid-region error reduction: 6% → <1% mean relative pressure error** | **IN PROGRESS** |
+| P2 | FR-MA-002 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) | PENDING — blocked until FR-MA-001-L1 complete |
+| P3 | FR-AN-001 | Aerospace-grade animations (physics-based particle systems) | PENDING |
+| P4 | FR-FV-001 | Formal verification strategy (Lean 4 / Coq / TLA+) | PENDING |
+
+### Implementation Approach — FR-MA-001-L1
+
+**Acceptance criteria:**
+- Mean relative pressure error < 1% for T ∈ [220, 340] K and ρ ∈ [1.05·ρ_c, 2.0·ρ_c]
+- All existing 195 Python tests continue to pass
+- No new xfails introduced
+
+**Options:**
+
+| Option | Description | Risk | Effort |
+|:---|:---|:---|:---|
+| **A** | Expand liquid training data density — more samples in compressed liquid region | Training data availability | Low |
+| **B** | Multi-region spline — separate liquid/vapor EOS with smooth transition at saturation boundary | Boundary continuity | Medium |
+| **C** | Increase term count for liquid region — more polynomial/exponential terms | Overfitting risk | Low-Medium |
+
+**Recommended strategy:** Start with Option A (regenerate liquid coefficients with denser sampling in the compressed liquid region). If <1% not achievable, fall back to Option B (multi-region spline). Validate against CoolProp at every step.
+
+**Regression file:** `math_model/regress_r410a_v4.py` — modify liquid training range sampling density.
 
 ---
 
