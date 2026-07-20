@@ -43,12 +43,16 @@ func _ready():
 		add_child(flow_system)
 	_fetch_state()
 
+# FR-PE-001: JSON read cache to avoid redundant file I/O
+var _last_state_mtime := 0
+var _state_file_path := "user://hvac_state.json"
+
 func _process(delta):
-	# Smooth needle animation
+	# Render-rate updates: smooth animations only
 	pressure_needle.rotation.z = lerp(pressure_needle.rotation.z, target_pressure_angle, delta * 5)
 	temp_needle.rotation.z = lerp(temp_needle.rotation.z, target_temp_angle, delta * 5)
 
-	# Compressor animation (RPM from system state)
+	# Compressor animation
 	if compressor_rpm > 0:
 		compressor_angle += compressor_rpm * delta * 0.1047
 		compressor_pulley.rotation.x = compressor_angle
@@ -59,23 +63,32 @@ func _process(delta):
 		fan_angle += fan_rpm * delta * 0.1047
 		condenser_fan.rotation.y = fan_angle
 
+# FR-PE-001: physics updates decoupled to ~30 Hz via timer
 func _on_timer_timeout():
 	_fetch_state()
 
 func _fetch_state():
-	var file = FileAccess.open("user://hvac_state.json", FileAccess.READ)
-	if file:
-		var json = JSON.new()
-		var error = json.parse(file.get_as_text())
+	# Check file modification time to skip redundant reads
+	var file = FileAccess.open(_state_file_path, FileAccess.READ)
+	if not file:
+		return
+	var mtime = file.get_modified_time(_state_file_path) if FileAccess.file_exists(_state_file_path) else 0
+	if mtime == _last_state_mtime and not current_state.is_empty():
 		file.close()
+		return  # no change — skip parse
+	_last_state_mtime = mtime
 
-		if error == OK:
-			current_state = json.get_data()
-			_update_gauges()
-			_update_ui()
-			_update_animation_state()
-		else:
-			push_error("Failed to parse HVAC state JSON")
+	var json = JSON.new()
+	var error = json.parse(file.get_as_text())
+	file.close()
+
+	if error == OK:
+		current_state = json.get_data()
+		_update_gauges()
+		_update_ui()
+		_update_animation_state()
+	else:
+		push_error("Failed to parse HVAC state JSON")
 
 func _update_gauges():
 	var pressure_psi = current_state.get("pressure_psi", 0.0)
