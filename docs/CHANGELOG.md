@@ -4,6 +4,35 @@
 
 ---
 
+## [v1.6] — 2026-07-20 — FR-MA-001 Helmholtz EOS
+
+### Added
+- FR-MA-001: Helmholtz Equation of State for R410A (first-principles implementation)
+- EOS-HEOS-001: Residual Helmholtz form a(δ,τ) = a^ideal + a^res
+- EOS-DER-001/002: Full derivative stack (da_ddelta, d2a_ddelta2, da_dtau, d2a_dtau2, d2a_ddelta_dtau)
+- EOS-PROP-001: Derived properties (c_v, c_p, speed_of_sound) from Helmholtz partials
+- EOS-CONV-001/002: Newton-Raphson solver with Jacobian condition number check (κ < 1e14)
+- Region-aware R410A model — T-gated vapor (T≥350, ρ<0.9ρ_c) / liquid (T≤340, ρ>1.05ρ_c) with CoolProp fallback
+- Glass-box `return_details` on all thermodynamic methods exposing intermediate Helmholtz partials
+- CoolProp-based Jacobian fallback via central-difference on `PropsSI` pressure
+- Complex-step derivative verification guard for CoolProp-incompatible inputs
+- `math_model/` directory with coefficient files, regression scripts, and test suite
+
+### Fixed
+- Region detector: changed from loose OR-logic to explicit temperature-gated AND-logic matching regression training ranges
+- Newton-Raphson fallback: replaced finite-differences of wrapper with direct CoolProp pressure derivative
+
+### Known Issues
+- 9 xfailed tests: c_v, c_p, speed_of_sound diverge from CoolProp (~73% at 360 K) — ideal-gas c_v⁰ placeholder needs Aly-Lee (1999) correlation
+- Liquid fit 6% error — revisit training range or add multi-region spline
+
+### Ground Truth
+- Commit: `9934a9d`
+- Tests: 186 passed + 9 xfailed (195 Python total) + 12 Godot = 207 total
+- SRS: v1.6
+
+---
+
 ## 2026-07-19 — docs/ Folder Created, v1.5 Locked
 
 ### Added
