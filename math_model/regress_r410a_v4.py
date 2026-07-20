@@ -268,6 +268,50 @@ def generate_points(n_points, T_min, T_max, rho_min, rho_max, seed):
     return np.array(points)
 
 
+def generate_stratified_points(n_points, T_min, T_max, rho_min, rho_max, seed,
+                               single_phase_only=False):
+    """Generate n_points stratified (T, rho, P) samples.
+
+    Stratification concentrates more points near the region boundaries:
+      - T: finer grid near T_max (saturation boundary at ~340 K)
+      - rho: finer grid near rho_min (low-density liquid boundary)
+
+    Uses a beta(2, 1) transform to bias sampling toward the upper T bound
+    and lower rho bound without completely excluding the interior.
+
+    If single_phase_only=True, rejects points where CoolProp reports
+    0 < Q < 1 (two-phase).  This is required for the compressed-liquid
+    region because the saturation dome extends well above rho_c.
+    """
+    rng = np.random.default_rng(seed)
+    points = []
+    attempts = 0
+    while len(points) < n_points and attempts < n_points * 50:
+        attempts += 1
+        # Stratified T: bias toward T_max with Beta(2, 1)
+        u_T = rng.beta(2.0, 1.0)
+        T = T_min + u_T * (T_max - T_min)
+        # Stratified rho: bias toward rho_min with 1 - Beta(2, 1)
+        u_rho = 1.0 - rng.beta(2.0, 1.0)
+        rho = rho_min + u_rho * (rho_max - rho_min)
+        try:
+            if single_phase_only:
+                Q = CP.PropsSI("Q", "T", T, "D", rho, FLUID)
+                if 0.0 < Q < 1.0:
+                    continue  # skip two-phase states
+            P = CP.PropsSI("P", "T", T, "D", rho, FLUID)
+            if np.isfinite(P) and P > 0.0:
+                points.append((T, rho, P))
+        except Exception:
+            continue
+    if len(points) < n_points:
+        raise RuntimeError(
+            f"Only generated {len(points)}/{n_points} valid CoolProp points "
+            f"in T=[{T_min},{T_max}], rho=[{rho_min},{rho_max}]."
+        )
+    return np.array(points)
+
+
 def compute_targets(data):
     """Convert (T, rho, P) data to reduced variables and target alpha_delta."""
     T, rho, P = data[:, 0], data[:, 1], data[:, 2]
@@ -329,15 +373,21 @@ def validate(p, data):
 # ---------------------------------------------------------------------------
 # Region-specific regression
 # ---------------------------------------------------------------------------
-def fit_region(name, T_min, T_max, rho_min, rho_max, train_seed, val_seed, out_path):
+def fit_region(name, T_min, T_max, rho_min, rho_max, train_seed, val_seed, out_path,
+               n_train=2000, n_val=500, stratified=False, single_phase_only=False):
     print("\n" + "=" * 60)
     print(f"R410A {name.upper()} REGION FIT")
     print("=" * 60)
     print(f"T range   = [{T_min}, {T_max}] K")
     print(f"rho range = [{rho_min:.3f}, {rho_max:.3f}] kg/m^3")
+    if single_phase_only:
+        print("  (single-phase only — two-phase states rejected)")
 
-    print(f"\nGenerating 2000 training points for the {name} region ...")
-    train_data = generate_points(2000, T_min, T_max, rho_min, rho_max, train_seed)
+    print(f"\nGenerating {n_train} training points for the {name} region"
+          + (" (stratified)" if stratified else "") + " ...")
+    gen = generate_stratified_points if stratified else generate_points
+    kwargs = {"single_phase_only": single_phase_only} if stratified else {}
+    train_data = gen(n_train, T_min, T_max, rho_min, rho_max, train_seed, **kwargs)
     delta_tr, tau_tr, y_tr = compute_targets(train_data)
     print(f"  Target alpha_delta range: [{y_tr.min():.6e}, {y_tr.max():.6e}]")
 
@@ -362,8 +412,8 @@ def fit_region(name, T_min, T_max, rho_min, rho_max, train_seed, val_seed, out_p
     print(f"Optimization finished: {result.message.strip()}")
     print(f"  nfev = {result.nfev}, njev = {result.njev}, cost = {result.cost:.6e}")
 
-    print(f"\nGenerating 500 validation points for the {name} region ...")
-    val_data = generate_points(500, T_min, T_max, rho_min, rho_max, val_seed)
+    print(f"\nGenerating {n_val} validation points for the {name} region ...")
+    val_data = generate_points(n_val, T_min, T_max, rho_min, rho_max, val_seed)
     stats = validate(result.x, val_data)
 
     print("\nValidation relative pressure errors:")
@@ -394,16 +444,20 @@ def main():
 
     base = os.path.expanduser("~/hvac-simulation/math_model")
 
-    # Liquid region
+    # Liquid region (FR-MA-001-L1: denser stratified sampling for <1% error)
     fit_region(
         name="liquid",
         T_min=220.0,
         T_max=340.0,
-        rho_min=1.1 * RHO_CRITICAL,
-        rho_max=2.0 * RHO_CRITICAL,
+        rho_min=1.05 * RHO_CRITICAL,
+        rho_max=3.0 * RHO_CRITICAL,
         train_seed=42,
         val_seed=43,
         out_path=os.path.join(base, "r410a_liquid_coefficients.py"),
+        n_train=5000,
+        n_val=1000,
+        stratified=True,
+        single_phase_only=True,
     )
 
     # Vapor region

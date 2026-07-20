@@ -21,7 +21,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-PH-002 | A2L safety classification display | **PASS** | 4/4 | ASHRAE Standard 34-2022 |
 | **FR-PH-003** | **Advanced thermodynamics — MOOSE-inspired steady-state heat conduction solver** | **PASS** | **2/2** | **scipy BVP solver, analytical verification** |
 | **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **19/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018), Aly & Lee (1999)** |
-| **FR-MA-001-L1** | **Liquid-region error reduction for R410A Helmholtz EOS (target <1% from 6%)** | **IN PROGRESS** | **0/0** | **Expand training data or multi-region spline; see §7 implementation approach** |
+| **FR-MA-001-L1** | **Liquid-region error reduction for R410A Helmholtz EOS (target <1% from 6%)** | **BLOCKED** | **0/0** | **Option A FAILED (96.5% two-phase in box); requires Option B (multi-region spline)** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -45,7 +45,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 25/26 requirements (25 PASS + 1 IN PROGRESS) — 195 Python passed + 12 Godot tests**
+**TOTAL: 25/26 requirements (25 PASS + 1 BLOCKED) — 195 Python passed + 12 Godot tests**
 
 ---
 
@@ -97,7 +97,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | ID | Limitation | Impact | Mitigation |
 |:---|:---|:---|:---|
-| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | **IN PROGRESS** — see §7 implementation approach; target <1% mean relative error |
+| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | **BLOCKED** — Option A (denser stratified sampling, 5000 pts, single-phase filter) FAILED (25x error). Root cause: 96.5% of box is two-phase; true single-phase compressed liquid is a narrow strip above saturation curve. Requires Option B (multi-region spline). 6% error accepted for v1.6. |
 
 ---
 
@@ -117,8 +117,8 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | Priority | Requirement | Description | Status |
 |:---|:---|:---|:---|
-| **P1** | **FR-MA-001-L1** | **Liquid-region error reduction: 6% → <1% mean relative pressure error** | **IN PROGRESS** |
-| P2 | FR-MA-002 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) | PENDING — blocked until FR-MA-001-L1 complete |
+| **P1** | **FR-MA-001-L1** | **Liquid-region error reduction: 6% → <1% mean relative pressure error** | **BLOCKED** |
+| P2 | FR-MA-002 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) | PENDING |
 | P3 | FR-AN-001 | Aerospace-grade animations (physics-based particle systems) | PENDING |
 | P4 | FR-FV-001 | Formal verification strategy (Lean 4 / Coq / TLA+) | PENDING |
 
@@ -140,6 +140,16 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 **Recommended strategy:** Start with Option A (regenerate liquid coefficients with denser sampling in the compressed liquid region). If <1% not achievable, fall back to Option B (multi-region spline). Validate against CoolProp at every step.
 
 **Regression file:** `math_model/regress_r410a_v4.py` — modify liquid training range sampling density.
+
+**Experiment results (2026-07-20):**
+
+| Attempt | Configuration | Mean Error | Result |
+|:---|:---|:---|:---|
+| 1 | Uniform 2000 pts, rho∈[1.1·ρ_c, 2.0·ρ_c] | 6.6% | FAILED |
+| 2 | Stratified 5000 pts, rho∈[1.05·ρ_c, 2.0·ρ_c] | 6.6% | FAILED |
+| 3 | Stratified 5000 pts + single-phase filter, rho∈[1.05·ρ_c, 3.0·ρ_c] | 2558% | FAILED (wider range + true liquid = harder surface) |
+
+**Root cause:** 96.5% of the T∈[220,340], rho∈[1.05·ρ_c, 2.0·ρ_c] box is in the two-phase region. Saturated liquid density ranges from 2.95·ρ_c (220K) to 1.56·ρ_c (340K). A single Helmholtz residual form cannot simultaneously fit the flat two-phase behavior and the steep compressed-liquid behavior. **Option B (multi-region spline) is required for <1% error.**
 
 ---
 
