@@ -22,7 +22,10 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-PH-003** | **Advanced thermodynamics — MOOSE-inspired steady-state heat conduction solver** | **PASS** | **2/2** | **scipy BVP solver, analytical verification** |
 | **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **19/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018), Aly & Lee (1999)** |
 | **FR-MA-001-L1** | **Liquid-region error reduction — resolved via CoolProp fallback** | **PASS** | **—** | **Option 3: removed liquid coefficient branch; all liquid/two-phase states use CoolProp for physical accuracy** |
-| **FR-MA-002** | **R32 Helmholtz EOS — vapor coefficients from CoolProp-derived regression** | **PASS** | **—** | **FR-MA-001 framework generalized; 0.0035% mean error vs CoolProp** |
+| **FR-MA-002** | **R32 Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.0035% mean error vs CoolProp** |
+| **FR-MA-003** | **R134a Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.28% mean error vs CoolProp** |
+| **FR-MA-004** | **R1234yf Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.14% mean error vs CoolProp** |
+| **FR-MA-005** | **R22 Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.16% mean error vs CoolProp** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -46,7 +49,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 27/27 requirements PASS — 195 Python passed + 12 Godot tests**
+**TOTAL: 30/30 requirements PASS — 195 Python passed + 12 Godot tests**
 
 ---
 

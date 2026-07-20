@@ -55,6 +55,24 @@ try:
 except ImportError:
     _HAS_R32 = False
 
+# FR-MA-003: R134a, FR-MA-004: R1234yf, FR-MA-005: R22
+_REFRIGERANTS = {
+    "R134a": "r134a_vapor_coefficients",
+    "R1234yf": "r1234yf_vapor_coefficients",
+    "R22": "r22_vapor_coefficients",
+}
+_REFRIGERANT_IMPORTS = {}
+for _name, _mod in _REFRIGERANTS.items():
+    try:
+        _m = __import__(_mod, fromlist=["T_CRITICAL"])
+        _REFRIGERANT_IMPORTS[_name] = {
+            "T_c": _m.T_CRITICAL, "rho_c": _m.RHO_CRITICAL, "R": _m.GAS_CONSTANT,
+            "poly": _m.POLYNOMIAL_TERMS, "exp": _m.EXPONENTIAL_TERMS,
+            "gauss": _m.GAUSSIAN_TERMS,
+        }
+    except ImportError:
+        pass
+
 try:
     import CoolProp.CoolProp as CP
 except ImportError:
@@ -168,6 +186,14 @@ if _HAS_R32:
 else:
     R32_VAPOR_COEFFS = None
 
+# Build coefficient dicts for R134a, R1234yf, R22 (FR-MA-003/004/005)
+_EXTRA_COEFFS = {}
+for _name, _data in _REFRIGERANT_IMPORTS.items():
+    _EXTRA_COEFFS[_name] = _build_coeff_dict(
+        _data["T_c"], _data["rho_c"], _data["R"],
+        _data["poly"], _data["exp"], _data["gauss"],
+    )
+
 
 class HelmholtzEOS:
     """
@@ -178,14 +204,13 @@ class HelmholtzEOS:
 
     Supported fluids:
       - "R410A" (default) — vapor coefficients + CoolProp fallback
-      - "R32" (FR-MA-002) — vapor coefficients + CoolProp fallback
+      - "R32", "R134a", "R1234yf", "R22" — vapor coefficients + CoolProp fallback
     """
 
-    FLUID_COEFFS = {
-        "R410A": VAPOR_COEFFS,
-    }
+    FLUID_COEFFS = {"R410A": VAPOR_COEFFS}
     if _HAS_R32:
         FLUID_COEFFS["R32"] = R32_VAPOR_COEFFS
+    FLUID_COEFFS.update(_EXTRA_COEFFS)
 
     def __init__(self, fluid: str = "R410A"):
         if fluid not in self.FLUID_COEFFS:
