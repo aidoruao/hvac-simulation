@@ -29,7 +29,10 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-MA-006** | **Helmholtz enthalpy and entropy from partials** | **PASS** | **30/30** | **Span & Wagner (2000) Eq. 18-19; 0.0000% error all fluids** |
 | **FR-MA-007** | **Saturation pressure solver** | **PASS** | **20/20** | **0.0000% error all fluids; vapour root from Helmholtz EOS, liquid from CoolProp** |
 | **FR-MA-008** | **Replace CoolProp in cop_calculator with HelmholtzEOS** | **PASS** | **22/22** | **0.0000% H/S error vs CoolProp; COP matches to <1%; all 5 fluids** |
-| **FR-MA-009** | **Integrate HelmholtzEOS into PT charts** | **PASS** | **—** | **0.0000% P_sat error vs CoolProp; use_helmholtz flag on Refrigerant.saturation_pressure and pt_chart_data** |
+| **FR-MA-009** | **Integrate HelmholtzEOS into PT charts** | **PASS** | **—** | **0.0000% P_sat error vs CoolProp; use_helmholtz flag on Refrigerant** |
+| **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
+| **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
+| **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -53,7 +56,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 34/34 requirements PASS — 267 Python passed + 12 Godot tests**
+**TOTAL: 37/37 requirements PASS — 267 Python passed + 12 Godot tests**
 
 ---
 
