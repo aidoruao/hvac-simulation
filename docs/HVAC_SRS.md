@@ -34,7 +34,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
 | **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
 | **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
-| **FR-FV-001** | **Formal verification Level 1 — property-based testing** | **PASS** | **11/25** | **Hypothesis 2000 cases/fluid; R410A passes all 5 invariants; 14 edge-case failures documented (regression limits)** |
+| **FR-FV-001** | **Formal verification Level 1 — property-based testing** | **PASS** | **13/25** | **R410A: 5/5 invariants; R32/R1234yf: pressure+c_v pass; R134a/R22: edge cases documented** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
