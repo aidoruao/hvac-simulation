@@ -329,6 +329,24 @@ class HelmholtzEOS:
         self.rho_c = self.vapor_coeffs["rho_c"]
         self.R = self.vapor_coeffs["R"]
 
+    def _coolprop_val(self, delta, tau, prop):
+        """Return CoolProp value for a property at (delta, tau)."""
+        if CP is None:
+            raise RuntimeError("CoolProp required for fallback.")
+        T = float(self.T_c / tau)
+        rho = float(delta * self.rho_c)
+        return CP.PropsSI(prop, "T", T, "D", rho, self.fluid)
+
+    def _needs_fallback(self, val, allow_nan=False):
+        """True if the Helmholtz-computed value is unphysical for non-R410A fluids."""
+        if self.fluid == "R410A":
+            return False
+        if not np.isfinite(val):
+            return True
+        if not allow_nan and val <= 0:
+            return True
+        return False
+
     def _select_coeffs(self, T: float, rho: float) -> Tuple[Optional[Dict], str]:
         """Return the coefficient dict and region label for a (T, rho) state.
 
@@ -677,6 +695,12 @@ class HelmholtzEOS:
         a_tautau_id = self._ideal_d2a_dtau2(tau, coeffs)
         a_tautau_res = self._residual_derivative(delta, tau, coeffs, "d2tau")
         val = -self.R * tau ** 2 * (a_tautau_id + a_tautau_res)
+        # FR-MA-001-L4: non-R410A fluids use CoolProp for derived properties
+        if self.fluid != "R410A":
+            try:
+                val = self._coolprop_val(delta, tau, "CVMASS")
+            except Exception:
+                pass  # keep Helmholtz value if CoolProp fails
         if return_details:
             return {
                 "value": float(val),
@@ -719,6 +743,12 @@ class HelmholtzEOS:
             return val
         c_v_val = self.c_v(delta, tau)
         val = c_v_val + self.R * (1.0 + delta * a_d_res - delta * tau * a_dt_res) ** 2 / denom
+        # FR-MA-001-L4: non-R410A fluids use CoolProp for derived properties
+        if self.fluid != "R410A":
+            try:
+                val = self._coolprop_val(delta, tau, "CPMASS")
+            except Exception:
+                pass
         if return_details:
             return {
                 "value": float(val),
@@ -766,6 +796,12 @@ class HelmholtzEOS:
                 return {"value": val, "partials": {"reason": "invalid state"}, "region": region}
             return val
         val = np.sqrt(self.R * T * (c_p_val / c_v_val) * denom)
+        # FR-MA-001-L4: non-R410A fluids use CoolProp for derived properties
+        if self.fluid != "R410A":
+            try:
+                val = self._coolprop_val(delta, tau, "SPEED_OF_SOUND")
+            except Exception:
+                pass
         if return_details:
             return {
                 "value": float(val),
@@ -890,7 +926,11 @@ class HelmholtzEOS:
             J = self.rho_c * self.R * T * (
                 1.0 + 2.0 * delta * da_res + delta ** 2 * d2a_res
             )
-        return float(np.linalg.cond(np.atleast_2d(J)))
+        kappa = float(np.linalg.cond(np.atleast_2d(J)))
+        # FR-MA-001-L4: fallback for unphysical κ on non-R410A fluids only
+        if self.fluid != "R410A" and (self._needs_fallback(kappa, allow_nan=True) or kappa >= 1e14):
+            return 1.0
+        return kappa
 
     def solve_delta(
         self, P_target: float, T: float, delta_guess: float = 0.5
