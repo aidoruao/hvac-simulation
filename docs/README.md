@@ -16,7 +16,7 @@ python3 -m pytest          # 176 Python tests
 python3 test_godot_regression.py  # 12 Godot tests
 ```
 
-**Expected:** 188/188 PASS
+**Expected:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)
 
 ---
 
@@ -30,7 +30,38 @@ python3 test_godot_regression.py  # 12 Godot tests
 | Spanish localization | ✅ |
 | Automated visual regression testing (D3D12/RTX 4050) | ✅ |
 | MOOSE-inspired steady-state heat conduction solver | ✅ |
-| Mathematical modeling (Helmholtz EOS derivations) | 🚧 P0 skeleton |
+| Mathematical modeling (Helmholtz EOS derivations) | ✅ FR-MA-001 complete — R410A vapor/liquid coefficients, c_p, c_v, speed of sound, Jacobian stability |
+
+---
+
+## Development Workflow
+
+- **Canonical environment:** WSL2 on Ubuntu 24.04
+- **Virtual environment:** `~/hvac-simulation/venv`
+- **Preferred AI agents:** Kimi CLI or Codewhale for direct WSL2 filesystem access
+- **Web-based AI agents** (Kimi Web, DeepSeek Web) should use Base64 encoding for file transmission; heredocs are banned due to terminal corruption
+
+### Base64 Encoding Rule
+
+Web agents must encode multi-line content to Base64, then decode:
+```bash
+echo '<base64>' | base64 -d > target_file
+```
+
+### Heredoc Ban
+
+`<< EOF` blocks are banned for multi-line files because Bash interpolates `$`, `\n`, and `#` before file write, and long blocks corrupt mid-sentence. See [KIMI_ONBOARDING.md](docs/KIMI_ONBOARDING.md) for the full history (7 consecutive failures in Campaign 5a).
+
+### Hardware-Accelerated Headless Rendering
+
+For visual regression on RTX 4050:
+```bash
+--rendering-driver d3d12
+```
+
+### Path Mapping
+
+Use `wslpath -w` when the Windows Godot executable writes to the WSL2 filesystem.
 
 ---
 
@@ -38,7 +69,7 @@ python3 test_godot_regression.py  # 12 Godot tests
 
 All documentation lives in [`docs/`](docs/INDEX.md):
 
-- [Requirements (SRS v1.5)](docs/HVAC_SRS.md)
+- [Requirements (SRS v1.6)](docs/HVAC_SRS.md)
 - [Formula Citations](docs/FORMULA_CITATIONS.md)
 - [AI Onboarding](docs/KIMI_ONBOARDING.md)
 - [Campaign History](docs/GEMINI_NBLM_HISTORIAN.md)
