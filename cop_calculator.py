@@ -12,6 +12,12 @@ import json
 from CoolProp.CoolProp import PropsSI
 from refrigerants import Refrigerant
 
+try:
+    from math_model.helmholtz_eos import HelmholtzEOS
+    _HAS_HEOS = True
+except ImportError:
+    _HAS_HEOS = False
+
 
 @dataclass
 class CyclePoint:
@@ -22,6 +28,67 @@ class CyclePoint:
     entropy_kj_kg_k: float
     quality: Optional[float] = None
     phase: str = ""
+    
+    @classmethod
+    def from_helmholtz(cls, fluid: str, T_K: float, P_Pa: float) -> "CyclePoint":
+        """Build CyclePoint using HelmholtzEOS for vapour and CoolProp for liquid.
+
+        FR-MA-008: replaces CoolProp in vapour/superheated regimes while
+        maintaining the liquid-region CoolProp fallback policy.
+        """
+        if not _HAS_HEOS:
+            return cls.from_coolprop(fluid, T_K, P_Pa)
+        eos = HelmholtzEOS(fluid)
+        P_sat = eos.saturation_pressure(T_K)
+
+        # Determine phase relative to saturation
+        tol = 1.0  # Pa tolerance for saturation equality
+        if P_Pa < P_sat - tol:
+            # Superheated vapour — HelmholtzEOS
+            phase = "superheated"
+            quality = None
+            # Ideal-gas density estimate for low-pressure vapour
+            delta_guess = max(0.01, min(0.5, P_Pa / (eos.rho_c * eos.R * T_K)))
+            delta, info = eos.solve_delta(P_Pa, T_K, delta_guess=delta_guess)
+            tau = eos.T_c / T_K
+            h = eos.enthalpy(delta, tau) / 1000.0  # kJ/kg
+            s = eos.entropy(delta, tau) / 1000.0   # kJ/kg/K
+        elif P_Pa > P_sat + tol:
+            # Compressed liquid — CoolProp fallback
+            phase = "subcooled"
+            quality = None
+            h = PropsSI("H", "T", T_K, "P", P_Pa, fluid) / 1000.0
+            s = PropsSI("S", "T", T_K, "P", P_Pa, fluid) / 1000.0
+        else:
+            # Two-phase — quality from CoolProp, sat properties from Helmholtz
+            try:
+                Q = PropsSI("Q", "T", T_K, "P", P_Pa, fluid)
+            except Exception:
+                Q = -1
+            if Q == -1:
+                phase = "subcooled" if T_K < PropsSI("T", "P", P_Pa, "Q", 0, fluid) else "superheated"
+                quality = None
+                h = PropsSI("H", "T", T_K, "P", P_Pa, fluid) / 1000.0
+                s = PropsSI("S", "T", T_K, "P", P_Pa, fluid) / 1000.0
+            else:
+                phase = "two-phase"
+                quality = Q
+                # Saturated liquid/vapour H, S from CoolProp (liquid policy)
+                H_l = PropsSI("H", "T", T_K, "Q", 0, fluid) / 1000.0
+                H_v = PropsSI("H", "T", T_K, "Q", 1, fluid) / 1000.0
+                S_l = PropsSI("S", "T", T_K, "Q", 0, fluid) / 1000.0
+                S_v = PropsSI("S", "T", T_K, "Q", 1, fluid) / 1000.0
+                h = H_l + Q * (H_v - H_l)
+                s = S_l + Q * (S_v - S_l)
+
+        return cls(
+            temperature_c=T_K - 273.15,
+            pressure_bar=P_Pa / 100000.0,
+            enthalpy_kj_kg=h,
+            entropy_kj_kg_k=s,
+            quality=quality,
+            phase=phase,
+        )
     
     @classmethod
     def from_coolprop(cls, fluid: str, T_K: float, P_Pa: float) -> "CyclePoint":
@@ -213,9 +280,15 @@ class COPCalculator:
                                   evap_temp_c: float = 7.2,    # 45°F
                                   cond_temp_c: float = 54.4,   # 130°F
                                   superheat_k: float = 5.0,
-                                  subcooling_k: float = 5.0) -> RefrigerationCycle:
-        """Calculate COP for standard AHRI conditions using direct CoolProp."""
+                                  subcooling_k: float = 5.0,
+                                  use_helmholtz: bool = False) -> RefrigerationCycle:
+        """Calculate COP for standard AHRI conditions.
+
+        If use_helmholtz=True (FR-MA-008), uses HelmholtzEOS for vapour
+        states and CoolProp for liquid states.
+        """
         fluid = refrigerant_name
+        builder = CyclePoint.from_helmholtz if use_helmholtz else CyclePoint.from_coolprop
         
         # Saturation pressures
         p_evap_pa = PropsSI('P', 'T', evap_temp_c + 273.15, 'Q', 1, fluid)
@@ -223,7 +296,7 @@ class COPCalculator:
         
         # Point 3: Condenser outlet (subcooled liquid)
         T3_K = cond_temp_c - subcooling_k + 273.15
-        point3 = CyclePoint.from_coolprop(fluid, T3_K, p_cond_pa)
+        point3 = builder(fluid, T3_K, p_cond_pa)
         
         # Point 4: Expansion valve outlet (isenthalpic: h4 = h3)
         h3_J_kg = point3.enthalpy_kj_kg * 1000.0
@@ -231,14 +304,14 @@ class COPCalculator:
         
         # Point 1: Compressor suction (superheated vapor)
         T1_K = evap_temp_c + superheat_k + 273.15
-        point1 = CyclePoint.from_coolprop(fluid, T1_K, p_evap_pa)
+        point1 = builder(fluid, T1_K, p_evap_pa)
         
         # Point 2: Compressor discharge
         # Simplified: estimate from pressure ratio and typical efficiency
         pressure_ratio = p_cond_pa / p_evap_pa
         # Approximate: T2 = T_cond + delta for compression
         T2_K = cond_temp_c + 273.15 + 20.0 + 15.0 * (pressure_ratio - 3.0) / 3.0
-        point2 = CyclePoint.from_coolprop(fluid, T2_K, p_cond_pa)
+        point2 = builder(fluid, T2_K, p_cond_pa)
         
         return RefrigerationCycle(
             refrigerant=refrigerant_name,

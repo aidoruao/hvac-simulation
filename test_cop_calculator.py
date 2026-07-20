@@ -130,5 +130,38 @@ class TestRefrigerantComparison:
         assert c134a.condenser_out.pressure_bar < c410a.condenser_out.pressure_bar
 
 
+class TestHelmholtzIntegration:
+    """FR-MA-008: HelmholtzEOS integration with COP calculator."""
+
+    @pytest.mark.parametrize("fluid", ["R410A", "R32", "R134a", "R1234yf", "R22"])
+    @pytest.mark.parametrize("T_K", [280, 310, 340, 370])
+    def test_from_helmholtz_matches_coolprop(self, fluid, T_K):
+        """CyclePoint.from_helmholtz matches from_coolprop to <1%."""
+        from cop_calculator import _HAS_HEOS
+        if not _HAS_HEOS:
+            pytest.skip("HelmholtzEOS not available")
+        P = 1.5e5  # 1.5 bar — superheated vapour for all fluids at these T
+        cp_helm = CyclePoint.from_helmholtz(fluid, T_K, P)
+        cp_ref = CyclePoint.from_coolprop(fluid, T_K, P)
+        assert cp_helm.phase == cp_ref.phase
+        rel_h = abs(cp_helm.enthalpy_kj_kg - cp_ref.enthalpy_kj_kg) / abs(cp_ref.enthalpy_kj_kg)
+        rel_s = abs(cp_helm.entropy_kj_kg_k - cp_ref.entropy_kj_kg_k) / abs(cp_ref.entropy_kj_kg_k)
+        assert rel_h < 0.01, f"{fluid} {T_K}K: H mismatch {rel_h*100:.2f}%"
+        assert rel_s < 0.01, f"{fluid} {T_K}K: S mismatch {rel_s*100:.2f}%"
+
+    @pytest.mark.parametrize("fluid", ["R410A", "R32"])
+    def test_cop_helmholtz_matches_coolprop(self, fluid):
+        """Full refrigeration cycle COP matches between Helmholtz and CoolProp."""
+        from cop_calculator import _HAS_HEOS
+        if not _HAS_HEOS:
+            pytest.skip("HelmholtzEOS not available")
+        c_helm = COPCalculator.calculate_standard_cycle(fluid, 7.2, 54.4,
+                                                         use_helmholtz=True)
+        c_ref = COPCalculator.calculate_standard_cycle(fluid, 7.2, 54.4,
+                                                       use_helmholtz=False)
+        rel_cop = abs(c_helm.cop_cooling - c_ref.cop_cooling) / c_ref.cop_cooling
+        assert rel_cop < 0.02, f"{fluid} COP mismatch {rel_cop*100:.2f}%"
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
