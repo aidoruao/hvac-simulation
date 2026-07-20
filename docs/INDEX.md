@@ -2,10 +2,10 @@
 
 **Project:** Free, non-proprietary HVAC simulation for trade school alternative  
 **Repo:** https://github.com/aidoruao/hvac-simulation  
-**Last Updated:** 2026-07-19  
-**Ground Truth Commit:** `9cb3c3b`  
-**Test Count:** 188/188 PASS (176 Python + 12 Godot)  
-**SRS Version:** v1.5
+**Last Updated:** 2026-07-20  
+**Ground Truth Commit:** `f04ef13`  
+**Test Count:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)  
+**SRS Version:** v1.6
 
 ---
 
@@ -28,13 +28,13 @@
 |------|---------|--------------|--------|--------|
 | [README.md](README.md) | One-page project overview + quickstart | 2026-07-19 | — | 🆕 NEW |
 | [INDEX.md](INDEX.md) | This file — master navigation | 2026-07-19 | — | 🆕 NEW |
-| [HVAC_SRS.md](HVAC_SRS.md) | Software Requirements Specification v1.5 | 2026-07-19 | `9cb3c3b` | ✅ CURRENT |
-| [FORMULA_CITATIONS.md](FORMULA_CITATIONS.md) | Every formula traced to primary source | 2026-07-19 | `9cb3c3b` | ✅ CURRENT |
-| [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) | AI/human developer environment rules | 2026-07-19 | — | 🆕 UPDATED |
+| [HVAC_SRS.md](HVAC_SRS.md) | Software Requirements Specification v1.6 | 2026-07-20 | `f04ef13` | ✅ CURRENT |
+| [FORMULA_CITATIONS.md](FORMULA_CITATIONS.md) | Every formula traced to primary source | 2026-07-20 | `f04ef13` | ✅ CURRENT |
+| [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) | AI/human developer environment rules | 2026-07-20 | `f04ef13` | 🆕 UPDATED |
 | [RECONNAISSANCE.md](RECONNAISSANCE.md) | Open-source tool survey + gap analysis | 2026-07-19 | — | 🆕 UPDATED |
-| [GEMINI_NBLM_HISTORIAN.md](GEMINI_NBLM_HISTORIAN.md) | Campaign archive (1a–6a, immutable) | 2026-07-19 | `9cb3c3b` | ✅ CURRENT |
+| [GEMINI_NBLM_HISTORIAN.md](GEMINI_NBLM_HISTORIAN.md) | Campaign archive (1a–7a, immutable) | 2026-07-20 | `f04ef13` | ✅ CURRENT |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add requirements, tests, formulas | 2026-07-19 | — | 🆕 NEW |
-| [CHANGELOG.md](CHANGELOG.md) | Version history across all documents | 2026-07-19 | — | 🆕 NEW |
+| [CHANGELOG.md](CHANGELOG.md) | Version history across all documents | 2026-07-20 | `f04ef13` | 🆕 UPDATED |
 
 ---
 
@@ -47,7 +47,7 @@
 | Godot binary (Windows) | `/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe` |
 | Godot binary (Linux) | `~/hvac-simulation/godot` (4.3.stable) |
 | Renderer | Forward Plus (headless D3D12) |
-| Test count | 188 (176 Python + 12 Godot) |
+| Test count | 207 (195 Python + 12 Godot, 0 xfailed) |
 
 ---
 
@@ -61,10 +61,11 @@
 | 4a | 2026-07-17–18 | Wiring, SEER/COP | — |
 | 5a | 2026-07-18 | Godot regression, Heredoc War resolved | `d4d2581` |
 | 6a | 2026-07-18–19 | Visual regression (FR-VA-004), MOOSE-lite (FR-PH-003) | `f1e5a8d`, `271a3a3`, `9cb3c3b` |
+| 7a | 2026-07-20 | Helmholtz EOS (FR-MA-001), first-principles R410A | `9934a9d`, `2d96437`, `f04ef13` |
 
 ---
 
-## Active Requirements (24/24 PASS)
+## Active Requirements (25/25 PASS)
 
 | ID | Status | Tests | Location |
 |----|--------|-------|----------|
@@ -93,8 +94,7 @@
 | FR-VA-002 | ✅ PASS | 5/5 | `validation.py` |
 | FR-VA-003 | ✅ PASS | 10/10 | `test_godot_regression.py` |
 | FR-VA-004 | ✅ PASS | 3/3 | `test_screenshot_diff.py` |
-
-**In Progress:** FR-MA-001 P0 skeleton (4/4 PASS) in `math_model/`
+| **FR-MA-001** | ✅ PASS | 19/19 | `math_model/helmholtz_eos.py` |
 
 ---
 

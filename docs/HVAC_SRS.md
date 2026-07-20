@@ -20,7 +20,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-PH-001 | Multi-refrigerant physics (R22, R134a, R32, R410A, R1234yf) | **PASS** | 15/15 | CoolProp 8.0.0 Helmholtz EOS |
 | FR-PH-002 | A2L safety classification display | **PASS** | 4/4 | ASHRAE Standard 34-2022 |
 | **FR-PH-003** | **Advanced thermodynamics — MOOSE-inspired steady-state heat conduction solver** | **PASS** | **2/2** | **scipy BVP solver, analytical verification** |
-| **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **10/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018); 9 xfailed (ideal-gas c_v⁰ placeholder)** |
+| **FR-MA-001** | **Mathematical modeling — Helmholtz EOS (first-principles R410A)** | **PASS** | **19/19** | **Span & Wagner (2000), Lemmon & Jacobsen (2018), Aly & Lee (1999)** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -52,11 +52,9 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | Suite | Count | Status |
 |:---|:---|:---|
-| Python (pytest) | 186 | **PASS** |
-| Python (xfailed — documented) | 9 | **XFAIL** |
-| **Python Total** | **195** | **PASS (186) + XFAIL (9)** |
+| Python (pytest) | 195 | **PASS** |
 | Godot (headless) | 12 | **PASS** |
-| **Combined** | **207** | **PASS (198) + XFAIL (9)** |
+| **Combined** | **207** | **PASS (0 xfailed)** |
 
 ---
 
@@ -97,8 +95,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | ID | Limitation | Impact | Mitigation |
 |:---|:---|:---|:---|
-| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | TODO: expand training data or multi-region spline |
-| FR-MA-001-L2 | Ideal-gas c_v⁰ ≈ 0 (placeholder ideal_n / ideal_t) | c_v, c_p, speed of sound diverge from CoolProp (~73% error at 360 K) | TODO: implement Aly-Lee (1999) ideal-gas correlation for R410A |
+| FR-MA-001-L1 | Liquid fit 6% error (T ∈ [220,340] K, rho > 1.05·ρ_c) | Pressure error in compressed liquid | **ACCEPTED** — v1.6 baseline; revisit in v1.7 with expanded training data or multi-region spline |
 
 ---
 
@@ -118,8 +115,8 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 
 | Priority | Requirement | Description |
 |:---|:---|:---|
-| P1 | FR-MA-001-L2 | Ideal-gas heat capacity correlation (Aly-Lee 1999 for R410A) |
-| P2 | FR-MA-001-L1 | Liquid-region error reduction (expanded training data or spline) |
+| P1 | FR-MA-002 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) |
+| P2 | FR-MA-001-L1 | Liquid-region 6% error reduction (expanded training data or spline) |
 | P3 | FR-AN-001 | Aerospace-grade animations (physics-based particle systems) |
 | P4 | FR-FV-001 | Formal verification strategy (Lean 4 / Coq / TLA+) |
 

@@ -1,10 +1,10 @@
 # KIMI ONBOARDING — HVAC Simulation
 
-**Last Updated:** 2026-07-19 (Campaign 6a, Turn 278)  
+**Last Updated:** 2026-07-20 (Campaign 7a, FR-MA-001 complete)  
 **Status:** LOCKED  
-**Current Commit:** `9cb3c3b`  
-**SRS Version:** v1.5  
-**Test Count:** 188/188 PASS (176 Python + 12 Godot)  
+**Current Commit:** `f04ef13`  
+**SRS Version:** v1.6  
+**Test Count:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)  
 **Docs Root:** `docs/INDEX.md`
 
 ---
@@ -18,7 +18,7 @@
 | Godot binary (Windows) | `/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe` | "Executable not found" |
 | Godot binary (Linux) | `~/hvac-simulation/godot` (4.3.stable) | Version mismatch |
 | Renderer | Forward Plus (headless D3D12) | Screenshot corruption |
-| Test count | 188 (176 Python + 12 Godot) | False confidence in broken state |
+| Test count | 207 (195 Python + 12 Godot, 0 xfailed) | False confidence in broken state |
 | Documentation root | `docs/INDEX.md` | Navigation failure |
 
 ---
@@ -54,10 +54,11 @@ AI must end every turn by explicitly asking for terminal output.
 | 4a | 2026-07-17–18 | Wiring, SEER/COP | — |
 | 5a | 2026-07-18 | Godot regression, Heredoc War resolved | `d4d2581` |
 | 6a | 2026-07-18–19 | Visual regression (FR-VA-004), MOOSE-lite (FR-PH-003) | `f1e5a8d`, `271a3a3`, `9cb3c3b` |
+| 7a | 2026-07-20 | Helmholtz EOS (FR-MA-001), first-principles R410A | `9934a9d`, `2d96437`, `f04ef13` |
 
 ---
 
-## Active Requirements (24/24 PASS)
+## Active Requirements (25/25 PASS)
 
 | ID | Status | Tests | Location |
 |----|--------|-------|----------|
@@ -86,19 +87,20 @@ AI must end every turn by explicitly asking for terminal output.
 | FR-VA-002 | PASS | 5/5 | `validation.py` |
 | FR-VA-003 | PASS | 10/10 | `test_godot_regression.py` |
 | FR-VA-004 | PASS | 3/3 | `test_screenshot_diff.py` |
+| **FR-MA-001** | **PASS** | **19/19** | **`math_model/helmholtz_eos.py`** |
 
-**TOTAL: 24/24 PASS — 188/188 tests**
+**TOTAL: 25/25 PASS — 207/207 tests (0 xfailed)**
 
 ---
 
-## In Progress
+## Next Phase (v1.6 Target)
 
-| ID | Phase | Status | Location |
-|----|-------|--------|----------|
-| FR-MA-001 | P0 | Skeleton done, 4/4 PASS | `math_model/helmholtz_eos.py` |
-| FR-MA-001 | P1 | Real R410A coefficients needed | `math_model/` |
-| FR-AN-001 | — | Not started | — |
-| FR-FV-001 | — | Not started | — |
+| ID | Priority | Description |
+|----|----------|-------------|
+| FR-MA-002 | P1 | Next refrigerant: R32 Helmholtz EOS (reuse FR-MA-001 framework) |
+| FR-MA-001-L1 | P2 | Liquid-region 6% error reduction |
+| FR-AN-001 | P3 | Aerospace-grade animations |
+| FR-FV-001 | P4 | Formal verification (Lean 4 / Coq) |
 
 ---
 

@@ -28,9 +28,10 @@
 - Integration constants C, D = 0 (enthalpy/entropy baselines not calibrated against reference data)
 
 ### Ground Truth
-- Commits: `9934a9d`, pending (ideal-gas fix)
+- Commits: `9934a9d` (EOS core), `2d96437` (docs v1.6), `f04ef13` (ideal-gas fix)
 - Tests: 195 Python passed + 12 Godot = 207 total (0 xfailed)
 - SRS: v1.6
+- Accepted limitation: 6% liquid-region error (training simulator scope)
 
 ---
 
