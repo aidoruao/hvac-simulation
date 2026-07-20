@@ -174,3 +174,57 @@ def test_jacobian_condition_number_two_phase():
     # J should be (near-)zero in the two-phase region → κ = inf
     assert not np.isfinite(kappa) or kappa > 1e6, \
         f"Expected κ(J) = ∞ or > 1e6 in two-phase, got {kappa:.2e}"
+
+
+# ── FR-MA-006: enthalpy and entropy from Helmholtz partials ─────────────
+
+
+@pytest.mark.parametrize("fluid", ["R410A", "R32", "R134a", "R1234yf", "R22"])
+@pytest.mark.parametrize("delta_val", [0.15, 0.3, 0.5])
+def test_enthalpy_against_coolprop(fluid, delta_val):
+    """H(δ,τ) matches CoolProp HMASS to within 2% in vapor region."""
+    if not HAS_COOLPROP:
+        pytest.skip("CoolProp not available")
+    try:
+        eos = HelmholtzEOS(fluid)
+    except ValueError:
+        pytest.skip(f"{fluid} coefficients not available")
+    tau = eos.T_c / T_SINGLE_PHASE
+    rho = delta_val * eos.rho_c
+
+    result = eos.enthalpy(delta_val, tau, return_details=True)
+    val = result["value"]
+    cp_ref = CP.PropsSI("HMASS", "T", T_SINGLE_PHASE, "D", rho, fluid)
+
+    assert "a0_tau" in result["partials"], "Glass-box missing a0_tau"
+    assert "ar_delta" in result["partials"], "Glass-box missing ar_delta"
+    assert "ar_tau" in result["partials"], "Glass-box missing ar_tau"
+    rel_err = abs(val - cp_ref) / abs(cp_ref)
+    assert rel_err < 0.02, \
+        f"{fluid} H mismatch: ours={val:.1f}, CP={cp_ref:.1f} ({rel_err*100:.2f}%)"
+
+
+@pytest.mark.parametrize("fluid", ["R410A", "R32", "R134a", "R1234yf", "R22"])
+@pytest.mark.parametrize("delta_val", [0.15, 0.3, 0.5])
+def test_entropy_against_coolprop(fluid, delta_val):
+    """S(δ,τ) matches CoolProp SMASS to within 2% in vapor region."""
+    if not HAS_COOLPROP:
+        pytest.skip("CoolProp not available")
+    try:
+        eos = HelmholtzEOS(fluid)
+    except ValueError:
+        pytest.skip(f"{fluid} coefficients not available")
+    tau = eos.T_c / T_SINGLE_PHASE
+    rho = delta_val * eos.rho_c
+
+    result = eos.entropy(delta_val, tau, return_details=True)
+    val = result["value"]
+    cp_ref = CP.PropsSI("SMASS", "T", T_SINGLE_PHASE, "D", rho, fluid)
+
+    assert "a0" in result["partials"], "Glass-box missing a0"
+    assert "ar" in result["partials"], "Glass-box missing ar"
+    assert "a0_tau" in result["partials"], "Glass-box missing a0_tau"
+    assert "ar_tau" in result["partials"], "Glass-box missing ar_tau"
+    rel_err = abs(val - cp_ref) / abs(cp_ref)
+    assert rel_err < 0.02, \
+        f"{fluid} S mismatch: ours={val:.1f}, CP={cp_ref:.1f} ({rel_err*100:.2f}%)"

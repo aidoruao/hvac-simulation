@@ -162,6 +162,8 @@ def _build_coeff_dict(
         "ideal_ln_tau": _ideal_ln_tau,
         "ideal_n": _ideal_n,
         "ideal_t": _ideal_t,
+        "ideal_C": 0.0,   # integration constant — patched by _patch_reference_constants
+        "ideal_D": 0.0,
     }
 
 
@@ -195,6 +197,112 @@ for _name, _data in _REFRIGERANT_IMPORTS.items():
     )
 
 
+
+
+def _patch_reference_constants(coeffs, fluid):
+    """Solve for ideal_C, ideal_D that match CoolProp H, S at a reference state.
+
+    The Helmholtz ideal-gas form α⁰ includes two integration constants C, D
+    that set the enthalpy and entropy reference state.  We determine them by
+    matching CoolProp's PropsSI at T=360 K, δ=0.3 (single-phase vapor for
+    all supported fluids).  C and D are state-independent, so any valid
+    reference point works.
+    """
+    if CP is None:
+        return
+    T_ref, delta_ref = 360.0, 0.3
+    try:
+        T_c = coeffs["T_c"]
+        tau = T_c / T_ref
+        R = coeffs["R"]
+        rho = delta_ref * coeffs["rho_c"]
+        Hcp = CP.PropsSI("H", "T", T_ref, "D", rho, fluid)
+        Scp = CP.PropsSI("S", "T", T_ref, "D", rho, fluid)
+    except Exception:
+        return  # CoolProp unavailable or state invalid — leave C=D=0
+
+    # Build temporary arrays matching _residual_derivative expectations
+    delta_arr = np.asarray(delta_ref, dtype=float)
+    tau_arr = np.asarray(tau, dtype=float)
+
+    # Ideal terms (with current C=D=0)
+    a0_tau = _ideal_da_dtau_static(tau_arr, coeffs)
+    a0 = _a_ideal_static(delta_arr, tau_arr, coeffs)
+
+    # Residual terms
+    ar_tau = _residual_derivative_static(delta_arr, tau_arr, coeffs, "dtau")
+    ar_delta = _residual_derivative_static(delta_arr, tau_arr, coeffs, "ddelta")
+    ar = _residual_derivative_static(delta_arr, tau_arr, coeffs, "a")
+
+    tau_sum = float(tau * (a0_tau + ar_tau))
+    C = (Hcp / (R * T_ref) - tau_sum - delta_ref * float(ar_delta) - 1.0) / tau
+    # S / R = τ·(a0_tau + ar_tau) − (a0 + ar) = tau_sum − (a0 + ar)
+    # With C,D: S_new/R = S_old/R − D  →  D = S_old/R − S_cp/R
+    D = tau_sum - float(a0) - float(ar) - Scp / R
+
+    coeffs["ideal_C"] = float(C)
+    coeffs["ideal_D"] = float(D)
+
+
+# Static versions for use before the class is instantiated
+def _a_ideal_static(delta, tau, coeffs):
+    n, t = coeffs["ideal_n"], coeffs["ideal_t"]
+    n_ln = coeffs.get("ideal_ln_tau", 0.0)
+    return np.log(delta) + n_ln * np.log(tau) + np.sum(n * tau ** t)
+
+def _ideal_da_dtau_static(tau, coeffs):
+    n, t = coeffs["ideal_n"], coeffs["ideal_t"]
+    n_ln = coeffs.get("ideal_ln_tau", 0.0)
+    return n_ln / tau + np.sum(n * t * tau ** (t - 1.0))
+
+def _residual_derivative_static(delta, tau, coeffs, deriv):
+    """Lightweight copy of _residual_derivative for use during C/D patching."""
+    delta_c = np.clip(np.asarray(delta, dtype=float), 1e-6, 10.0)
+    tau_c = np.clip(np.asarray(tau, dtype=float), 0.5, 5.0)
+    n = coeffs["n"]; d = coeffs["d"]; t = coeffs["t"]
+    l = coeffs["l"]; ga = coeffs["ga"]; be = coeffs["be"]
+    eps = coeffs["eps"]; gamma = coeffs["gamma"]
+    out = np.zeros_like(delta_c)
+    for i in range(len(n)):
+        nk, dk, tk, lk = n[i], d[i], t[i], l[i]
+        gak, bek, epsk, gammak = ga[i], be[i], eps[i], gamma[i]
+        if gak > 0:
+            G = -gak*(delta_c-epsk)**2 - bek*(tau_c-gammak)**2
+            active = G >= -50; E = np.exp(np.clip(G,-50,50))
+            H = dk - 2*gak*delta_c*(delta_c-epsk)
+            Rterm = tk - 2*bek*tau_c*(tau_c-gammak)
+            if deriv=="a": term = nk*delta_c**dk*tau_c**tk*E
+            elif deriv=="ddelta": term = nk*tau_c**tk*E*delta_c**(dk-1)*H
+            elif deriv=="dtau": term = nk*delta_c**dk*tau_c**(tk-1)*E*Rterm
+            else: term = 0
+            out += term * active
+        elif lk > 0:
+            Cpow = delta_c**lk; arg = -Cpow; active = arg >= -50
+            E = np.exp(np.clip(arg,-50,50))
+            if deriv=="a": term = nk*delta_c**dk*tau_c**tk*E
+            elif deriv=="ddelta": term = nk*tau_c**tk*E*(dk*delta_c**(dk-1)-lk*delta_c**(dk+lk-1))
+            elif deriv=="dtau": term = nk*tk*delta_c**dk*tau_c**(tk-1)*E
+            else: term = 0
+            out += term * active
+        else:
+            if deriv=="a": term = nk*delta_c**dk*tau_c**tk
+            elif deriv=="ddelta": term = nk*dk*delta_c**(dk-1)*tau_c**tk
+            elif deriv=="dtau": term = nk*tk*delta_c**dk*tau_c**(tk-1)
+            else: term = 0
+            out += term
+    return float(out) if np.ndim(delta_c)==0 else out
+
+
+# Build the module-level fluid registry and patch reference constants
+_FLUID_COEFFS = {"R410A": VAPOR_COEFFS}
+if _HAS_R32:
+    _FLUID_COEFFS["R32"] = R32_VAPOR_COEFFS
+_FLUID_COEFFS.update(_EXTRA_COEFFS)
+
+for _fluid_name, _coeffs in _FLUID_COEFFS.items():
+    _patch_reference_constants(_coeffs, _fluid_name)
+
+
 class HelmholtzEOS:
     """
     Helmholtz Equation of State in reduced variables.
@@ -207,19 +315,14 @@ class HelmholtzEOS:
       - "R32", "R134a", "R1234yf", "R22" — vapor coefficients + CoolProp fallback
     """
 
-    FLUID_COEFFS = {"R410A": VAPOR_COEFFS}
-    if _HAS_R32:
-        FLUID_COEFFS["R32"] = R32_VAPOR_COEFFS
-    FLUID_COEFFS.update(_EXTRA_COEFFS)
-
     def __init__(self, fluid: str = "R410A"):
-        if fluid not in self.FLUID_COEFFS:
+        if fluid not in _FLUID_COEFFS:
             raise ValueError(
                 f"Unsupported fluid '{fluid}'. "
-                f"Available: {list(self.FLUID_COEFFS.keys())}"
+                f"Available: {list(_FLUID_COEFFS.keys())}"
             )
         self.fluid = fluid
-        self.vapor_coeffs = self.FLUID_COEFFS[fluid]
+        self.vapor_coeffs = _FLUID_COEFFS[fluid]
 
         # Critical properties from vapor coefficient file (canonical).
         self.T_c = self.vapor_coeffs["T_c"]
@@ -255,12 +358,14 @@ class HelmholtzEOS:
         """Ideal gas contribution: a^ideal(δ,τ).
 
         Aly-Lee (1999) form:
-          α^0 = ln(δ) + n_ln·ln(τ) + Σ n_k·τ^{t_k}
+          α^0 = ln(δ) + n_ln·ln(τ) + Σ n_k·τ^{t_k} + C·τ + D
         """
         n = coeffs["ideal_n"]
         t = coeffs["ideal_t"]
         n_ln = coeffs.get("ideal_ln_tau", 0.0)
-        return np.log(delta) + n_ln * np.log(tau) + np.sum(n * tau ** t)
+        C = coeffs.get("ideal_C", 0.0)
+        D = coeffs.get("ideal_D", 0.0)
+        return np.log(delta) + n_ln * np.log(tau) + np.sum(n * tau ** t) + C * tau + D
 
     def _a_res(self, delta, tau, coeffs):
         """Residual contribution: a^res(δ,τ). Supports complex inputs for verification."""
@@ -461,11 +566,13 @@ class HelmholtzEOS:
 
         d/dτ [n_ln·ln(τ)] = n_ln / τ
         d/dτ [n_k·τ^{t_k}] = n_k·t_k·τ^{t_k-1}
+        d/dτ [C·τ] = C
         """
         n = coeffs["ideal_n"]
         t = coeffs["ideal_t"]
         n_ln = coeffs.get("ideal_ln_tau", 0.0)
-        return n_ln / tau + np.sum(n * t * tau ** (t - 1.0))
+        C = coeffs.get("ideal_C", 0.0)
+        return n_ln / tau + np.sum(n * t * tau ** (t - 1.0)) + C
 
     def _ideal_d2a_dtau2(self, tau, coeffs):
         """Second τ-derivative of ideal-gas contribution: ∂²α^0/∂τ².
@@ -668,6 +775,86 @@ class HelmholtzEOS:
                     "c_v": float(c_v_val),
                     "c_p": float(c_p_val),
                     "gamma": float(c_p_val / c_v_val) if c_v_val > 0 else float("nan"),
+                },
+                "region": region,
+            }
+        return val
+
+    # ── FR-MA-006: enthalpy and entropy from Helmholtz partials ──────────
+
+    def enthalpy(self, delta: Number, tau: Number, return_details: bool = False) -> Number:
+        """Specific enthalpy (J/kg).
+
+        Span & Wagner (2000), Eq. 18:
+          H / (RT) = τ (∂α⁰/∂τ + ∂αʳ/∂τ) + δ·∂αʳ/∂δ + 1
+
+        Glass box: pass return_details=True to receive a dict with all
+        intermediate Helmholtz partials alongside the final value.
+        """
+        coeffs, region = self._get_coeffs(delta, tau)
+        T = self.T_c / tau
+        if coeffs is None:
+            if CP is None:
+                raise RuntimeError("CoolProp is required for fallback properties.")
+            rho = delta * self.rho_c
+            val = CP.PropsSI("HMASS", "T", float(T), "D", float(rho), self.fluid)
+            if return_details:
+                return {"value": float(val), "partials": {"region": region, "source": "CoolProp"}}
+            return val
+        a0_tau = self._ideal_da_dtau(tau, coeffs)
+        ar_delta = self._residual_derivative(delta, tau, coeffs, "ddelta")
+        ar_tau = self._residual_derivative(delta, tau, coeffs, "dtau")
+        val = self.R * T * (tau * (a0_tau + ar_tau) + delta * ar_delta + 1.0)
+        if return_details:
+            return {
+                "value": float(val),
+                "partials": {
+                    "tau": float(tau),
+                    "delta": float(delta),
+                    "T": float(T),
+                    "a0_tau": float(a0_tau),
+                    "ar_delta": float(ar_delta),
+                    "ar_tau": float(ar_tau),
+                },
+                "region": region,
+            }
+        return val
+
+    def entropy(self, delta: Number, tau: Number, return_details: bool = False) -> Number:
+        """Specific entropy (J/kg/K).
+
+        Span & Wagner (2000), Eq. 19:
+          S / R = τ (∂α⁰/∂τ + ∂αʳ/∂τ) − (α⁰ + αʳ)
+
+        Glass box: pass return_details=True to receive a dict with all
+        intermediate Helmholtz partials alongside the final value.
+        """
+        coeffs, region = self._get_coeffs(delta, tau)
+        T = self.T_c / tau
+        if coeffs is None:
+            if CP is None:
+                raise RuntimeError("CoolProp is required for fallback properties.")
+            rho = delta * self.rho_c
+            val = CP.PropsSI("SMASS", "T", float(T), "D", float(rho), self.fluid)
+            if return_details:
+                return {"value": float(val), "partials": {"region": region, "source": "CoolProp"}}
+            return val
+        a0 = self._a_ideal(delta, tau, coeffs)
+        ar = self._residual_derivative(delta, tau, coeffs, "a")
+        a0_tau = self._ideal_da_dtau(tau, coeffs)
+        ar_tau = self._residual_derivative(delta, tau, coeffs, "dtau")
+        val = self.R * (tau * (a0_tau + ar_tau) - (a0 + ar))
+        if return_details:
+            return {
+                "value": float(val),
+                "partials": {
+                    "tau": float(tau),
+                    "delta": float(delta),
+                    "T": float(T),
+                    "a0": float(a0),
+                    "ar": float(ar),
+                    "a0_tau": float(a0_tau),
+                    "ar_tau": float(ar_tau),
                 },
                 "region": region,
             }
