@@ -71,8 +71,21 @@ class Refrigerant:
         self.name = name
         self.info = CLASSIFICATIONS[name]
     
-    def saturation_pressure(self, temperature_c: float) -> float:
-        """Saturation pressure [bar] at given temperature [°C]."""
+    def saturation_pressure(self, temperature_c: float,
+                            use_helmholtz: bool = False) -> float:
+        """Saturation pressure [bar] at given temperature [°C].
+
+        If use_helmholtz=True (FR-MA-009), uses HelmholtzEOS saturation
+        solver instead of CoolProp.
+        """
+        if use_helmholtz:
+            try:
+                from math_model.helmholtz_eos import HelmholtzEOS
+                eos = HelmholtzEOS(self.name)
+                T_k = temperature_c + 273.15
+                return eos.saturation_pressure(T_k) / 1e5
+            except ImportError:
+                pass
         T_k = temperature_c + 273.15
         P_pa = PropsSI('P', 'T', T_k, 'Q', 1, self.name)
         return P_pa / 1e5
@@ -134,10 +147,15 @@ class Refrigerant:
             phase=phase
         )
     
-    def pt_chart_data(self, t_min_c: float = -40, t_max_c: float = 60, points: int = 100) -> Dict:
-        """Generate data for PT chart plotting."""
+    def pt_chart_data(self, t_min_c: float = -40, t_max_c: float = 60,
+                      points: int = 100, use_helmholtz: bool = False) -> Dict:
+        """Generate data for PT chart plotting.
+
+        If use_helmholtz=True (FR-MA-009), saturation pressures come from
+        HelmholtzEOS instead of CoolProp.
+        """
         temps = [t_min_c + (t_max_c - t_min_c) * i / (points - 1) for i in range(points)]
-        pressures = [self.saturation_pressure(t) for t in temps]
+        pressures = [self.saturation_pressure(t, use_helmholtz=use_helmholtz) for t in temps]
         return {
             'temperature_c': temps,
             'pressure_bar': pressures,
