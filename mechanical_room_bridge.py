@@ -35,6 +35,11 @@ class MechanicalRoomState:
     validation_status: str = ""
     divergence_percent: float = 0.0
     timestamp: str = ""
+    # FR-AN-001: flow visualization fields
+    compressor_running: bool = False
+    load_percent: float = 0.0
+    mass_flow: float = 0.0
+    pressure_bar: float = 0.0
     
     def __post_init__(self):
         if self.faults is None:

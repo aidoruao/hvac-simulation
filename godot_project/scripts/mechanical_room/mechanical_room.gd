@@ -30,8 +30,17 @@ var fan_rpm := 0.0
 var compressor_angle := 0.0
 var fan_angle := 0.0
 
+@onready var flow_system = $RefrigerantFlow if has_node("RefrigerantFlow") else null
+
 func _ready():
-	print("Mechanical Room initialized (FR-3D-002)")
+	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001)")
+	if not flow_system:
+		# Instantiate flow system dynamically
+		var flow_script = load("res://scripts/mechanical_room/refrigerant_flow.gd")
+		flow_system = Node3D.new()
+		flow_system.name = "RefrigerantFlow"
+		flow_system.set_script(flow_script)
+		add_child(flow_system)
 	_fetch_state()
 
 func _process(delta):
@@ -96,6 +105,10 @@ func _update_animation_state():
 	else:
 		compressor_rpm = 0.0
 		fan_rpm = 0.0
+
+	# FR-AN-001: update refrigerant flow particles
+	if flow_system and flow_system.has_method("update_from_state"):
+		flow_system.update_from_state(current_state)
 
 func _update_ui():
 	refrigerant_label.text = "Refrigerant: %s" % current_state.get("refrigerant", "—")
