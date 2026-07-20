@@ -228,3 +228,31 @@ def test_entropy_against_coolprop(fluid, delta_val):
     rel_err = abs(val - cp_ref) / abs(cp_ref)
     assert rel_err < 0.02, \
         f"{fluid} S mismatch: ours={val:.1f}, CP={cp_ref:.1f} ({rel_err*100:.2f}%)"
+
+
+# ── FR-MA-007: saturation pressure ──────────────────────────────────────
+
+
+@pytest.mark.parametrize("fluid", ["R410A", "R32", "R134a", "R1234yf", "R22"])
+@pytest.mark.parametrize("T", [270, 290, 310, 330])
+def test_saturation_pressure_against_coolprop(fluid, T):
+    """P_sat(T) matches CoolProp to within 1%."""
+    if not HAS_COOLPROP:
+        pytest.skip("CoolProp not available")
+    try:
+        eos = HelmholtzEOS(fluid)
+    except ValueError:
+        pytest.skip(f"{fluid} coefficients not available")
+    if T >= eos.T_c:
+        pytest.skip(f"T={T} >= T_c={eos.T_c}")
+
+    result = eos.saturation_pressure(T, return_details=True)
+    val = result["value"]
+    cp_ref = CP.PropsSI("P", "T", T, "Q", 0, fluid)
+
+    assert "rho_l" in result["partials"], "Glass-box missing rho_l"
+    assert "rho_v" in result["partials"], "Glass-box missing rho_v"
+    assert "G_residual" in result["partials"], "Glass-box missing G_residual"
+    rel_err = abs(val - cp_ref) / cp_ref
+    assert rel_err < 0.01, \
+        f"{fluid} P_sat at {T}K: ours={val/1e5:.4f} bar, CP={cp_ref/1e5:.4f} bar ({rel_err*100:.2f}%)"

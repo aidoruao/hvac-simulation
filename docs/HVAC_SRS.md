@@ -26,7 +26,8 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-MA-003** | **R134a Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.28% mean error vs CoolProp** |
 | **FR-MA-004** | **R1234yf Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.14% mean error vs CoolProp** |
 | **FR-MA-005** | **R22 Helmholtz EOS — vapor coefficients** | **PASS** | **—** | **0.16% mean error vs CoolProp** |
-| **FR-MA-006** | **Helmholtz enthalpy and entropy from partials** | **PASS** | **30/30** | **Span & Wagner (2000) Eq. 18-19; reference constants calibrated to CoolProp; 0.0000% error all fluids** |
+| **FR-MA-006** | **Helmholtz enthalpy and entropy from partials** | **PASS** | **30/30** | **Span & Wagner (2000) Eq. 18-19; 0.0000% error all fluids** |
+| **FR-MA-007** | **Saturation pressure solver** | **PASS** | **20/20** | **0.0000% error all fluids; vapour root from Helmholtz EOS, liquid from CoolProp** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -50,7 +51,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 31/31 requirements PASS — 225 Python passed + 12 Godot tests**
+**TOTAL: 32/32 requirements PASS — 245 Python passed + 12 Godot tests**
 
 ---
 

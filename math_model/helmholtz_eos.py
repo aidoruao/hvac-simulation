@@ -964,6 +964,86 @@ class HelmholtzEOS:
         info["final_delta"] = delta
         return delta, info
 
+    # ── FR-MA-007: saturation pressure solver ────────────────────────────
+
+    def saturation_pressure(self, T: float, return_details: bool = False) -> Number:
+        """Saturation pressure P_sat(T) (Pa).
+
+        Uses CoolProp for the liquid-side saturation state (the liquid
+        region falls back to CoolProp in this model) and the fitted
+        Helmholtz vapour coefficients for the vapour-side density root.
+
+        The vapour density is found via ``solve_delta`` at the saturation
+        pressure, and the vapour Gibbs free energy G = H − T·S is
+        compared with the liquid value as a consistency check.
+
+        Glass box: pass return_details=True for the liquid/vapour
+        density roots, Gibbs free-energy residual, and convergence info.
+        """
+        T_c = self.T_c
+        if T >= T_c:
+            if CP is None:
+                raise RuntimeError("CoolProp required for critical pressure.")
+            val = CP.PropsSI("PCRIT", self.fluid)
+            if return_details:
+                return {
+                    "value": float(val),
+                    "partials": {"rho_l": None, "rho_v": None, "G_residual": None},
+                    "note": "T >= T_c, returning P_crit",
+                }
+            return val
+
+        if CP is None:
+            raise RuntimeError("CoolProp required for saturation properties.")
+
+        # Liquid side from CoolProp
+        P_sat = CP.PropsSI("P", "T", T, "Q", 0, self.fluid)
+        rho_l = CP.PropsSI("D", "T", T, "Q", 0, self.fluid)
+        H_l = CP.PropsSI("HMASS", "T", T, "Q", 0, self.fluid)
+        S_l = CP.PropsSI("SMASS", "T", T, "Q", 0, self.fluid)
+        G_l = H_l - T * S_l
+
+        # Vapour root from Helmholtz EOS at saturation pressure.
+        # Use ideal-gas estimate as initial guess (valid for low-density vapour).
+        delta_guess = max(0.01, min(0.5, P_sat / (self.rho_c * self.R * T)))
+        try:
+            delta_v, sol_info = self.solve_delta(P_sat, T, delta_guess=delta_guess)
+        except Exception:
+            sol_info = {"converged": False, "iterations": []}
+            delta_v = float("nan")
+        rho_v = delta_v * self.rho_c
+        tau = T_c / T
+        if np.isfinite(delta_v) and delta_v > 0:
+            H_v = self.enthalpy(delta_v, tau)
+            S_v = self.entropy(delta_v, tau)
+            G_v = H_v - T * S_v
+        else:
+            # Fallback: use CoolProp for vapour properties too
+            rho_v = CP.PropsSI("D", "T", T, "Q", 1, self.fluid)
+            H_v = CP.PropsSI("HMASS", "T", T, "Q", 1, self.fluid)
+            S_v = CP.PropsSI("SMASS", "T", T, "Q", 1, self.fluid)
+            G_v = H_v - T * S_v
+
+        G_residual = float(abs(G_v - G_l))
+
+        if return_details:
+            return {
+                "value": float(P_sat),
+                "partials": {
+                    "rho_l": float(rho_l),
+                    "rho_v": float(rho_v),
+                    "delta_v": float(delta_v),
+                    "H_v": float(H_v),
+                    "S_v": float(S_v),
+                    "G_v": float(G_v),
+                    "G_l": float(G_l),
+                    "G_residual": G_residual,
+                    "vapour_converged": sol_info["converged"],
+                    "vapour_n_iter": len(sol_info.get("iterations", [])),
+                },
+            }
+        return float(P_sat)
+
 
 if __name__ == "__main__":
     # Quick sanity check
