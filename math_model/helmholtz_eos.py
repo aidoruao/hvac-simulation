@@ -332,13 +332,17 @@ class HelmholtzEOS:
     def _select_coeffs(self, T: float, rho: float) -> Tuple[Optional[Dict], str]:
         """Return the coefficient dict and region label for a (T, rho) state.
 
-        Vapor coefficients were trained on T ∈ [350, 480] K.  Liquid
-        and two-phase states fall back to CoolProp for physical accuracy
-        (Option A — denser regression — was attempted and blocked; see
-        HVAC_SRS.md §7).
+        FR-MA-001-L2 — unified CoolProp fallback policy:
+          - R410A: vapour for T ≥ 350 K, ρ < 0.9·ρ_c (validated to 480 K)
+          - All other fluids: vapour for T ∈ [350, 500] K, ρ < 0.9·ρ_c
+          - Everything else → CoolProp fallback
         """
-        if T >= 350.0 and rho < 0.9 * self.rho_c:
-            return self.vapor_coeffs, "vapor"
+        if self.fluid == "R410A":
+            if T >= 350.0 and rho < 0.9 * self.rho_c:
+                return self.vapor_coeffs, "vapor"
+        else:
+            if 350.0 <= T <= 500.0 and rho < 0.9 * self.rho_c:
+                return self.vapor_coeffs, "vapor"
         return None, "coolprop"
 
     def _get_coeffs(self, delta, tau) -> Tuple[Optional[Dict], str]:
