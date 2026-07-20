@@ -14,40 +14,18 @@ EOS-PROP-001: Derived thermodynamic properties (c_p, c_v, w, Jacobian)
 Region-aware R410A model:
   - Vapor coefficients are used when T >= 350 K AND rho < 0.9*rho_c
     (the vapor regression was trained on T ∈ [350, 480] K).
-  - Liquid coefficients are used when T <= 340 K AND rho > 1.05*rho_c
-    (the liquid regression was trained on T ∈ [220, 340] K).
-  - Otherwise the class falls back to CoolProp for properties.
+  - Liquid and two-phase states fall back to CoolProp for physical
+    accuracy.  (Option A — denser regression for liquid — was attempted
+    and blocked; 96.5% of the liquid-region box is two-phase.  See
+    HVAC_SRS.md §7 experiment results.)
 
-TODO(FR-MA-001):
-  Liquid fit 6 % error — revisit with expanded training data or
-  multi-region spline.  The liquid-region regression (T ∈ [220, 340] K,
-  rho ∈ [1.1*rho_c, 2.0*rho_c]) has a mean relative pressure error of
-  about 6 % on held-out data because the specified box is not single-
-  phase compressed liquid over most of the lower-T range.
-
-  Ideal-gas heat capacity: implemented Aly-Lee (1999) polynomial
-  c_v⁰(T) for R410A (see _build_coeff_dict and FORMULA_CITATIONS.md
-  §2.6).  Integration constants C, D set to zero — may be refined
-  against reference enthalpy/entropy data.
+  Ideal-gas heat capacity: Aly-Lee (1999) polynomial c_v⁰(T) fitted
+  to CoolProp 8.0 at D → 0 (see _build_coeff_dict and
+  FORMULA_CITATIONS.md §2.5).
 """
 
 import numpy as np
 from typing import Tuple, Dict, Optional, Union
-
-try:
-    from r410a_liquid_coefficients import (
-        T_CRITICAL as LIQUID_T_CRITICAL,
-        RHO_CRITICAL as LIQUID_RHO_CRITICAL,
-        GAS_CONSTANT as LIQUID_GAS_CONSTANT,
-        POLYNOMIAL_TERMS as LIQUID_POLYNOMIAL_TERMS,
-        EXPONENTIAL_TERMS as LIQUID_EXPONENTIAL_TERMS,
-        GAUSSIAN_TERMS as LIQUID_GAUSSIAN_TERMS,
-    )
-except ImportError as e:
-    raise ImportError(
-        "Liquid coefficient file not found. "
-        "Run regress_r410a_v4.py to generate it."
-    ) from e
 
 try:
     from r410a_vapor_coefficients import (
@@ -156,15 +134,6 @@ def _build_coeff_dict(
     }
 
 
-LIQUID_COEFFS = _build_coeff_dict(
-    LIQUID_T_CRITICAL,
-    LIQUID_RHO_CRITICAL,
-    LIQUID_GAS_CONSTANT,
-    LIQUID_POLYNOMIAL_TERMS,
-    LIQUID_EXPONENTIAL_TERMS,
-    LIQUID_GAUSSIAN_TERMS,
-)
-
 VAPOR_COEFFS = _build_coeff_dict(
     VAPOR_T_CRITICAL,
     VAPOR_RHO_CRITICAL,
@@ -188,26 +157,23 @@ class HelmholtzEOS:
 
     def __init__(self, fluid: str = "R410A"):
         self.fluid = fluid
-        self.liquid_coeffs = LIQUID_COEFFS
         self.vapor_coeffs = VAPOR_COEFFS
 
-        # Critical properties are the same in both files; use liquid as canonical.
-        self.T_c = self.liquid_coeffs["T_c"]
-        self.rho_c = self.liquid_coeffs["rho_c"]
-        self.R = self.liquid_coeffs["R"]
+        # Critical properties from vapor coefficient file (canonical).
+        self.T_c = self.vapor_coeffs["T_c"]
+        self.rho_c = self.vapor_coeffs["rho_c"]
+        self.R = self.vapor_coeffs["R"]
 
     def _select_coeffs(self, T: float, rho: float) -> Tuple[Optional[Dict], str]:
         """Return the coefficient dict and region label for a (T, rho) state.
 
         Vapor coefficients were trained on T ∈ [350, 480] K.  Liquid
-        coefficients were trained on T ∈ [220, 340] K.  Outside those
-        training ranges the regressed EOS can produce non-monotonic
-        isotherms, so we fall back to CoolProp.
+        and two-phase states fall back to CoolProp for physical accuracy
+        (Option A — denser regression — was attempted and blocked; see
+        HVAC_SRS.md §7).
         """
         if T >= 350.0 and rho < 0.9 * self.rho_c:
             return self.vapor_coeffs, "vapor"
-        if T <= 340.0 and rho > 1.05 * self.rho_c:
-            return self.liquid_coeffs, "liquid"
         return None, "coolprop"
 
     def _get_coeffs(self, delta, tau) -> Tuple[Optional[Dict], str]:
@@ -481,7 +447,7 @@ class HelmholtzEOS:
             dalphar_dtau = CP.PropsSI(
                 "DALPHAR_DTAU_CONSTDELTA", "T", float(T), "D", float(rho), self.fluid
             )
-            return dalphar_dtau + self._ideal_da_dtau(tau, self.liquid_coeffs)
+            return dalphar_dtau + self._ideal_da_dtau(tau, self.vapor_coeffs)
         return self._ideal_da_dtau(tau, coeffs) + self._residual_derivative(
             delta, tau, coeffs, "dtau"
         )

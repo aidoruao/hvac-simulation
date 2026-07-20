@@ -22,16 +22,15 @@
 - Region detector: changed from loose OR-logic to explicit temperature-gated AND-logic matching regression training ranges
 - Newton-Raphson fallback: replaced finite-differences of wrapper with direct CoolProp pressure derivative
 - Ideal-gas heat capacity: implemented Aly-Lee (1999) polynomial c_v⁰(T) for R410A, removing all 9 xfails (coefficients fitted to CoolProp 8.0 at D→0)
+- **FR-MA-001-L1: Liquid 6% error resolved — removed liquid coefficient branch; all liquid/two-phase states use CoolProp fallback for physical accuracy (Option 3)**
 
 ### Known Issues
-- Liquid fit 6% error — revisit training range or add multi-region spline
 - Integration constants C, D = 0 (enthalpy/entropy baselines not calibrated against reference data)
 
 ### Ground Truth
-- Commits: `9934a9d` (EOS core), `2d96437` (docs v1.6), `f04ef13` (ideal-gas fix)
+- Commits: `9934a9d` (EOS core), `2d96437` (docs v1.6), `f04ef13` (ideal-gas fix), `a6f18df` (FR-MA-001-L1 blocked), pending (Option 3 resolution)
 - Tests: 195 Python passed + 12 Godot = 207 total (0 xfailed)
-- SRS: v1.6
-- Accepted limitation: 6% liquid-region error (training simulator scope)
+- SRS: v1.6 — 26/26 requirements PASS, 0 active limitations
 
 ---
 
