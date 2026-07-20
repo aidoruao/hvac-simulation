@@ -11,13 +11,12 @@ EOS-HEOS-001: Helmholtz residual form a(δ,τ) = a^ideal + a^res
 EOS-DER-001/002: First and second partial derivatives
 EOS-PROP-001: Derived thermodynamic properties (c_p, c_v, w, Jacobian)
 
-Region-aware R410A model:
+Region-aware model (R410A and R32):
   - Vapor coefficients are used when T >= 350 K AND rho < 0.9*rho_c
-    (the vapor regression was trained on T ∈ [350, 480] K).
+    (the vapor regression was trained on T ∈ [350, 480] K per fluid).
   - Liquid and two-phase states fall back to CoolProp for physical
-    accuracy.  (Option A — denser regression for liquid — was attempted
-    and blocked; 96.5% of the liquid-region box is two-phase.  See
-    HVAC_SRS.md §7 experiment results.)
+    accuracy (see HVAC_SRS.md §7).
+  - FR-MA-002: R32 supported via ``HelmholtzEOS(fluid="R32")``.
 
   Ideal-gas heat capacity: Aly-Lee (1999) polynomial c_v⁰(T) fitted
   to CoolProp 8.0 at D → 0 (see _build_coeff_dict and
@@ -41,6 +40,20 @@ except ImportError as e:
         "Vapor coefficient file not found. "
         "Run regress_r410a_v4.py to generate it."
     ) from e
+
+# R32 vapor coefficients (FR-MA-002) — optional; only required for fluid="R32"
+try:
+    from r32_vapor_coefficients import (
+        T_CRITICAL as R32_T_CRITICAL,
+        RHO_CRITICAL as R32_RHO_CRITICAL,
+        GAS_CONSTANT as R32_GAS_CONSTANT,
+        POLYNOMIAL_TERMS as R32_POLYNOMIAL_TERMS,
+        EXPONENTIAL_TERMS as R32_EXPONENTIAL_TERMS,
+        GAUSSIAN_TERMS as R32_GAUSSIAN_TERMS,
+    )
+    _HAS_R32 = True
+except ImportError:
+    _HAS_R32 = False
 
 try:
     import CoolProp.CoolProp as CP
@@ -143,6 +156,18 @@ VAPOR_COEFFS = _build_coeff_dict(
     VAPOR_GAUSSIAN_TERMS,
 )
 
+if _HAS_R32:
+    R32_VAPOR_COEFFS = _build_coeff_dict(
+        R32_T_CRITICAL,
+        R32_RHO_CRITICAL,
+        R32_GAS_CONSTANT,
+        R32_POLYNOMIAL_TERMS,
+        R32_EXPONENTIAL_TERMS,
+        R32_GAUSSIAN_TERMS,
+    )
+else:
+    R32_VAPOR_COEFFS = None
+
 
 class HelmholtzEOS:
     """
@@ -151,13 +176,25 @@ class HelmholtzEOS:
     Glass box: every method returns intermediate values for inspection.
     No hidden state. All derivatives computed analytically.
 
-    The model selects fitted R410A coefficients by region and falls back to
-    CoolProp when the state is outside the fitted regions.
+    Supported fluids:
+      - "R410A" (default) — vapor coefficients + CoolProp fallback
+      - "R32" (FR-MA-002) — vapor coefficients + CoolProp fallback
     """
 
+    FLUID_COEFFS = {
+        "R410A": VAPOR_COEFFS,
+    }
+    if _HAS_R32:
+        FLUID_COEFFS["R32"] = R32_VAPOR_COEFFS
+
     def __init__(self, fluid: str = "R410A"):
+        if fluid not in self.FLUID_COEFFS:
+            raise ValueError(
+                f"Unsupported fluid '{fluid}'. "
+                f"Available: {list(self.FLUID_COEFFS.keys())}"
+            )
         self.fluid = fluid
-        self.vapor_coeffs = VAPOR_COEFFS
+        self.vapor_coeffs = self.FLUID_COEFFS[fluid]
 
         # Critical properties from vapor coefficient file (canonical).
         self.T_c = self.vapor_coeffs["T_c"]
