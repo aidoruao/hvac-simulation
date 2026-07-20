@@ -21,14 +21,15 @@
 ### Fixed
 - Region detector: changed from loose OR-logic to explicit temperature-gated AND-logic matching regression training ranges
 - Newton-Raphson fallback: replaced finite-differences of wrapper with direct CoolProp pressure derivative
+- Ideal-gas heat capacity: implemented Aly-Lee (1999) polynomial c_v⁰(T) for R410A, removing all 9 xfails (coefficients fitted to CoolProp 8.0 at D→0)
 
 ### Known Issues
-- 9 xfailed tests: c_v, c_p, speed_of_sound diverge from CoolProp (~73% at 360 K) — ideal-gas c_v⁰ placeholder needs Aly-Lee (1999) correlation
 - Liquid fit 6% error — revisit training range or add multi-region spline
+- Integration constants C, D = 0 (enthalpy/entropy baselines not calibrated against reference data)
 
 ### Ground Truth
-- Commit: `9934a9d`
-- Tests: 186 passed + 9 xfailed (195 Python total) + 12 Godot = 207 total
+- Commits: `9934a9d`, pending (ideal-gas fix)
+- Tests: 195 Python passed + 12 Godot = 207 total (0 xfailed)
 - SRS: v1.6
 
 ---

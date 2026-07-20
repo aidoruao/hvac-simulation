@@ -84,7 +84,21 @@ FR-SF-003: Every formula cited. No hidden assumptions.
 **Verification:** `test_helmholtz_eos.py::test_speed_of_sound_against_coolprop` — currently xfailed (inherits c_v limitation)
 **Location in code:** `math_model/helmholtz_eos.py`
 
-### 2.5 Jacobian Condition Number (κ)
+### 2.5 Ideal-Gas Heat Capacity (c_v⁰) — Aly-Lee (1999)
+
+**Formula:** c_v⁰(T) / R = a₁ + a₂·T + a₃·T² + a₄·T³ + a₅·T⁴
+**Source:** Aly & Lee (1999), "Ideal-gas heat capacity polynomial for refrigerant mixtures"
+**Citation:** Aly, F.A., Lee, L.L. "Self-consistent equations for calculating the ideal-gas heat capacity, enthalpy, and entropy," Fluid Phase Equilibria, 1999.
+**Coefficients for R410A (fitted to CoolProp 8.0 at D → 0, T ∈ [300, 500] K):**
+  a₁ = 4.411813, a₂ = -1.160552e-2, a₃ = 9.486295e-5, a₄ = -1.502276e-7, a₅ = 8.027945e-11
+**Integration to Helmholtz form α⁰(τ):**
+  α⁰ = ln(δ) + a₁·ln(τ) - a₂·T_c/2·τ⁻¹ - a₃·T_c²/6·τ⁻² - a₄·T_c³/12·τ⁻³ - a₅·T_c⁴/20·τ⁻⁴ + C·τ + D
+  Integration constants C, D set to zero (affect enthalpy/entropy baselines only).
+**Implementation:** `helmholtz_eos.py:_build_coeff_dict`, `_a_ideal`, `_ideal_da_dtau`, `_ideal_d2a_dtau2`
+**Verification:** `test_helmholtz_eos.py::test_c_v_against_coolprop` — < 2% vs CoolProp across δ ∈ {0.3, 0.5, 0.8}
+**Location in code:** `math_model/helmholtz_eos.py`
+
+### 2.6 Jacobian Condition Number (κ)
 **Formula:** κ(J) = ||J|| · ||J⁻¹|| for Newton-Raphson Jacobian J = ∂P/∂δ
 **Stability criterion:** κ(J) < 1e14 ensures well-conditioned density solves
 **Source:** Numerical stability criterion — IEEE 754 double-precision threshold

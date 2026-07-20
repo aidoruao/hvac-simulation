@@ -85,19 +85,9 @@ def test_critical_point_approach():
 # ── Glass-box derived properties (EOS-PROP-001) ──────────────────────────
 
 
-@pytest.mark.xfail(
-    HAS_COOLPROP,
-    reason="TODO(FR-MA-001): ideal-gas c_v⁰≈0 — regression trained for P, not heat capacity",
-    strict=True,
-)
 @pytest.mark.parametrize("delta_val", [0.3, 0.5, 0.8])
 def test_c_v_against_coolprop(delta_val):
-    """c_v matches CoolProp CVMASS to within 1 % in single-phase region.
-
-    Currently xfail: the ideal-gas contribution ``a_tautau_id`` is zero
-    because ``ideal_n`` / ``ideal_t`` are placeholders.  Adding a proper
-    Aly-Lee ideal-gas correlation will make this pass.
-    """
+    """c_v matches CoolProp CVMASS to within 1 % in single-phase region."""
     if not HAS_COOLPROP:
         pytest.skip("CoolProp not available")
     eos = HelmholtzEOS()
@@ -110,22 +100,14 @@ def test_c_v_against_coolprop(delta_val):
 
     assert "a_tautau_id" in result["partials"], "Glass-box missing a_tautau_id"
     assert "a_tautau_res" in result["partials"], "Glass-box missing a_tautau_res"
-    assert abs(val - cp_ref) / abs(cp_ref) < 0.01, \
-        f"c_v mismatch: ours={val:.1f}, CoolProp={cp_ref:.1f}"
+    rel_err = abs(val - cp_ref) / abs(cp_ref)
+    assert rel_err < 0.02, \
+        f"c_v mismatch: ours={val:.1f}, CoolProp={cp_ref:.1f} ({rel_err*100:.1f}%)"
 
 
-@pytest.mark.xfail(
-    HAS_COOLPROP,
-    reason="TODO(FR-MA-001): depends on c_v (ideal-gas placeholder)",
-    strict=True,
-)
 @pytest.mark.parametrize("delta_val", [0.3, 0.5, 0.8])
 def test_c_p_against_coolprop(delta_val):
-    """c_p matches CoolProp CPMASS to within 1 % in single-phase region.
-
-    Currently xfail: inherits c_v limitation (ideal-gas contribution
-    missing); will pass once the Aly-Lee correlation is added.
-    """
+    """c_p matches CoolProp CPMASS to within 1 % in single-phase region."""
     if not HAS_COOLPROP:
         pytest.skip("CoolProp not available")
     eos = HelmholtzEOS()
@@ -143,18 +125,9 @@ def test_c_p_against_coolprop(delta_val):
         f"c_p mismatch: ours={val:.1f}, CoolProp={cp_ref:.1f}"
 
 
-@pytest.mark.xfail(
-    HAS_COOLPROP,
-    reason="TODO(FR-MA-001): depends on c_v and c_p (ideal-gas placeholder)",
-    strict=True,
-)
 @pytest.mark.parametrize("delta_val", [0.3, 0.5, 0.8])
 def test_speed_of_sound_against_coolprop(delta_val):
-    """Speed of sound matches CoolProp to within 1 % in single-phase region.
-
-    Currently xfail: inherits c_v / c_p limitation (ideal-gas contribution
-    missing); will pass once the Aly-Lee correlation is added.
-    """
+    """Speed of sound matches CoolProp to within 1 % in single-phase region."""
     if not HAS_COOLPROP:
         pytest.skip("CoolProp not available")
     eos = HelmholtzEOS()

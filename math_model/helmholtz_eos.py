@@ -19,15 +19,16 @@ Region-aware R410A model:
   - Otherwise the class falls back to CoolProp for properties.
 
 TODO(FR-MA-001):
-  1. Liquid fit 6 % error — revisit with expanded training data or
-     multi-region spline.  The liquid-region regression (T ∈ [220, 340] K,
-     rho ∈ [1.1*rho_c, 2.0*rho_c]) has a mean relative pressure error of
-     about 6 % on held-out data because the specified box is not single-
-     phase compressed liquid over most of the lower-T range.
-  2. Ideal-gas heat capacity — ``ideal_n`` / ``ideal_t`` are placeholders
-     (c_v⁰ ≈ 0), so c_v, c_p, and speed of sound diverge from CoolProp.
-     Add a proper Aly-Lee (1999) ideal-gas correlation for R410A.
-     See ``math_model/test_helmholtz_eos.py`` xfail markers.
+  Liquid fit 6 % error — revisit with expanded training data or
+  multi-region spline.  The liquid-region regression (T ∈ [220, 340] K,
+  rho ∈ [1.1*rho_c, 2.0*rho_c]) has a mean relative pressure error of
+  about 6 % on held-out data because the specified box is not single-
+  phase compressed liquid over most of the lower-T range.
+
+  Ideal-gas heat capacity: implemented Aly-Lee (1999) polynomial
+  c_v⁰(T) for R410A (see _build_coeff_dict and FORMULA_CITATIONS.md
+  §2.6).  Integration constants C, D set to zero — may be refined
+  against reference enthalpy/entropy data.
 """
 
 import numpy as np
@@ -119,6 +120,24 @@ def _build_coeff_dict(
         eps.append(term[5])
         gamma.append(term[6])
 
+    # Aly-Lee (1999) ideal-gas heat capacity for R410A:
+    #   c_v^0(T) / R = a1 + a2·T + a3·T² + a4·T³ + a5·T⁴
+    # Coefficients fitted to CoolProp 8.0 at D → 0 (ideal-gas limit)
+    # over T ∈ [300, 500] K.  Twice-integrated to Helmholtz form:
+    #   α^0 = ln(δ) + n_ln·ln(τ) + Σ n_k·τ^{t_k}
+    # See FORMULA_CITATIONS.md §2.6 for derivation.
+    _T_c = float(T_c)
+    _a1, _a2, _a3, _a4, _a5 = (
+        4.411813197, -0.011605522, 9.486295e-5, -1.502276e-7, 8.027945e-11
+    )
+    _ideal_ln_tau = _a1
+    _ideal_n = np.array([
+        -_a2 * _T_c / 2.0,           # τ^{-1}
+        -_a3 * _T_c**2 / 6.0,        # τ^{-2}
+        -_a4 * _T_c**3 / 12.0,       # τ^{-3}
+        -_a5 * _T_c**4 / 20.0,       # τ^{-4}
+    ], dtype=float)
+    _ideal_t = np.array([-1.0, -2.0, -3.0, -4.0], dtype=float)
     return {
         "T_c": float(T_c),
         "rho_c": float(rho_c),
@@ -131,8 +150,9 @@ def _build_coeff_dict(
         "be": np.array(be, dtype=float),
         "eps": np.array(eps, dtype=float),
         "gamma": np.array(gamma, dtype=float),
-        "ideal_n": np.array([np.log(1.0), 2.5]),
-        "ideal_t": np.array([0.0, 1.0]),
+        "ideal_ln_tau": _ideal_ln_tau,
+        "ideal_n": _ideal_n,
+        "ideal_t": _ideal_t,
     }
 
 
@@ -204,10 +224,15 @@ class HelmholtzEOS:
         return coeffs, region
 
     def _a_ideal(self, delta, tau, coeffs):
-        """Ideal gas contribution: a^ideal(δ,τ)."""
+        """Ideal gas contribution: a^ideal(δ,τ).
+
+        Aly-Lee (1999) form:
+          α^0 = ln(δ) + n_ln·ln(τ) + Σ n_k·τ^{t_k}
+        """
         n = coeffs["ideal_n"]
         t = coeffs["ideal_t"]
-        return np.log(delta) + np.sum(n * tau ** t)
+        n_ln = coeffs.get("ideal_ln_tau", 0.0)
+        return np.log(delta) + n_ln * np.log(tau) + np.sum(n * tau ** t)
 
     def _a_res(self, delta, tau, coeffs):
         """Residual contribution: a^res(δ,τ). Supports complex inputs for verification."""
@@ -404,14 +429,26 @@ class HelmholtzEOS:
         return out
 
     def _ideal_da_dtau(self, tau, coeffs):
+        """First τ-derivative of ideal-gas contribution: ∂α^0/∂τ.
+
+        d/dτ [n_ln·ln(τ)] = n_ln / τ
+        d/dτ [n_k·τ^{t_k}] = n_k·t_k·τ^{t_k-1}
+        """
         n = coeffs["ideal_n"]
         t = coeffs["ideal_t"]
-        return np.sum(n * t * tau ** (t - 1.0))
+        n_ln = coeffs.get("ideal_ln_tau", 0.0)
+        return n_ln / tau + np.sum(n * t * tau ** (t - 1.0))
 
     def _ideal_d2a_dtau2(self, tau, coeffs):
+        """Second τ-derivative of ideal-gas contribution: ∂²α^0/∂τ².
+
+        d²/dτ² [n_ln·ln(τ)] = -n_ln / τ²
+        d²/dτ² [n_k·τ^{t_k}] = n_k·t_k·(t_k-1)·τ^{t_k-2}
+        """
         n = coeffs["ideal_n"]
         t = coeffs["ideal_t"]
-        return np.sum(n * t * (t - 1.0) * tau ** (t - 2.0))
+        n_ln = coeffs.get("ideal_ln_tau", 0.0)
+        return -n_ln / tau**2 + np.sum(n * t * (t - 1.0) * tau ** (t - 2.0))
 
     def da_ddelta(self, delta: Number, tau: Number) -> Number:
         """First partial: (∂a/∂δ)_τ."""
