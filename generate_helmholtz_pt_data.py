@@ -18,9 +18,12 @@ REFRIGERANTS = {
     "R134a":  {"class": "A1", "gwp": 1430, "status": "current"},
     "R1234yf":{"class": "A2L", "gwp": 4, "status": "future"},
     "R22":    {"class": "A1", "gwp": 1810, "status": "legacy"},
+    # FR-MA-010: public data + CoolProp mixture
+    "R454B":  {"class": "A2L", "gwp": 466, "status": "transition"},
+    "R513A":  {"class": "A1", "gwp": 631, "status": "transition"},
 }
 
-T_MIN, T_MAX, N_PTS = -40, 60, 150
+T_MIN, T_MAX, N_PTS = -20, 60, 80
 
 def generate_pt_data():
     if not HAS_HEOS:

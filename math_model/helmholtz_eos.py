@@ -318,13 +318,16 @@ class HelmholtzEOS:
       - "R32", "R134a", "R1234yf", "R22" — vapor coefficients + CoolProp fallback
     """
 
+    # FR-MA-010: CoolProp mixture notation for blends not in fluid library
+    _CP_FLUID = {"R454B": "R32[0.689]&R1234yf[0.311]", "R513A": "R1234yf[0.56]&R134a[0.44]"}
+
     def __init__(self, fluid: str = "R410A"):
         if fluid not in _FLUID_COEFFS:
             raise ValueError(
                 f"Unsupported fluid '{fluid}'. "
                 f"Available: {list(_FLUID_COEFFS.keys())}"
             )
-        self.fluid = fluid
+        self.fluid = self._CP_FLUID.get(fluid, fluid)
         self.vapor_coeffs = _FLUID_COEFFS[fluid]
 
         # Critical properties from vapor coefficient file (canonical).

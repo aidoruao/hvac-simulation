@@ -1,0 +1,23 @@
+{
+  "refrigerant": "R410A",
+  "pressure_psi": 0.0,
+  "temperature_f": 0.0,
+  "superheat_f": 0.0,
+  "subcooling_f": 0.0,
+  "phase": "superheated",
+  "scenario_id": "",
+  "difficulty": "",
+  "faults": [],
+  "hints_used": 0,
+  "session_id": "",
+  "attempts_total": 0,
+  "attempts_passed": 0,
+  "attempts_failed": 0,
+  "validation_status": "",
+  "divergence_percent": 0.0,
+  "timestamp": "",
+  "compressor_running": true,
+  "load_percent": 75,
+  "mass_flow": 0.05,
+  "pressure_bar": 16.5
+}
