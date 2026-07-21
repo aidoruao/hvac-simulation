@@ -21,7 +21,7 @@ for name, (cp_name, cls, gwp) in FLUIDS.items():
     except: T_c = 370  # default for blends
     if T_c <= 0: T_c = 370
     T_c_C = T_c - 273.15
-    for t_c in range(-20, 61, 2):
+    for t_c in range(-20, 61, 1):
         T = t_c + 273.15
         if T >= T_c:
             continue
