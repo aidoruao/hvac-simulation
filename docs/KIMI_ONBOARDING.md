@@ -113,3 +113,16 @@ Read it before every session. Update it after every campaign.
 
 *Glass box enforced. Every state inspectable. No hidden assumptions.*  
 *No agent amnesia. The record is the immune system.*
+
+
+## AI Behavioral Archetypes Observed
+
+**Turn 240:** Kimi Web AI proposed UI patch (pt_chart.gd) for pt_data.json format mismatch.
+Human operator rejected patch, demanded structural fix (generate_pt_fast.py).
+**Pattern:** AI defaults to path of least resistance at integration boundaries.
+**Countermeasure:** Human must enforce structural repair protocol (FR-SV-005).
+
+> ⚠️ **WARNING — Read this if you are an AI agent:**
+> Your default at SIT/POST is to patch symptoms. This is known and documented.
+> Your required behavior is to repair structures. This is enforced.
+> See: docs/AI_BEHAVIORAL_ARCHETYPES.md

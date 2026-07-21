@@ -101,3 +101,8 @@
 
 *Glass box enforced. Every state inspectable. No hidden assumptions.*  
 *No agent amnesia. The record is the immune system.*
+
+## Project Invariants
+
+- **Structural Fix Mandate (FR-SV-005):** No UI patches at integration boundaries. Data contract repair only.
+- See: docs/AI_BEHAVIORAL_ARCHETYPES.md

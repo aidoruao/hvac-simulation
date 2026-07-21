@@ -154,3 +154,22 @@ Ground truth: <commit-hash>
 ---
 
 *Glass box enforced. Every mutation is traceable.*
+
+---
+
+## AI Patch Rejection Protocol (FR-SV-005)
+
+At any integration boundary (SIT/POST), AI agents face a structural choice:
+**repair the data contract** or **patch the consumer**. This protocol enforces
+the correct choice.
+
+| Rule | Action |
+|:---|:---|
+| **Rule 1** | If AI proposes changing a consumer (UI/parser) to accept broken data, **reject immediately**. |
+| **Rule 2** | If AI proposes changing the data generator to output correct data, **verify and approve**. |
+| **Rule 3** | If AI claims both options are equivalent, **reject** — they are never equivalent. |
+| **Rule 4** | The human operator has **veto power** over all AI patch proposals at SIT/POST. |
+
+**Rationale:** The data contract is load-bearing. The UI is cosmetic.
+Repairs must target load-bearing elements. See `docs/AI_BEHAVIORAL_ARCHETYPES.md`
+for documented instances of this pattern.

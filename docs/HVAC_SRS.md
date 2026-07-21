@@ -47,6 +47,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-FV-001-L2** | **Formal verification Level 2 — TLA+ specification** | **PASS** | **—** | **docs/formal_spec/helmholtz.tla; state machine with 5 invariants; TLC config provided** |
 | **FR-SV-001** | **System integration verification — whole-system visual inspection** | **AWAITING** | **—** | **Requires Godot .exe launch; 3D room + PT chart + gauges + faults + refrigerant switching** |
 | **FR-SV-002** | **JSON bridge verification — Python↔Godot state sync** | **AWAITING** | **—** | **Requires Godot .exe; hvac_state.json round-trip within 1s** |
+| **FR-SV-005** | **Structural Fix Mandate — no UI patches at integration boundaries** | **ACTIVE** | **—** | **Load-bearing invariant; AI must repair data contract, not patch consumer** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -70,7 +71,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 49/51 requirements (49 PASS + 2 AWAITING human verification) — 267 Python passed + 12 Godot tests**
+**TOTAL: 50/52 requirements (49 PASS + 1 ACTIVE + 2 AWAITING) — 267 Python passed + 12 Godot tests**
 
 ---
 

@@ -121,3 +121,10 @@ FR-3D-003/004/005, FR-AN-001, FR-PE-001, FR-FV-001 (L1 + L2)
 ---
 
 *Every entry links to a commit. Every commit links to a test count. No hidden history.*
+
+
+## 2026-07-20 — Structural Fix Mandate Injected
+
+- docs: FR-SV-005 — load-bearing invariant across all documentation
+- Reference: Turn 240, pt_data.json format mismatch, patch rejection
+- See: docs/AI_BEHAVIORAL_ARCHETYPES.md
