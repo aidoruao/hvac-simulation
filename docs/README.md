@@ -12,11 +12,11 @@ No vendor lock-in. Every formula cited with primary sources. Glass box enforced 
 git clone https://github.com/aidoruao/hvac-simulation.git
 cd hvac-simulation
 source venv/bin/activate
-python3 -m pytest          # 176 Python tests
+PYTHONPATH=. ./venv/bin/pytest  # 267 Python tests
 python3 test_godot_regression.py  # 12 Godot tests
 ```
 
-**Expected:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)
+**Expected:** 279/279 PASS (267 Python + 12 Godot, 0 xfailed)
 
 ---
 
@@ -24,13 +24,17 @@ python3 test_godot_regression.py  # 12 Godot tests
 
 | Feature | Status |
 |---------|--------|
-| Multi-refrigerant physics (R22, R134a, R32, R410A, R1234yf) | ✅ |
-| 3D mechanical room with real-time gauges (Godot 4.7.1) | ✅ |
-| Training scenario engine with 20+ unique faults | ✅ |
-| Spanish localization | ✅ |
-| Automated visual regression testing (D3D12/RTX 4050) | ✅ |
-| MOOSE-inspired steady-state heat conduction solver | ✅ |
-| Mathematical modeling (Helmholtz EOS derivations) | ✅ FR-MA-001 complete — R410A vapor/liquid coefficients, c_p, c_v, speed of sound, Jacobian stability |
+| Multi-refrigerant physics (R410A, R32, R134a, R1234yf, R22) | ✅ 5 fluids |
+| First-principles Helmholtz EOS (c_v, c_p, w, H, S, P_sat) | ✅ FR-MA-001–009 |
+| 3D mechanical room with real-time gauges (Godot 4.7.1) | ✅ FR-3D-001/002 |
+| Aerospace-grade particle flow visualization | ✅ FR-AN-001 |
+| HelmholtzEOS-driven PT chart with dynamic switching | ✅ FR-3D-003–005 |
+| Training scenario engine with 23 unique faults | ✅ 23 scenarios |
+| Real-time cycle simulation with fault injection + scoring | ✅ FR-ED-005 |
+| Spanish localization | ✅ FR-ED-004 |
+| Property-based testing (50,000 random cases) | ✅ FR-FV-001 L1 |
+| TLA+ formal specification | ✅ FR-FV-001 L2 |
+| 60 FPS with all systems active | ✅ FR-PE-001 |
 
 ---
 
