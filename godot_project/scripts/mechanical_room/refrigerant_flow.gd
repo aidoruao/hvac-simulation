@@ -111,8 +111,17 @@ func update_from_state(state: Dictionary):
 	low_pressure = state.get("pressure_bar", 1.0)
 	mass_flow = state.get("mass_flow", 0.0)
 
-	# Update particle emission
-	var emit := system_on and mass_flow > 0.001
+	# FR-ED-005: fault-aware particle behavior
+	# Compressor failure → stop all particles immediately
+	if not system_on:
+		particles_compressor.emitting = false
+		particles_condenser.emitting = false
+		particles_expansion.emitting = false
+		particles_evaporator.emitting = false
+		return
+
+	# Low refrigerant → reduced emission
+	var emit := mass_flow > 0.001
 	particles_compressor.emitting = emit
 	particles_condenser.emitting = emit
 	particles_expansion.emitting = emit

@@ -32,8 +32,13 @@ var fan_angle := 0.0
 
 @onready var flow_system = $RefrigerantFlow if has_node("RefrigerantFlow") else null
 
+# FR-ED-005: cycle state and scoring
+var cycle_state = {}
+var scoring_state = {}
+var fault_state = {}
+
 func _ready():
-	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001)")
+	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001 + FR-ED-005)")
 	if not flow_system:
 		# Instantiate flow system dynamically
 		var flow_script = load("res://scripts/mechanical_room/refrigerant_flow.gd")
@@ -84,6 +89,10 @@ func _fetch_state():
 
 	if error == OK:
 		current_state = json.get_data()
+		# FR-ED-005: extract cycle and scoring state
+		cycle_state = current_state.get("cycle_state", {})
+		scoring_state = current_state.get("scoring_state", {})
+		fault_state = current_state.get("active_fault", {})
 		_update_gauges()
 		_update_ui()
 		_update_animation_state()
@@ -130,8 +139,25 @@ func _update_ui():
 	superheat_label.text = "Superheat: %.1f °F" % current_state.get("superheat_f", 0.0)
 	subcooling_label.text = "Subcooling: %.1f °F" % current_state.get("subcooling_f", 0.0)
 	phase_label.text = "Phase: %s" % current_state.get("phase", "—")
-	scenario_label.text = "Scenario: %s" % current_state.get("scenario_id", "—")
-	faults_label.text = "Faults: %s" % ", ".join(current_state.get("faults", []))
+
+	# FR-ED-005: cycle state and fault display
+	if not cycle_state.is_empty():
+		scenario_label.text = "Cycle: Suction %.1f bar | Discharge %.1f bar" % [
+			cycle_state.get("suction_p_bar", 0.0),
+			cycle_state.get("discharge_p_bar", 0.0)]
+		var fault_name = ""
+		if not fault_state.is_empty():
+			fault_name = fault_state.get("name", "")
+		var score_info = ""
+		if not scoring_state.is_empty():
+			score_info = " | Score: %d | Time: %ds | Hints: %d" % [
+				scoring_state.get("score", 0),
+				scoring_state.get("time_remaining_s", 30),
+				scoring_state.get("hints_used", 0)]
+		faults_label.text = "Fault: %s%s" % [fault_name, score_info]
+	else:
+		scenario_label.text = "Scenario: %s" % current_state.get("scenario_id", "—")
+		faults_label.text = "Faults: %s" % ", ".join(current_state.get("faults", []))
 
 func _make_color_material(color: Color) -> StandardMaterial3D:
 	var mat = StandardMaterial3D.new()
