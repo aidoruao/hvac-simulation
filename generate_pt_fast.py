@@ -31,9 +31,12 @@ for name, (cp_name, cls, gwp) in FLUIDS.items():
         except Exception:
             pass
 
+    temps_c = [p["T"] for p in pts]
+    pressures_bar = [p["P"] for p in pts]
     data[name] = {
+        "temperature_c": temps_c,
+        "pressure_bar": pressures_bar,
         "critical_point": {"T": round(T_c_C, 1), "P": None},
-        "saturation_curve": pts,
         "safety_class": cls,
         "gwp": gwp,
         "status": "current",
@@ -45,4 +48,4 @@ with open(out, "w") as f:
     json.dump(data, f, indent=2)
 print(f"Generated {out} with {len(data)} refrigerants")
 for name, d in data.items():
-    print(f"  {name}: {len(d['saturation_curve'])} points, T_c={d['critical_point']['T']}°C")
+    print(f"  {name}: {len(d['temperature_c'])} points, T_c={d['critical_point']['T']}°C")
