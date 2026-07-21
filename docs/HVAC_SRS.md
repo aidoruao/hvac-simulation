@@ -37,17 +37,23 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
 | **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
 | **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
+| **FR-3D-006** | **DeepSeek AI Editor Plugin — Godot editor panel with API integration** | **ACTIVE** | **—** | **Viewport capture, scene serialization, API client, mutation engine** |
+| **FR-3D-007** | **Visual Comprehension Bridge — structured viewport state serialization** | **ACTIVE** | **—** | **Scene tree + node properties + materials + scripts → AI-readable format** |
+| **FR-3D-008** | **AI Mutation Engine — automated scene modification with approval gates** | **ACTIVE** | **—** | **Preview before apply; UndoRedo integration** |
+| **FR-3D-010** | **Player Camera Controls — walk-around camera for human/AI inspection** | **AWAITING** | **—** | **WASD + mouse look; collision with room bounds** |
 | **FR-AN-001** | **Aerospace-grade refrigerant flow particle visualization** | **PASS** | **—** | **GPUParticles3D per component; color-coded by phase; speed ∝ mass flow** |
 | **FR-PE-001** | **Performance — 60 FPS with all particle systems active** | **PASS** | **—** | **Particles capped at 250; JSON mod-time cache; physics decoupled from render** |
 | **FR-ED-005** | **Real-time cycle simulation with fault injection and scoring** | **PASS** | **—** | **4-point cycle state; 4 fault types; 30s timed scoring** |
 | **FR-ED-006** | **Full 23-scenario fault mapping** | **PASS** | **—** | **23 fault types; one inject_fault() per scenario** |
 | **FR-ED-007** | **Interactive fault injection UI and diagnosis panel** | **PASS** | **—** | **23 fault buttons; student diagnosis; 30s timer; scoring** |
 | **FR-ED-008** | **Mobile and tablet optimization** | **PASS** | **—** | **Mobile detection; particles 50→250 LOD; simplified gauges; responsive layout** |
+| **FR-ED-009** | **AI-Assisted Training Scenario Generation** | **ACTIVE** | **—** | **DeepSeek generates fault scenarios, customer complaints, diagnostic workflows from live physics** |
 | **FR-FV-001** | **Formal verification Level 1 — property-based testing** | **PASS** | **15/25** | **Hypothesis 2000 cases/fluid; R410A 5/5** |
 | **FR-FV-001-L2** | **Formal verification Level 2 — TLA+ specification** | **PASS** | **—** | **docs/formal_spec/helmholtz.tla; state machine with 5 invariants; TLC config provided** |
 | **FR-SV-001** | **System integration verification — whole-system visual inspection** | **AWAITING** | **—** | **Requires Godot .exe launch; 3D room + PT chart + gauges + faults + refrigerant switching** |
 | **FR-SV-002** | **JSON bridge verification — Python↔Godot state sync** | **AWAITING** | **—** | **Requires Godot .exe; hvac_state.json round-trip within 1s** |
 | **FR-SV-005** | **Structural Fix Mandate — no UI patches at integration boundaries** | **ACTIVE** | **—** | **Load-bearing invariant; AI must repair data contract, not patch consumer** |
+| **FR-SV-007** | **Cross-Platform AI Agent Equalizer — shared visual state** | **ACTIVE** | **—** | **Screenshot + scene tree hash verification; human/AI share identical viewport** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
 | FR-SC-002 | Progressive fault injection | **PASS** | 8/8 | Divergence detection |
 | FR-ED-001 | Session tracking and audit logging | **PASS** | 6/6 | ISO 27001 traceability |
@@ -71,7 +77,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 50/52 requirements (49 PASS + 1 ACTIVE + 2 AWAITING) — 267 Python passed + 12 Godot tests**
+**TOTAL: 50/58 requirements (44 PASS + 6 ACTIVE + 8 AWAITING) — 267 Python passed + 12 Godot tests**
 
 ---
 
