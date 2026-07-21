@@ -3,9 +3,9 @@
 **Project:** Free, non-proprietary HVAC simulation for trade school alternative  
 **Repo:** https://github.com/aidoruao/hvac-simulation  
 **Last Updated:** 2026-07-20  
-**Ground Truth Commit:** `f04ef13`  
-**Test Count:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)  
-**SRS Version:** v1.6
+**Ground Truth Commit:** `f0287ca`  
+**Test Count:** 279/279 PASS (267 Python + 12 Godot, 0 xfailed)  
+**SRS Version:** v1.6 — **RELEASED** (tag: v1.6)
 
 ---
 
@@ -13,9 +13,9 @@
 
 | I am a... | Start Here |
 |-----------|------------|
-| New developer or contributor | [README.md](README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) |
-| AI instance (Kimi, DeepSeek, Gemini, Claude, Grok) | [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) → this file |
-| Historian or auditor | [GEMINI_NBLM_HISTORIAN.md](GEMINI_NBLM_HISTORIAN.md) |
+| New developer or contributor | [RELEASE_NOTES_v1.6.md](RELEASE_NOTES_v1.6.md) → [README.md](README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) |
+| AI instance (Kimi, DeepSeek, Codewhale) | [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) → this file |
+| Historian or auditor | [CHANGELOG.md](CHANGELOG.md) → [GEMINI_NBLM_HISTORIAN.md](GEMINI_NBLM_HISTORIAN.md) |
 | Requirements engineer | [HVAC_SRS.md](HVAC_SRS.md) |
 | Thermodynamics reviewer | [FORMULA_CITATIONS.md](FORMULA_CITATIONS.md) |
 | Capability researcher | [RECONNAISSANCE.md](RECONNAISSANCE.md) |
@@ -61,11 +61,12 @@
 | 4a | 2026-07-17–18 | Wiring, SEER/COP | — |
 | 5a | 2026-07-18 | Godot regression, Heredoc War resolved | `d4d2581` |
 | 6a | 2026-07-18–19 | Visual regression (FR-VA-004), MOOSE-lite (FR-PH-003) | `f1e5a8d`, `271a3a3`, `9cb3c3b` |
-| 7a | 2026-07-20 | Helmholtz EOS (FR-MA-001), first-principles R410A | `9934a9d`, `2d96437`, `f04ef13` |
+| 7a | 2026-07-20 | Helmholtz EOS (FR-MA-001), first-principles R410A | `9934a9d` |
+| 8a | 2026-07-20 | Full v1.6 release — 44 requirements, 279 tests | `f0287ca` |
 
 ---
 
-## Active Requirements (25/25 PASS)
+## Active Requirements (44/44 PASS)
 
 | ID | Status | Tests | Location |
 |----|--------|-------|----------|

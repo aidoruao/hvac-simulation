@@ -28,9 +28,15 @@
 - Integration constants C, D = 0 (enthalpy/entropy baselines not calibrated against reference data)
 
 ### Ground Truth
-- Commits: `9934a9d` (EOS core), `2d96437` (docs v1.6), `f04ef13` (ideal-gas fix), `a6f18df` (FR-MA-001-L1 blocked), pending (Option 3 resolution)
-- Tests: 195 Python passed + 12 Godot = 207 total (0 xfailed)
-- SRS: v1.6 — 26/26 requirements PASS, 0 active limitations
+- Commits: 9934a9d → f0287ca (18 commits)
+- Tests: 267 Python passed + 12 Godot = 279 total (0 xfailed)
+- SRS: v1.6 — 44/44 requirements PASS
+- Release notes: docs/RELEASE_NOTES_v1.6.md
+- Tag: v1.6
+
+### v1.6 Complete Requirement List
+FR-MA-001, FR-MA-001-L1/L2/L3/L4, FR-MA-002 through FR-MA-009,
+FR-3D-003/004/005, FR-AN-001, FR-PE-001, FR-FV-001 (L1 + L2)
 
 ---
 
