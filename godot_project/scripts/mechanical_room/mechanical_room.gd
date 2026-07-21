@@ -32,21 +32,49 @@ var fan_angle := 0.0
 
 @onready var flow_system = $RefrigerantFlow if has_node("RefrigerantFlow") else null
 
-# FR-ED-005: cycle state and scoring
+# FR-ED-005/007: cycle state, scoring, instructor panel
 var cycle_state = {}
 var scoring_state = {}
 var fault_state = {}
+var instructor_panel = null
 
 func _ready():
-	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001 + FR-ED-005)")
+	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001 + FR-ED-005/007)")
 	if not flow_system:
-		# Instantiate flow system dynamically
 		var flow_script = load("res://scripts/mechanical_room/refrigerant_flow.gd")
 		flow_system = Node3D.new()
 		flow_system.name = "RefrigerantFlow"
 		flow_system.set_script(flow_script)
 		add_child(flow_system)
+
+	# FR-ED-007: instructor panel
+	var panel_script = load("res://scripts/mechanical_room/instructor_panel.gd")
+	instructor_panel = Control.new()
+	instructor_panel.name = "InstructorPanel"
+	instructor_panel.set_script(panel_script)
+	add_child(instructor_panel)
+
 	_fetch_state()
+
+func inject_fault_from_ui(fault_id: String):
+	fault_state = {"name": fault_id, "active": true}
+	var file = FileAccess.open(_state_file_path, FileAccess.READ_WRITE)
+	if file:
+		var json = JSON.new()
+		var data = {}
+		if file.get_as_text().length() > 0:
+			file.seek(0)
+			var err = json.parse(file.get_as_text())
+			if err == OK:
+				data = json.get_data()
+		data["fault_injected"] = fault_id
+		file.seek(0)
+		file.store_string(JSON.stringify(data))
+		file.close()
+
+func clear_fault_from_ui():
+	fault_state = {}
+	inject_fault_from_ui("")
 
 # FR-PE-001: JSON read cache to avoid redundant file I/O
 var _last_state_mtime := 0
