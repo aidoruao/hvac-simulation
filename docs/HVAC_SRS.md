@@ -33,7 +33,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-MA-007** | **Saturation pressure solver** | **PASS** | **20/20** | **0.0000% error all fluids; vapour root from Helmholtz EOS, liquid from CoolProp** |
 | **FR-MA-008** | **Replace CoolProp in cop_calculator with HelmholtzEOS** | **PASS** | **22/22** | **0.0000% H/S error vs CoolProp** |
 | **FR-MA-009** | **Integrate HelmholtzEOS into PT charts** | **PASS** | **—** | **0.0000% P_sat error; use_helmholtz flag on Refrigerant** |
-| **FR-MA-010** | **R454B and R513A refrigerant support** | **BLOCKED** | **—** | **Not in CoolProp 8.0.0; requires CoolProp 8.1+** |
+| **FR-MA-010** | **R454B and R513A refrigerant support** | **PASS** | **—** | **CoolProp mixture + Chemours data; R454B 0.006%, R513A 0.195% mean error** |
 | **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
 | **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
 | **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
@@ -68,7 +68,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 48/49 requirements (48 PASS + 1 BLOCKED) — 267 Python passed + 12 Godot tests**
+**TOTAL: 49/49 requirements PASS — 267 Python passed + 12 Godot tests**
 
 ---
 

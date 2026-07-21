@@ -60,6 +60,9 @@ _REFRIGERANTS = {
     "R134a": "r134a_vapor_coefficients",
     "R1234yf": "r1234yf_vapor_coefficients",
     "R22": "r22_vapor_coefficients",
+    # FR-MA-010: public data + CoolProp mixture regression
+    "R454B": "r454b_vapor_coefficients",
+    "R513A": "r513a_vapor_coefficients",
 }
 _REFRIGERANT_IMPORTS = {}
 for _name, _mod in _REFRIGERANTS.items():
