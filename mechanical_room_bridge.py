@@ -191,34 +191,124 @@ class MechanicalRoomBridge:
         self.current_state.pressure_bar = discharge_p
         self._write_state()
 
+    # FR-ED-006: full scenario-fault mapping — all 23 scenarios
     FAULTS = {
+        # ── Original 4 ──
         "low_refrigerant": {
-            "name": "Low Refrigerant Charge",
-            "mass_flow_multiplier": 0.4,
-            "discharge_pressure_offset_bar": -2.0,
-            "superheat_offset_K": 10.0,
+            "name": "Low Refrigerant Charge", "mass_flow_multiplier": 0.4,
+            "discharge_pressure_offset_bar": -2.0, "superheat_offset_K": 10.0,
             "compressor_enabled": True,
         },
         "dirty_condenser": {
-            "name": "Dirty Condenser",
-            "mass_flow_multiplier": 1.0,
-            "discharge_pressure_offset_bar": 5.0,
-            "superheat_offset_K": 0.0,
+            "name": "Dirty Condenser", "mass_flow_multiplier": 1.0,
+            "discharge_pressure_offset_bar": 5.0, "superheat_offset_K": 0.0,
             "compressor_enabled": True,
         },
         "bad_expansion_valve": {
-            "name": "Failed Expansion Valve",
-            "mass_flow_multiplier": 0.7,
-            "discharge_pressure_offset_bar": 0.0,
-            "superheat_offset_K": -4.0,
+            "name": "Failed Expansion Valve", "mass_flow_multiplier": 0.7,
+            "discharge_pressure_offset_bar": 0.0, "superheat_offset_K": -4.0,
             "compressor_enabled": True,
         },
         "compressor_failure": {
-            "name": "Compressor Failure",
-            "mass_flow_multiplier": 0.0,
-            "discharge_pressure_offset_bar": -10.0,
-            "superheat_offset_K": 0.0,
+            "name": "Compressor Failure", "mass_flow_multiplier": 0.0,
+            "discharge_pressure_offset_bar": -10.0, "superheat_offset_K": 0.0,
             "compressor_enabled": False,
+        },
+        # ── New 19 fault types (FR-ED-006) ──
+        "overcharge": {
+            "name": "Refrigerant Overcharge", "mass_flow_multiplier": 1.2,
+            "discharge_pressure_offset_bar": 3.0, "superheat_offset_K": -3.0,
+            "compressor_enabled": True,
+        },
+        "undercharge": {
+            "name": "Refrigerant Undercharge", "mass_flow_multiplier": 0.6,
+            "discharge_pressure_offset_bar": -3.0, "superheat_offset_K": 8.0,
+            "compressor_enabled": True,
+        },
+        "non_condensables": {
+            "name": "Non-Condensable Gases", "mass_flow_multiplier": 0.9,
+            "discharge_pressure_offset_bar": 6.0, "superheat_offset_K": 2.0,
+            "compressor_enabled": True,
+        },
+        "restriction": {
+            "name": "Line Restriction", "mass_flow_multiplier": 0.5,
+            "discharge_pressure_offset_bar": -1.0, "superheat_offset_K": 12.0,
+            "compressor_enabled": True,
+        },
+        "bad_txv": {
+            "name": "Failed TXV", "mass_flow_multiplier": 0.6,
+            "discharge_pressure_offset_bar": 1.0, "superheat_offset_K": -2.0,
+            "compressor_enabled": True,
+        },
+        "dirty_evaporator": {
+            "name": "Dirty Evaporator Coil", "mass_flow_multiplier": 0.8,
+            "discharge_pressure_offset_bar": -1.0, "superheat_offset_K": -5.0,
+            "compressor_enabled": True,
+        },
+        "bad_condenser_fan": {
+            "name": "Condenser Fan Failure", "mass_flow_multiplier": 0.7,
+            "discharge_pressure_offset_bar": 8.0, "superheat_offset_K": 1.0,
+            "compressor_enabled": True,
+        },
+        "refrigerant_mix": {
+            "name": "Mixed Refrigerants", "mass_flow_multiplier": 0.8,
+            "discharge_pressure_offset_bar": -1.5, "superheat_offset_K": 3.0,
+            "compressor_enabled": True,
+        },
+        "low_ambient_no_kit": {
+            "name": "Low Ambient — No Kit", "mass_flow_multiplier": 0.5,
+            "discharge_pressure_offset_bar": -6.0, "superheat_offset_K": -2.0,
+            "compressor_enabled": True,
+        },
+        "overcharge_and_noncond": {
+            "name": "Overcharge + Non-Condensables", "mass_flow_multiplier": 1.1,
+            "discharge_pressure_offset_bar": 8.0, "superheat_offset_K": -4.0,
+            "compressor_enabled": True,
+        },
+        "retrofit_verification": {
+            "name": "R32 Retrofit Verification", "mass_flow_multiplier": 1.0,
+            "discharge_pressure_offset_bar": 0.5, "superheat_offset_K": 0.0,
+            "compressor_enabled": True,
+        },
+        "a2l_leak": {
+            "name": "A2L Leak (R32)", "mass_flow_multiplier": 0.3,
+            "discharge_pressure_offset_bar": -3.0, "superheat_offset_K": 15.0,
+            "compressor_enabled": True,
+        },
+        "bad_compressor_valves": {
+            "name": "Compressor Valve Failure", "mass_flow_multiplier": 0.4,
+            "discharge_pressure_offset_bar": -4.0, "superheat_offset_K": 5.0,
+            "compressor_enabled": True,
+        },
+        "capillary_blockage": {
+            "name": "Blocked Capillary Tube", "mass_flow_multiplier": 0.3,
+            "discharge_pressure_offset_bar": 2.0, "superheat_offset_K": 10.0,
+            "compressor_enabled": True,
+        },
+        "head_pressure_failure": {
+            "name": "Head Pressure Control Failure", "mass_flow_multiplier": 0.9,
+            "discharge_pressure_offset_bar": 10.0, "superheat_offset_K": 0.0,
+            "compressor_enabled": True,
+        },
+        "reversing_valve_stuck": {
+            "name": "Reversing Valve Stuck", "mass_flow_multiplier": 0.5,
+            "discharge_pressure_offset_bar": -2.0, "superheat_offset_K": -3.0,
+            "compressor_enabled": True,
+        },
+        "suction_uninsulated": {
+            "name": "Uninsulated Suction Line", "mass_flow_multiplier": 1.0,
+            "discharge_pressure_offset_bar": 0.0, "superheat_offset_K": 6.0,
+            "compressor_enabled": True,
+        },
+        "liquid_line_restriction": {
+            "name": "Liquid Line Restriction", "mass_flow_multiplier": 0.5,
+            "discharge_pressure_offset_bar": 1.0, "superheat_offset_K": -1.0,
+            "compressor_enabled": True,
+        },
+        "r22_contamination": {
+            "name": "R22 Contamination", "mass_flow_multiplier": 0.7,
+            "discharge_pressure_offset_bar": -2.0, "superheat_offset_K": 0.0,
+            "compressor_enabled": True,
         },
     }
 
