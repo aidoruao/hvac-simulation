@@ -19,6 +19,9 @@ var condenser_box: AABB
 var expansion_box: AABB
 var evaporator_box: AABB
 
+# FR-ED-008: mobile detection for adaptive rendering
+var is_mobile := false
+
 # Flow parameters (updated from state)
 var mass_flow: float = 0.0        # kg/s
 var high_pressure: float = 1.0    # bar
@@ -39,6 +42,8 @@ var color_two    := Color(0.5, 0.6, 0.95, 0.7)
 
 func _ready():
 	print("FR-AN-001 Refrigerant Flow initialized")
+	# FR-ED-008: mobile detection
+	is_mobile = OS.get_name() in ["Android", "iOS"] or OS.has_feature("mobile")
 	_setup_particles()
 	_estimate_boxes()
 
@@ -52,8 +57,8 @@ func _setup_particles():
 func _make_particle_system(name: String, default_color: Color) -> GPUParticles3D:
 	var ps = GPUParticles3D.new()
 	ps.name = name
-	ps.amount = 100  # FR-PE-001: reduced from 200 for 60 FPS
-	ps.lifetime = 1.5  # shorter = fewer active particles
+	ps.amount = 50 if is_mobile else 100  # FR-ED-008: mobile LOD
+	ps.lifetime = 1.0 if is_mobile else 1.5
 	ps.explosiveness = 0.0
 	ps.randomness = 0.3
 	ps.emitting = false
@@ -156,7 +161,8 @@ func update_from_state(state: Dictionary):
 	_update_particle_color(particles_evaporator, color_vapor)    # evaporating → vapor
 
 	# Amount proportional to mass flow
-	var count = clamp(int(mass_flow * 500), 10, 250)  # FR-PE-001: reduced max
+	var max_count = 50 if is_mobile else 250  # FR-ED-008: mobile LOD
+	var count = clamp(int(mass_flow * 500), 10, max_count)
 	particles_compressor.amount = count
 	particles_condenser.amount = int(count * 0.8)
 	particles_expansion.amount = int(count * 0.6)

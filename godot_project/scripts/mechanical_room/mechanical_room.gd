@@ -32,6 +32,10 @@ var fan_angle := 0.0
 
 @onready var flow_system = $RefrigerantFlow if has_node("RefrigerantFlow") else null
 
+# FR-ED-008: mobile detection and adaptive rendering
+var is_mobile := false
+var use_simplified_gauges := false
+
 # FR-ED-005/007: cycle state, scoring, instructor panel
 var cycle_state = {}
 var scoring_state = {}
@@ -39,7 +43,11 @@ var fault_state = {}
 var instructor_panel = null
 
 func _ready():
-	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001 + FR-ED-005/007)")
+	# FR-ED-008: mobile detection
+	is_mobile = OS.get_name() in ["Android", "iOS"] or OS.has_feature("mobile")
+	use_simplified_gauges = is_mobile
+
+	print("Mechanical Room initialized (FR-3D-002 + FR-AN-001 + FR-ED-005/007/008)")
 	if not flow_system:
 		var flow_script = load("res://scripts/mechanical_room/refrigerant_flow.gd")
 		flow_system = Node3D.new()

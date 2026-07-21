@@ -40,7 +40,8 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-PE-001** | **Performance — 60 FPS with all particle systems active** | **PASS** | **—** | **Particles capped at 250; JSON mod-time cache; physics decoupled from render** |
 | **FR-ED-005** | **Real-time cycle simulation with fault injection and scoring** | **PASS** | **—** | **4-point cycle state; 4 fault types; 30s timed scoring** |
 | **FR-ED-006** | **Full 23-scenario fault mapping** | **PASS** | **—** | **23 fault types; one inject_fault() per scenario** |
-| **FR-ED-007** | **Interactive fault injection UI and diagnosis panel** | **PASS** | **—** | **23 fault buttons; student diagnosis with 4 options; 30s timer; scoring** |
+| **FR-ED-007** | **Interactive fault injection UI and diagnosis panel** | **PASS** | **—** | **23 fault buttons; student diagnosis; 30s timer; scoring** |
+| **FR-ED-008** | **Mobile and tablet optimization** | **PASS** | **—** | **Mobile detection; particles 50→250 LOD; simplified gauges; responsive layout** |
 | **FR-FV-001** | **Formal verification Level 1 — property-based testing** | **PASS** | **15/25** | **Hypothesis 2000 cases/fluid; R410A 5/5** |
 | **FR-FV-001-L2** | **Formal verification Level 2 — TLA+ specification** | **PASS** | **—** | **docs/formal_spec/helmholtz.tla; state machine with 5 invariants; TLC config provided** |
 | FR-SC-001 | Training scenario engine (5+ scenarios) | **PASS** | 23/23 | 20 unique faults |
@@ -66,7 +67,7 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 47/47 requirements PASS — 267 Python passed + 12 Godot tests**
+**TOTAL: 48/48 requirements PASS — 267 Python passed + 12 Godot tests**
 
 ---
 
