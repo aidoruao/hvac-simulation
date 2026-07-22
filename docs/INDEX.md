@@ -2,10 +2,10 @@
 
 **Project:** Free, non-proprietary HVAC simulation for trade school alternative  
 **Repo:** https://github.com/aidoruao/hvac-simulation  
-**Last Updated:** 2026-07-20  
-**Ground Truth Commit:** `f0287ca`  
-**Test Count:** 279/279 PASS (267 Python + 12 Godot, 0 xfailed)  
-**SRS Version:** v1.6 — **RELEASED** (tag: v1.6)
+**Last Updated:** 2026-07-21  
+**Ground Truth Commit:** `4508eae`  
+**Test Count:** 282/292 PASS (282 Python + 12 Godot, 10 xfailed)  
+**SRS Version:** v1.8 — **ACTIVE** (tag: v1.8)
 
 ---
 
@@ -28,9 +28,10 @@
 |------|---------|--------------|--------|--------|
 | [README.md](README.md) | One-page project overview + quickstart | 2026-07-19 | — | 🆕 NEW |
 | [INDEX.md](INDEX.md) | This file — master navigation | 2026-07-19 | — | 🆕 NEW |
-| [HVAC_SRS.md](HVAC_SRS.md) | Software Requirements Specification v1.6 | 2026-07-20 | `f04ef13` | ✅ CURRENT |
+| [HVAC_SRS.md](HVAC_SRS.md) | Software Requirements Specification v1.8 | 2026-07-21 | `4508eae` | ✅ CURRENT |
+| [INVESTIGATIONS.md](INVESTIGATIONS.md) | Investigation Manifest — active defects and root cause analyses | 2026-07-21 | `4508eae` | 🆕 NEW |
 | [FORMULA_CITATIONS.md](FORMULA_CITATIONS.md) | Every formula traced to primary source | 2026-07-20 | `f04ef13` | ✅ CURRENT |
-| [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) | AI/human developer environment rules | 2026-07-20 | `f04ef13` | 🆕 UPDATED |
+| [KIMI_ONBOARDING.md](KIMI_ONBOARDING.md) | AI/human developer environment rules | 2026-07-21 | `4508eae` | 🆕 UPDATED |
 | [RECONNAISSANCE.md](RECONNAISSANCE.md) | Open-source tool survey + gap analysis | 2026-07-19 | — | 🆕 UPDATED |
 | [GEMINI_NBLM_HISTORIAN.md](GEMINI_NBLM_HISTORIAN.md) | Campaign archive (1a–7a, immutable) | 2026-07-20 | `f04ef13` | ✅ CURRENT |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add requirements, tests, formulas | 2026-07-19 | — | 🆕 NEW |

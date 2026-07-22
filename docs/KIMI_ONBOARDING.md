@@ -1,15 +1,21 @@
 # KIMI ONBOARDING — HVAC Simulation
 
-**Last Updated:** 2026-07-20 (Campaign 7a, FR-MA-001 complete)  
-**Status:** LOCKED  
-**Current Commit:** `f04ef13`  
-**SRS Version:** v1.6  
-**Test Count:** 207/207 PASS (195 Python + 12 Godot, 0 xfailed)  
+**Last Updated:** 2026-07-21 (Campaign 9a, FR-3D-006/007/008 headless verified)  
+**Status:** ACTIVE  
+**Current Commit:** `4508eae`  
+**SRS Version:** v1.8  
+**Test Count:** 282/292 PASS (282 Python + 12 Godot, 10 xfailed)  
 **Docs Root:** `docs/INDEX.md`
 
 ---
 
-## Environment Invariants (NEVER violate)
+## Core Design Invariants (NEVER violate)
+
+### Almost Failure Invariant (Added 2026-07-21)
+
+A UI that displays 0.0 bar pressure, renders black viewports, or fails to load shaders is an **Almost Failure** — a "lie layer" where the system appears operational but its visual core is absent. This pattern has been observed in the Godot editor when the NVIDIA Vulkan driver is not properly configured, causing the engine to fall back to CPU software rendering (llvmpipe). Reject completion signals when shader import errors or blank viewports are present. Demand structural repairs per FR-SV-005 — do not proceed to mutation authorization on a hollow rendering foundation.
+
+### Environment Invariants
 
 | Invariant | Value | Violation Consequence |
 |-----------|-------|----------------------|

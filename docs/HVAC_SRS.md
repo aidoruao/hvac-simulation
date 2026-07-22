@@ -1,9 +1,9 @@
-# HVAC Simulation — Software Requirements Specification v1.6
+# HVAC Simulation — Software Requirements Specification v1.8
 
 **Document ID:** HVAC-SRS-001
-**Version:** 1.6
-**Date:** 2026-07-20
-**Status:** ACTIVE — 195 Python passed, 0 xfailed (195 total) + 12 Godot tests verified
+**Version:** 1.8
+**Date:** 2026-07-21
+**Status:** ACTIVE — 282 Python passed, 10 xfailed (292 total) + 12 Godot tests verified
 
 ---
 
@@ -37,9 +37,10 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
 | **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
 | **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
-| **FR-3D-006** | **DeepSeek AI Editor Plugin — Godot editor panel with API integration** | **ACTIVE** | **—** | **Viewport capture, scene serialization, API client, mutation engine** |
-| **FR-3D-007** | **Visual Comprehension Bridge — structured viewport state serialization** | **ACTIVE** | **—** | **Scene tree + node properties + materials + scripts → AI-readable format** |
-| **FR-3D-008** | **AI Mutation Engine — automated scene modification with approval gates** | **ACTIVE** | **—** | **Preview before apply; UndoRedo integration** |
+| **FR-3D-006** | **DeepSeek AI Editor Plugin — Godot editor panel with API integration** | **PASS (Headless)** | **—** | **Viewport capture, scene serialization, API client, mutation engine; 16-file C++ module** |
+| **FR-3D-007** | **Visual Comprehension Bridge — structured viewport state serialization** | **PASS (Headless)** | **—** | **Scene tree + node properties + materials + scripts → AI-readable format** |
+| **FR-3D-008** | **AI Mutation Engine — automated scene modification with approval gates** | **PASS (Headless)** | **—** | **UndoRedo-wrapped add_node, set_node_property, edit_script; mutation tag parser** |
+| **FR-3D-009** | **Physics Validation — compare AI node positions against physics constraints** | **ACTIVE** | **—** | **Linked to INV-9A-001; blocked by shader/driver failure (Round 11)** |
 | **FR-3D-010** | **Player Camera Controls — walk-around camera for human/AI inspection** | **AWAITING** | **—** | **WASD + mouse look; collision with room bounds** |
 | **FR-AN-001** | **Aerospace-grade refrigerant flow particle visualization** | **PASS** | **—** | **GPUParticles3D per component; color-coded by phase; speed ∝ mass flow** |
 | **FR-PE-001** | **Performance — 60 FPS with all particle systems active** | **PASS** | **—** | **Particles capped at 250; JSON mod-time cache; physics decoupled from render** |
@@ -77,7 +78,9 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | FR-VA-003 | Automated Godot regression test suite | **PASS** | 10/10 | test_godot_regression.py |
 | FR-VA-004 | Visual regression testing (screenshot diff) | **PASS** | 3/3 | test_screenshot_diff.py + D3D12 headless |
 
-**TOTAL: 50/58 requirements (44 PASS + 6 ACTIVE + 8 AWAITING) — 267 Python passed + 12 Godot tests**
+**TOTAL: 53/59 requirements (47 PASS + 7 ACTIVE + 5 AWAITING) — 282 Python passed + 12 Godot tests**
+
+> **Investigation**: INV-9A-001 (GLSL Shader Import Failures) blocks GUI-level mutation authorization. See `docs/INVESTIGATIONS.md`.
 
 ---
 
