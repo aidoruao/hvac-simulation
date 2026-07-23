@@ -1,7 +1,7 @@
-extends SceneTree
-
+@tool
+extends Node
 ## FR-PF-002: Frame Rate Benchmark
-## Measures FPS for PT chart and mechanical room scenes
+## Measures FPS for PT chart and mechanical room scenes.
 ## Run headless: godot --headless --script scripts/frame_rate_benchmark.gd
 
 const BENCHMARK_DURATION_SEC := 5.0
@@ -14,23 +14,23 @@ var scene_paths := [
 	"res://scenes/wiring_scene.tscn"
 ]
 
-var bench_results := []
-var current_scene_index := 0
-var loaded_scene: Node
+var bench_results: Array = []
+var current_scene_index: int = 0
+var loaded_scene: Node = null
 var fps_samples: Array = []
 var timer: float = 0.0
 
-func _initialize():
+func _ready():
 	print("FR-PF-002: Frame Rate Benchmark starting...")
 	print("Target FPS: ", TARGET_FPS)
 	print("Duration per scene: ", BENCHMARK_DURATION_SEC, "s")
 	print("---")
 	_load_next_scene()
 
-func _load_next_scene():
+func _load_next_scene() -> void:
 	if current_scene_index >= scene_paths.size():
 		_write_results()
-		quit()
+		get_tree().quit()
 		return
 
 	var path = scene_paths[current_scene_index]
@@ -49,23 +49,25 @@ func _load_next_scene():
 		return
 
 	loaded_scene = packed.instantiate()
-	root.add_child(loaded_scene)
+	get_tree().root.add_child(loaded_scene)
 	fps_samples.clear()
 	timer = 0.0
 	print("Scene loaded. Benchmarking...")
 
-func _process(delta):
+func _process(delta: float) -> void:
+	if timer < 0:
+		return
 	timer += delta
 	var fps = Engine.get_frames_per_second()
 	fps_samples.append(fps)
 	if timer >= BENCHMARK_DURATION_SEC:
 		_finish_current_scene()
 
-func _finish_current_scene():
+func _finish_current_scene() -> void:
 	var path = scene_paths[current_scene_index]
 	var avg_fps = _average(fps_samples)
-	var min_fps = fps_samples.min() if fps_samples.size() > 0 else 0.0
-	var max_fps = fps_samples.max() if fps_samples.size() > 0 else 0.0
+	var min_fps: float = fps_samples.min() if fps_samples.size() > 0 else 0.0
+	var max_fps: float = fps_samples.max() if fps_samples.size() > 0 else 0.0
 	var passed: bool = avg_fps >= TARGET_FPS
 
 	bench_results.append({
@@ -95,19 +97,25 @@ func _finish_current_scene():
 func _average(arr: Array) -> float:
 	if arr.is_empty():
 		return 0.0
-	var sum := 0.0
+	var sum: float = 0.0
 	for v in arr:
-		sum += v
-	return sum / arr.size()
+		sum += float(v)
+	return sum / float(arr.size())
 
-func _write_results():
+func _write_results() -> void:
+	var results_pass: bool = true
+	for r in bench_results:
+		if not r.get("pass", false):
+			results_pass = false
+			break
+
 	var output := {
 		"benchmark": "FR-PF-002",
 		"godot_version": Engine.get_version_info()["string"],
 		"date": Time.get_datetime_string_from_system(),
 		"target_fps": TARGET_FPS,
 		"duration_per_scene": BENCHMARK_DURATION_SEC,
-		"overall_pass": bench_results.all(func(r): return r.get("pass", false)),
+		"overall_pass": results_pass,
 		"results": bench_results
 	}
 

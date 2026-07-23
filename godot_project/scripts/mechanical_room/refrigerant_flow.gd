@@ -8,10 +8,10 @@ extends Node3D
 ##
 ## Attach to the MechanicalRoom scene root.
 
-# Particle material presets
-const MAT_LIQUID = preload("res://materials/liquid_particle.tres") if ResourceLoader.exists("res://materials/liquid_particle.tres") else null
-const MAT_VAPOR = preload("res://materials/vapor_particle.tres") if ResourceLoader.exists("res://materials/vapor_particle.tres") else null
-const MAT_TWOPHASE = preload("res://materials/twophase_particle.tres") if ResourceLoader.exists("res://materials/twophase_particle.tres") else null
+# Particle material presets — materials exist in res://materials/
+const MAT_LIQUID   = preload("res://materials/liquid_particle.tres")
+const MAT_VAPOR    = preload("res://materials/vapor_particle.tres")
+const MAT_TWOPHASE = preload("res://materials/twophase_particle.tres")
 
 # Component bounding boxes (set in _ready from scene node positions)
 var compressor_box: AABB
