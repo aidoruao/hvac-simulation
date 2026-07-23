@@ -21,10 +21,13 @@ config/features=PackedStringArray("4.8", "Forward Plus")
 
 [autoload]
 
-DeepSeekConfig="res://scripts/autoload/deepseek_config.gd"
 AuditLogger="res://scripts/audit_logger.gd"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/deepseek_editor_plugin/plugin.cfg")
