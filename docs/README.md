@@ -120,7 +120,9 @@ echo '<base64>' | base64 -d > target_file
 
 For visual regression on RTX 4050:
 ```bash
---rendering-driver d3d12
+# OpenGL3/WSLg bypass for INV-9A-001 (Vulkan ICD missing)
+export DISPLAY=:0
+--rendering-driver opengl3
 ```
 
 ### Path Mapping

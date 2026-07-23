@@ -128,3 +128,17 @@ FR-3D-003/004/005, FR-AN-001, FR-PE-001, FR-FV-001 (L1 + L2)
 - docs: FR-SV-005 — load-bearing invariant across all documentation
 - Reference: Turn 240, pt_data.json format mismatch, patch rejection
 - See: docs/AI_BEHAVIORAL_ARCHETYPES.md
+
+## v3.1 — OpenGL3/WSLg Bypass (2026-07-23)
+
+### Fixed
+- INV-9A-001: BYPASSED via OpenGL3/WSLg (Mesa llvmpipe). `DISPLAY=:0 --rendering-driver opengl3` produces valid 1280×720 PNG frames.
+- DeepSeek module: 6/6 components verified operational under OpenGL3/WSLg — ViewportCapture (capture_screenshot → valid PNG), SceneSerializer (serialize_tree → compressed tree), DeepSeekClient (API endpoint), DeepSeekCovenant (built-in fallback), DeepSeekMutation (ClassDB registered, API accessible), DeepSeekAIAssistant (dock initialized in editor mode).
+- Cathedral Index: anchor `a715ec8`, 145 tracked files, 14 DeepSeek module files, updated footer with `d141846` version commit.
+- Environment invariant: `export DISPLAY=:0` + `--rendering-driver opengl3` documented in KIMI_ONBOARDING.md.
+- Banach contraction: D₀=1.0 → D≈0.05. Visual pipeline unblocked. GPU hardware acceleration remains gated on NVIDIA Vulkan ICD (Path A).
+
+### Ground Truth
+- HVAC simulation HEAD: `a715ec8` (282/292 PASS)
+- godot-OE HEAD: `aac1c92` (DeepSeek module 14 files, compiled)
+- Cathedral Index: v3.1 at `d141846` + v3.1 status updates

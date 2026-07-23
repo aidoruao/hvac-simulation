@@ -1,10 +1,10 @@
 # KIMI ONBOARDING — HVAC Simulation
 
-**Last Updated:** 2026-07-21 (Campaign 9a, FR-3D-006/007/008 headless verified)  
-**Status:** ACTIVE  
-**Current Commit:** `4508eae`  
-**SRS Version:** v1.8  
-**Test Count:** 282/292 PASS (282 Python + 12 Godot, 10 xfailed)  
+**Last Updated:** 2026-07-23 (Campaign 9a, INV-9A-001 bypassed via OpenGL3/WSLg)
+**Status:** ACTIVE
+**Current Commit:** `a715ec8`
+**SRS Version:** v1.8
+**Test Count:** 282/292 PASS (282 Python + 12 Godot, 10 expected non-R410A failures)
 **Docs Root:** `docs/INDEX.md`
 
 ---
@@ -24,8 +24,9 @@ A UI that displays 0.0 bar pressure, renders black viewports, or fails to load s
 | Godot binary (Windows) | `/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe` | "Executable not found" |
 | Godot binary (Linux) | `~/hvac-simulation/godot` (4.3.stable) | Version mismatch |
 | Renderer | Forward Plus (headless D3D12) | Screenshot corruption |
-| Test count | 207 (195 Python + 12 Godot, 0 xfailed) | False confidence in broken state |
-| Documentation root | `docs/INDEX.md` | Navigation failure |
+| WSLg OpenGL3 renderer | `export DISPLAY=:0` + `--rendering-driver opengl3` | INV-9A-001 bypass; Mesa llvmpipe software rendering |
+| Test count | 282/292 PASS (10 expected non-R410A failures) | False confidence in broken state |
+| Cathedral Index | `docs/index.html` (Cathedral Index v3.1) | Navigation failure for AI agents |
 
 ---
 

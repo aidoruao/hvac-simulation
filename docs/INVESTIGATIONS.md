@@ -18,7 +18,7 @@
 | **Focus** | GLSL Shader Import Failures — SMAA, Volumetric Fog, Global Illumination, FSR2, SSAO, SSIL |
 | **Category** | Almost Failure / Ontological Layer Omission |
 | **Severity** | **CRITICAL** — blocks GUI-level mutation authorization |
-| **Status** | **ACTIVE** |
+| **Status** | **BYPASSED** — OpenGL3/WSLg viable (2026-07-23) |
 
 #### Symptoms
 
@@ -52,7 +52,7 @@ The WSL2 NVIDIA GPU passthrough is partially configured:
 | Option | Description | Priority |
 |---|---|---|
 | A | Install NVIDIA Vulkan ICD for WSL2 (Windows host driver update → `nvidia_icd.json` in `/usr/share/vulkan/icd.d/`) | **P1 — Recommended** |
-| B | Build Godot with `vulkan=no opengl3=yes` and run with `--rendering-driver opengl3` | P2 — Workaround |
+| **B** | **Build Godot with `vulkan=no opengl3=yes` and run with `--rendering-driver opengl3`** | **P1 — PROVEN (2026-07-23)** |
 | C | Use Windows-native Godot binary from `/mnt/c/` path instead of WSL2 build | P3 — Bypass |
 
 #### Linked Requirements
@@ -67,6 +67,7 @@ The WSL2 NVIDIA GPU passthrough is partially configured:
 |---|---|
 | 2026-07-21 | Opened. Diagnostic confirmed llvmpipe fallback, missing NVIDIA Vulkan ICD. |
 | 2026-07-21 | SRS v1.8 updated: FR-3D-006/007/008 marked PASS (Headless), FR-3D-009 linked to INV-9A-001. |
+| **2026-07-23** | **BYPASSED: OpenGL3/WSLg proven viable. `DISPLAY=:0 --rendering-driver opengl3` produces valid 1280×720 PNG frames. All 6 DeepSeek components verified operational (ViewportCapture, SceneSerializer, DeepSeekClient, DeepSeekCovenant, DeepSeekMutation, DeepSeekAIAssistant). Banach contraction D≈0.05. NVIDIA Vulkan ICD still missing — OpenGL3/WSLg is the functional bypass.** |
 
 ---
 

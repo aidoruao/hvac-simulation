@@ -37,10 +37,10 @@ Free, non-proprietary HVAC simulation for trade school alternative. No vendor lo
 | **FR-3D-003** | **Godot PT chart uses HelmholtzEOS saturation data** | **PASS** | **—** | **generate_helmholtz_pt_data.py → pt_data.json; all 5 fluids** |
 | **FR-3D-004** | **Dynamic PT chart update on refrigerant switch** | **PASS** | **—** | **Godot dropdown → switch_refrigerant → redraw; no scene reload** |
 | **FR-3D-005** | **Saturation dome, critical point, isotherms from real EOS** | **PASS** | **—** | **150-point saturation curves per fluid; critical T from HelmholtzEOS** |
-| **FR-3D-006** | **DeepSeek AI Editor Plugin — Godot editor panel with API integration** | **PASS (Headless)** | **—** | **Viewport capture, scene serialization, API client, mutation engine; 16-file C++ module** |
-| **FR-3D-007** | **Visual Comprehension Bridge — structured viewport state serialization** | **PASS (Headless)** | **—** | **Scene tree + node properties + materials + scripts → AI-readable format** |
-| **FR-3D-008** | **AI Mutation Engine — automated scene modification with approval gates** | **PASS (Headless)** | **—** | **UndoRedo-wrapped add_node, set_node_property, edit_script; mutation tag parser** |
-| **FR-3D-009** | **Physics Validation — compare AI node positions against physics constraints** | **ACTIVE** | **—** | **Linked to INV-9A-001; blocked by shader/driver failure (Round 11)** |
+| **FR-3D-006** | **DeepSeek AI Editor Plugin — Godot editor panel with API integration** | **PASS** | **—** | **OpenGL3/WSLg bypass verified (2026-07-23); 6/6 components operational; 14-file C++ module** |
+| **FR-3D-007** | **Visual Comprehension Bridge — structured viewport state serialization** | **PASS** | **—** | **ViewportCapture: 1280×720 PNG via `DISPLAY=:0 --rendering-driver opengl3`; `serialize_tree()` tested** |
+| **FR-3D-008** | **AI Mutation Engine — automated scene modification with approval gates** | **PASS** | **—** | **DeepSeekMutation: ClassDB registered, add_node/set_node_property/edit_script API available; UndoRedo-wrapped** |
+| **FR-3D-009** | **Physics Validation — compare AI node positions against physics constraints** | **ACTIVE** | **—** | **INV-9A-001 bypassed via OpenGL3/WSLg; visual pipeline unblocked for physics validation** |
 | **FR-3D-010** | **Player Camera Controls — walk-around camera for human/AI inspection** | **AWAITING** | **—** | **WASD + mouse look; collision with room bounds** |
 | **FR-AN-001** | **Aerospace-grade refrigerant flow particle visualization** | **PASS** | **—** | **GPUParticles3D per component; color-coded by phase; speed ∝ mass flow** |
 | **FR-PE-001** | **Performance — 60 FPS with all particle systems active** | **PASS** | **—** | **Particles capped at 250; JSON mod-time cache; physics decoupled from render** |

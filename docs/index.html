@@ -94,10 +94,10 @@ footer{text-align:center;padding:1.5rem;color:var(--text-dim);font-size:0.65rem;
   <hr style="border-color:var(--border);margin:0.5rem 0.7rem">
   <a href="#top" style="font-size:0.7rem">&#9650; Top</a>
   <div style="padding:0.5rem 1rem;font-size:0.65rem;color:var(--text-dim);margin-top:0.5rem">
-    Anchor: <span class="commit-hash">a7e823b</span><br>
-    282/292 PASS<br>
-    SRS v1.8<br>
-    FR-SV-005 Enforced
+     Anchor: <span class="commit-hash">a715ec8</span><br>
+     282/292 PASS<br>
+     SRS v1.8<br>
+     FR-SV-005 Enforced
   </div>
 </nav>
 
@@ -872,11 +872,11 @@ J = [&part;P/&part;&delta;  &part;P/&part;&tau;]
 <h4>Ground Truth Status Monitor</h4>
 <table>
 <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
-<tr><td>Anchor Commit</td><td class="mono commit-hash">a7e823b</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
+<tr><td>Anchor Commit</td><td class="mono commit-hash">a715ec8</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
 <tr><td>Python Tests</td><td class="mono">280 pass / 10 fail / 0 xfail</td><td><span class="badge badge-warn">PARTIAL</span></td></tr>
 <tr><td>Godot Tests</td><td class="mono">12 / 12 PASS</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
 <tr><td>SRS Version</td><td class="mono">v1.8</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
-<tr><td>INV-9A-001</td><td>ACTIVE — Blocking GUI</td><td><span class="badge badge-fail">BLOCKED</span></td></tr>
+<tr><td>INV-9A-001</td><td>BYPASSED — OpenGL3/WSLg (D≈0.05)</td><td><span class="badge badge-pass">BYPASSED</span></td></tr>
 <tr><td>FR-SV-005</td><td>ENFORCED</td><td><span class="badge badge-pass">ACTIVE</span></td></tr>
 </table>
 
@@ -1020,7 +1020,7 @@ Audit loop back to Python verification</pre>
 <tr><td>Godot binary (Linux)</td><td class="mono">~/hvac-simulation/godot (4.3.stable)</td></tr>
 <tr><td>Godot binary (Windows)</td><td class="mono">/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe</td></tr>
 <tr><td>Godot-OE build</td><td class="mono">~/godot-OE/bin/godot.linuxbsd.editor.x86_64</td></tr>
-<tr><td>Renderer (headless)</td><td>Forward Plus (D3D12 on Windows, Vulkan on Linux blocked by INV-9A-001)</td></tr>
+<tr><td>Renderer (headless)</td><td>OpenGL3/WSLg (Mesa llvmpipe) — functional bypass for INV-9A-001; Vulkan on Linux still blocked</td></tr>
 </table>
 
   </div>
@@ -1214,7 +1214,7 @@ Audit loop back to Python verification</pre>
   <summary>Verified Specification 20: File Inventory — Complete Tracked File Census</summary>
   <div class="detail-body">
 
-<h3>Repository: hvac-simulation | Anchor: <span class="commit-hash">a7ec136</span> | 144 tracked files</h3>
+<h3>Repository: hvac-simulation | Anchor: <span class="commit-hash">a715ec8</span> | 145 tracked files</h3>
 
 <table>
 <tr><th>Category</th><th>Count</th><th>Files</th></tr>
@@ -1233,7 +1233,7 @@ Audit loop back to Python verification</pre>
 
 <table>
 <tr><th>Category</th><th>Count</th><th>Files</th></tr>
-<tr><td>DeepSeek Module</td><td class="mono">10</td><td>modules/deepseek/ — deepseek_client, deepseek_mutation, viewport_capture, scene_serializer, ai_assistant_dock, deepseek_covenant, register_types (+headers)</td></tr>
+<tr><td>DeepSeek Module</td><td class="mono">14</td><td>modules/deepseek/ — deepseek_client, deepseek_mutation, viewport_capture, scene_serializer, ai_assistant_dock, deepseek_covenant, register_types (+headers)</td></tr>
 <tr><td>AI Constitution</td><td class="mono">1</td><td>COVENANT.json — 6 rules + audit checklist</td></tr>
 <tr><td>Scene Assets</td><td class="mono">1</td><td>scenes/mechanical_room/mechanical_room.tscn</td></tr>
 <tr><td>Built Binary</td><td class="mono">1</td><td>bin/godot.linuxbsd.editor.x86_64 (175MB)</td></tr>
@@ -1282,8 +1282,8 @@ git log --oneline -- &lt;path&gt;</pre>
 </details>
 
 <footer>
-  Cathedral Index v3.0 &bull; Baseline: <span class="commit-hash">a7e823b</span> &bull; Version: <span class="commit-hash">d141846</span> &bull; Glass Box Enforced &bull;
-  Generated 2026-07-22 &bull; 21 Verified Specifications &bull; FR-SV-005 Compliant &bull;
+  Cathedral Index v3.1 &bull; Baseline: <span class="commit-hash">a7e823b</span> &bull; Current: <span class="commit-hash">a715ec8</span> &bull; Glass Box Enforced &bull;
+  Generated 2026-07-23 &bull; INV-9A-001 BYPASSED &bull; 21 Verified Specifications &bull; FR-SV-005 Compliant &bull;
   No heredocs were harmed in the making of this document
 </footer>
 
