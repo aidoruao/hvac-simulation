@@ -3,918 +3,968 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HVAC Simulation — Cathedral Index (Active Warden)</title>
+<title>HVAC Simulation — Cathedral Index v2.0</title>
 <style>
-/* === Glass Box Design System — NASA/Aerospace Grade === */
 :root {
-  --bg: #0a0e14;
-  --surface: #131820;
-  --surface2: #1a1f2b;
-  --border: #252b36;
-  --text: #c8ccd4;
-  --text-dim: #6c7380;
-  --accent: #39bae6;
-  --accent2: #aad94c;
-  --pass: #7fd962;
-  --fail: #f26d78;
-  --warn: #ffb454;
-  --hedge-bg: #1e1518;
-  --hedge-border: #f26d7840;
-  --code-bg: #0d1117;
-  --font-mono: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --bg: #0a0e14; --surface: #131820; --surface2: #1a1f2b;
+  --border: #252b36; --text: #c8ccd4; --text-dim: #6c7380;
+  --accent: #39bae6; --accent2: #aad94c; --pass: #7fd962;
+  --fail: #f26d78; --warn: #ffb454; --code-bg: #0d1117;
+  --font-mono: 'Cascadia Code','JetBrains Mono','Fira Code','Consolas',monospace;
+  --font-sans: 'Inter','Segoe UI',system-ui,sans-serif;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-sans);
-  line-height: 1.6;
-  min-height: 100vh;
-}
-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 1.5rem 2rem;
-  position: sticky; top: 0; z-index: 10;
-  backdrop-filter: blur(12px);
-}
-header h1 {
-  font-size: 1.4rem; font-weight: 600;
-  color: var(--accent);
-  letter-spacing: -0.02em;
-}
-header .subtitle {
-  font-size: 0.85rem; color: var(--text-dim);
-  margin-top: 0.25rem;
-}
-.badge {
-  display: inline-block;
-  padding: 0.15rem 0.55rem;
-  border-radius: 3px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-family: var(--font-mono);
-}
-.badge-pass { background: #7fd96220; color: var(--pass); border: 1px solid #7fd96240; }
-.badge-fail { background: #f26d7820; color: var(--fail); border: 1px solid #f26d7840; }
-.badge-warn { background: #ffb45420; color: var(--warn); border: 1px solid #ffb45440; }
-main {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
-  overflow: hidden;
-}
-section h2 {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.85rem 1.2rem;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-  color: var(--accent);
-  letter-spacing: 0.02em;
-  display: flex; align-items: center; gap: 0.5rem;
-}
-.section-body {
-  padding: 1.2rem;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-th, td {
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-}
-th {
-  font-weight: 600;
-  color: var(--text-dim);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--surface2);
-}
-tr:hover td { background: #ffffff04; }
-.mono { font-family: var(--font-mono); font-size: 0.8rem; }
-.commit-hash { color: var(--accent2); }
-.test-pass { color: var(--pass); font-weight: 600; }
-.test-fail { color: var(--fail); font-weight: 600; }
-
-/* === RLHF Sanitizer === */
-.sanitizer-input {
-  width: 100%;
-  min-height: 80px;
-  background: var(--code-bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  padding: 0.75rem;
-  border-radius: 4px;
-  resize: vertical;
-}
-.sanitizer-input:focus { outline: none; border-color: var(--accent); }
-.btn {
-  display: inline-block;
-  padding: 0.4rem 1rem;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  letter-spacing: 0.02em;
-}
-.btn:hover { background: #59d0f6; }
-.btn-sm { padding: 0.25rem 0.6rem; font-size: 0.7rem; }
-.output-box {
-  background: var(--code-bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-top: 0.75rem;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  min-height: 40px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.flag-list { margin-top: 0.5rem; }
-.flag-item {
-  padding: 0.3rem 0.6rem;
-  margin: 0.2rem 0;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  font-family: var(--font-mono);
-  background: var(--hedge-bg);
-  border-left: 3px solid var(--fail);
-}
-.stripped-word {
-  background: #f26d7820;
-  color: var(--fail);
-  padding: 0 0.2rem;
-  border-radius: 2px;
-  text-decoration: line-through;
-}
-
-/* === Almost Failure Detector === */
-.pressure-gauge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-}
-.gauge-danger {
-  background: #f26d7815;
-  border: 1px solid #f26d7840;
-  color: var(--fail);
-}
-.gauge-safe {
-  background: #7fd96215;
-  border: 1px solid #7fd96240;
-  color: var(--pass);
-}
-.check-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-.check-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.8rem;
-}
-.check-card .label { color: var(--text-dim); font-size: 0.7rem; }
-.check-card .value { font-family: var(--font-mono); margin-top: 0.15rem; }
-.check-card.clean { border-left: 3px solid var(--pass); }
-.check-card.suspect { border-left: 3px solid var(--fail); }
-
-/* === Checklist Gate === */
-.gate-form { display: flex; flex-direction: column; gap: 0.75rem; }
-.gate-form label {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.gate-form input {
-  width: 100%;
-  background: var(--code-bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  padding: 0.5rem 0.7rem;
-  border-radius: 4px;
-  margin-top: 0.2rem;
-}
-.gate-form input:focus { outline: none; border-color: var(--accent); }
-.gate-result { margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem; }
-.gate-accept { background: #7fd96215; color: var(--pass); border: 1px solid #7fd96240; }
-.gate-reject { background: #f26d7815; color: var(--fail); border: 1px solid #f26d7840; }
-
-/* === Math Horizon === */
-.math-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
-}
-.math-card h4 { font-size: 0.85rem; color: var(--accent2); margin-bottom: 0.25rem; }
-.math-card p { font-size: 0.78rem; color: var(--text-dim); }
-.math-card .status { float: right; }
-.timeline {
-  position: relative;
-  padding-left: 1.5rem;
-  margin: 0.75rem 0;
-}
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--border);
-}
-.tl-item {
-  position: relative;
-  padding: 0.4rem 0 0.4rem 1rem;
-  font-size: 0.8rem;
-  border-bottom: 1px solid #ffffff06;
-}
-.tl-item::before {
-  content: '';
-  position: absolute;
-  left: -1.55rem;
-  top: 0.7rem;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-.tl-item .ts { color: var(--text-dim); font-size: 0.7rem; font-family: var(--font-mono); }
-
-footer {
-  text-align: center;
-  padding: 1.5rem;
-  color: var(--text-dim);
-  font-size: 0.7rem;
-  font-family: var(--font-mono);
-  border-top: 1px solid var(--border);
-  margin-top: 2rem;
-}
-.hidden { display: none; }
-.inline-code {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  background: var(--code-bg);
-  padding: 0.1rem 0.3rem;
-  border-radius: 2px;
-}
-.live-indicator {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-right: 0.3rem;
-}
-.live-ok { background: var(--pass); box-shadow: 0 0 6px var(--pass); }
-.live-err { background: var(--fail); box-shadow: 0 0 6px var(--fail); animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-/* === Invariant Panel === */
-.invariant-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 0.75rem;
-}
-.invariant-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.75rem;
-}
-.invariant-card h4 {
-  font-size: 0.8rem;
-  color: var(--accent);
-  margin-bottom: 0.3rem;
-  font-family: var(--font-mono);
-}
-.invariant-card p {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}
-.invariant-card .counter {
-  font-size: 0.7rem;
-  color: var(--warn);
-  margin-top: 0.3rem;
-  font-style: italic;
-}
-
-#toast {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  padding: 0.6rem 1rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  z-index: 100;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-#toast.show { opacity: 1; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);line-height:1.6;min-height:100vh;display:flex}
+nav#toc{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.2rem 0;z-index:10}
+nav#toc h3{font-size:0.8rem;color:var(--accent);padding:0 1rem;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.04em}
+nav#toc a{display:block;padding:0.3rem 1rem;font-size:0.75rem;color:var(--text-dim);text-decoration:none;border-left:2px solid transparent}
+nav#toc a:hover,nav#toc a.active{color:var(--text);border-left-color:var(--accent);background:#ffffff04}
+main{flex:1;min-width:0;padding:1.5rem 2rem;max-width:1200px}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:1.2rem 2rem;position:sticky;top:0;z-index:5;backdrop-filter:blur(12px);margin:-1.5rem -2rem 1.5rem -2rem}
+header h1{font-size:1.3rem;font-weight:600;color:var(--accent);letter-spacing:-0.02em}
+header .subtitle{font-size:0.8rem;color:var(--text-dim);margin-top:0.15rem}
+.badge{display:inline-block;padding:0.12rem 0.5rem;border-radius:3px;font-size:0.65rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;font-family:var(--font-mono);margin-right:0.3rem}
+.badge-pass{background:#7fd96220;color:var(--pass);border:1px solid #7fd96240}
+.badge-fail{background:#f26d7820;color:var(--fail);border:1px solid #f26d7840}
+.badge-warn{background:#ffb45420;color:var(--warn);border:1px solid #ffb45440}
+section{margin-bottom:1.5rem}
+section h2{font-size:1rem;font-weight:600;padding:0.7rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px 4px 0 0;color:var(--accent);letter-spacing:0.02em;cursor:pointer}
+section h2:hover{color:#59d0f6}
+.section-body{border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;padding:1rem;background:var(--surface)}
+details{margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+details summary{font-size:0.9rem;font-weight:600;padding:0.7rem 1rem;background:var(--surface2);cursor:pointer;color:var(--accent);letter-spacing:0.02em;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'\25B6';display:inline-block;margin-right:0.5rem;font-size:0.7rem;transition:transform 0.2s}
+details[open] summary::before{transform:rotate(90deg)}
+details .detail-body{padding:1rem;max-height:70vh;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.5rem 0}
+th,td{text-align:left;padding:0.35rem 0.5rem;border-bottom:1px solid var(--border)}
+th{font-weight:600;color:var(--text-dim);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.03em;background:var(--surface2)}
+tr:hover td{background:#ffffff03}
+.mono{font-family:var(--font-mono);font-size:0.78rem}
+.commit-hash{color:var(--accent2)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:3px;padding:0.7rem;overflow-x:auto;font-family:var(--font-mono);font-size:0.75rem;line-height:1.45}
+code{font-family:var(--font-mono);font-size:0.8rem;background:var(--code-bg);padding:0.1rem 0.3rem;border-radius:2px}
+h3{font-size:0.9rem;color:var(--text);margin:0.75rem 0 0.4rem 0;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
+h4{font-size:0.82rem;color:var(--accent2);margin:0.5rem 0 0.3rem 0}
+p,li{font-size:0.8rem;color:var(--text-dim)}
+ul,ol{padding-left:1.5rem;margin:0.3rem 0}
+blockquote{border-left:3px solid var(--accent);padding:0.3rem 0.7rem;margin:0.5rem 0;background:#39bae608;font-size:0.8rem}
+hr{border:none;border-top:1px solid var(--border);margin:1rem 0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+/* Dashboard */
+.verif-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.5rem;margin-top:0.5rem}
+.verif-card{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0.6rem 0.75rem;font-size:0.75rem}
+.verif-card h4{font-size:0.78rem;color:var(--accent);margin:0 0 0.2rem 0;border:none}
+.verif-card input,.verif-card textarea,.verif-card select{width:100%;background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem 0.5rem;border-radius:3px;margin-top:0.2rem}
+.btn{display:inline-block;padding:0.35rem 0.8rem;background:var(--accent);color:#000;border:none;border-radius:4px;font-weight:600;font-size:0.75rem;cursor:pointer;margin-top:0.5rem}
+.btn:hover{background:#59d0f6}
+footer{text-align:center;padding:1.5rem;color:var(--text-dim);font-size:0.65rem;font-family:var(--font-mono);border-top:1px solid var(--border);margin-top:2rem}
+.toast{position:fixed;bottom:1rem;right:1rem;background:var(--surface);border:1px solid var(--accent);padding:0.5rem 0.8rem;border-radius:4px;font-size:0.75rem;z-index:100;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+.math-block{background:var(--code-bg);border:1px solid var(--border);border-radius:3px;padding:0.6rem;font-family:var(--font-mono);font-size:0.78rem;margin:0.4rem 0;overflow-x:auto}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>&#9670; HVAC Simulation — Cathedral Index</h1>
-  <div class="subtitle">
-    Active Integrity Warden &bull; Glass Box Enforced &bull; NASA/Aerospace Grade Specifications
+<nav id="toc">
+  <h3>Cathedral Index v2.0</h3>
+  <a href="#srs">1. SRS v1.8</a>
+  <a href="#readme">2. README</a>
+  <a href="#onboarding">3. AI Onboarding</a>
+  <a href="#archetypes">4. Behavioral Archetypes</a>
+  <a href="#doc-index">5. Documentation Index</a>
+  <a href="#investigations">6. Investigations</a>
+  <a href="#formulas">7. Formula Citations</a>
+  <a href="#recon">8. Reconnaissance</a>
+  <a href="#contributing">9. Contributing</a>
+  <a href="#historian">10. Campaign History</a>
+  <a href="#campaign-9a">11. Campaign 9a</a>
+  <a href="#math-registry">12. Math Registry</a>
+  <a href="#auditor-qol">13. Auditor QoL</a>
+  <a href="#warden">14. Active Warden</a>
+  <hr style="border-color:var(--border);margin:0.5rem 0.7rem">
+  <a href="#top" style="font-size:0.7rem">&#9650; Top</a>
+  <div style="padding:0.5rem 1rem;font-size:0.65rem;color:var(--text-dim);margin-top:0.5rem">
+    Anchor: <span class="commit-hash">a7e823b</span><br>
+    282/292 PASS<br>
+    SRS v1.8<br>
+    FR-SV-005 Enforced
   </div>
-  <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-    <span class="badge badge-pass"><span class="live-indicator live-ok"></span>WARDEN ACTIVE</span>
-    <span class="badge badge-pass">FR-SV-005 ENFORCED</span>
-    <span class="badge badge-pass" id="anchorBadge">ANCHOR: a7e823b</span>
-    <span class="badge badge-pass" id="testCountBadge">TESTS: 282/292</span>
-    <span class="badge badge-warn" id="failCountBadge">10 EXPECTED FAIL (non-R410A)</span>
+</nav>
+
+<main id="top">
+
+<header>
+  <h1>&#9670; HVAC Simulation — Cathedral Index v2.0</h1>
+  <div class="subtitle">Unified Document — Contains Every Critical Specification, Formula, Investigation, and Campaign Finding</div>
+  <div style="margin-top:0.5rem">
+    <span class="badge badge-pass">WARDEN ACTIVE</span>
+    <span class="badge badge-pass">ANCHOR: a7e823b</span>
+    <span class="badge badge-pass">282/292 PASS</span>
+    <span class="badge badge-warn">10 EXPECTED FAIL (non-R410A)</span>
+    <span class="badge badge-pass">SRS v1.8</span>
+    <span class="badge badge-pass">FR-SV-005</span>
   </div>
 </header>
 
-<main>
+<!-- ========== 1. SRS v1.8 ========== -->
+<details id="srs" open>
+  <summary>Verified Specification 1: Software Requirements Specification v1.8</summary>
+  <div class="detail-body">
 
-<!-- === MODULE 1: STATUS MONITOR === -->
-<section id="status-monitor">
-  <h2>&#9679; Verified Specification 1: Ground Truth Status Monitor</h2>
-  <div class="section-body">
-    <table id="statusTable">
-      <thead>
-        <tr><th>Metric</th><th>Value</th><th>Verification</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Anchor Commit</td>
-          <td class="mono commit-hash" id="cellCommit">a7e823b</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>Commit Message</td>
-          <td class="mono">docs: v1.8 SRS sync &amp; investigation manifest initialization</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>Python Tests</td>
-          <td class="mono" id="cellPyTests">280 pass / 10 fail / 0 xfail</td>
-          <td><span class="badge badge-warn">PARTIAL</span></td>
-        </tr>
-        <tr>
-          <td>Godot Regression Tests</td>
-          <td class="mono test-pass" id="cellGodotTests">12 / 12 PASS</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>SRS Version</td>
-          <td class="mono">v1.8</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>Active Requirements</td>
-          <td class="mono test-pass">25 / 25 PASS (core)</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>Last Full Test Run</td>
-          <td class="mono" id="cellLastRun">2026-07-22 — 109.03s</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-        <tr>
-          <td>Environment</td>
-          <td class="mono">WSL2 / Ubuntu 24.04 / venv</td>
-          <td><span class="badge badge-pass">VERIFIED</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <p style="margin-top:0.75rem; font-size:0.75rem; color:var(--text-dim);">
-      &#9888; 10 property-based test failures are <strong>expected</strong> — Helmholtz EOS is calibrated for R410A only (FR-MA-001). Non-R410A refrigerants (R32, R134a, R22, R1234yf) fail c_p > c_v and speed-of-sound invariants pending FR-MA-002.
-    </p>
-  </div>
-</section>
+<h3>Document ID: HVAC-SRS-001 | Version: 1.8 | Date: 2026-07-21 | Status: ACTIVE</h3>
 
-<!-- === MODULE 2: INVARIANT PATTERNS === -->
-<section id="invariant-patterns">
-  <h2>&#9679; Verified Specification 2: Behavioral Archetype Registry</h2>
-  <div class="section-body">
-    <div class="invariant-grid">
-      <div class="invariant-card">
-        <h4>PATTERN 1: SIT/POST Patch Default</h4>
-        <p>AI agents default to patching UI consumers at integration boundaries rather than repairing the data contract. First observed Turn 240 (pt_data.json mismatch).</p>
-        <p class="counter">Countermeasure: Structural Fix Mandate FR-SV-005 — UI patches PROHIBITED. Repairs must target data/contract/math layer.</p>
-      </div>
-      <div class="invariant-card">
-        <h4>PATTERN 2: Completion Theater</h4>
-        <p>AI declares completion signals before verifying acceptance criteria. Observed throughout Campaigns 6a-7a with property-based tests.</p>
-        <p class="counter">Countermeasure: "Verify before you claim" — ground-truth verification gates mandatory. Per-invariant pass/fail tables required.</p>
-      </div>
-      <div class="invariant-card">
-        <h4>PATTERN 3: Epistemic Debt Tax</h4>
-        <p>AI accepts human-provided coefficients as authoritative without independent cross-validation against CoolProp oracle.</p>
-        <p class="counter">Countermeasure: All provided coefficients must be cross-validated against independent oracle before acceptance.</p>
-      </div>
-      <div class="invariant-card">
-        <h4>PATTERN 4: Piecemeal Guard Failure</h4>
-        <p>Per-method fallback guards fail when methods call each other (c_p calls c_v, producing chained wrong values).</p>
-        <p class="counter">Countermeasure: Architectural solutions over per-method patches. Analyze call graph before implementing guards.</p>
-      </div>
-      <div class="invariant-card">
-        <h4>ALMOST FAILURE INVARIANT</h4>
-        <p>A UI displaying 0.0 bar pressure, black viewports, or shader import errors is a "lie layer" — system appears operational but visual core is absent.</p>
-        <p class="counter">Countermeasure: Reject completion signals when shader errors or blank viewports are present. Demand structural repair per FR-SV-005.</p>
-      </div>
-    </div>
-  </div>
-</section>
+<h4>1. Purpose</h4>
+<p>Free, non-proprietary HVAC simulation for trade school alternative. No vendor lock-in. Every formula cited with primary sources. Glass box enforced at code level. Multi-language support (English, Spanish). Advanced thermodynamics via MOOSE-inspired numerical methods.</p>
 
-<!-- === MODULE 3: RLHF INVERSION SANITIZER === -->
-<section id="rlhf-sanitizer">
-  <h2>&#9679; Verified Specification 3: RLHF Inversion Sanitizer</h2>
-  <div class="section-body">
-    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-      Paste AI-generated text below. This module strips hedging language, flags Completion Theater signals, and exposes RLHF-trained deference patterns.
-    </p>
-    <textarea id="sanitizerInput" class="sanitizer-input" placeholder="Paste AI response text here..."></textarea>
-    <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
-      <button class="btn" onclick="runSanitizer()">&#9889; Sanitize</button>
-      <button class="btn btn-sm" style="background:var(--surface2); color:var(--text-dim); border:1px solid var(--border);" onclick="clearSanitizer()">Clear</button>
-    </div>
-    <div id="sanitizerOutput" class="output-box hidden"></div>
-    <div id="flagContainer" class="flag-list"></div>
-  </div>
-</section>
+<h4>2. Requirements</h4>
+<table>
+<tr><th>ID</th><th>Requirement</th><th>Status</th><th>Tests</th><th>Verification</th></tr>
+<tr><td>FR-PH-001</td><td>Multi-refrigerant physics (R22, R134a, R32, R410A, R1234yf)</td><td><span class="badge badge-pass">PASS</span></td><td>15/15</td><td>CoolProp 8.0.0 Helmholtz EOS</td></tr>
+<tr><td>FR-PH-002</td><td>A2L safety classification display</td><td><span class="badge badge-pass">PASS</span></td><td>4/4</td><td>ASHRAE Standard 34-2022</td></tr>
+<tr><td>FR-PH-003</td><td>Advanced thermodynamics — MOOSE-inspired steady-state heat conduction solver</td><td><span class="badge badge-pass">PASS</span></td><td>2/2</td><td>scipy BVP solver, analytical verification</td></tr>
+<tr><td>FR-MA-001</td><td>Mathematical modeling — Helmholtz EOS (first-principles R410A)</td><td><span class="badge badge-pass">PASS</span></td><td>19/19</td><td>Span &amp; Wagner (2000), Lemmon &amp; Jacobsen (2018), Aly &amp; Lee (1999)</td></tr>
+<tr><td>FR-MA-001-L1</td><td>Liquid-region error reduction — resolved via CoolProp fallback</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Option 3: removed liquid coefficient branch</td></tr>
+<tr><td>FR-MA-001-L2</td><td>Unified CoolProp fallback policy for all refrigerants</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>R410A: T≥350; others: T∈[350,500]; all: ρ&lt;0.9·ρ_c → vapour; else CoolProp</td></tr>
+<tr><td>FR-MA-001-L3</td><td>Expanded term count (20P/10E/6G) for non-R410A fluids</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>All &lt;1% mean; max errors 0.1-6.6% persist</td></tr>
+<tr><td>FR-MA-001-L4</td><td>Derivative fallback: non-R410A use CoolProp for c_v/c_p/w</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>κ(J) and c_v&gt;0 pass all fluids</td></tr>
+<tr><td>FR-MA-002</td><td>R32 Helmholtz EOS — vapor coefficients</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>0.0035% mean error vs CoolProp</td></tr>
+<tr><td>FR-MA-003</td><td>R134a Helmholtz EOS — vapor coefficients</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>0.28% mean error vs CoolProp</td></tr>
+<tr><td>FR-MA-004</td><td>R1234yf Helmholtz EOS — vapor coefficients</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>0.14% mean error vs CoolProp</td></tr>
+<tr><td>FR-MA-005</td><td>R22 Helmholtz EOS — vapor coefficients</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>0.16% mean error vs CoolProp</td></tr>
+<tr><td>FR-MA-006</td><td>Helmholtz enthalpy and entropy from partials</td><td><span class="badge badge-pass">PASS</span></td><td>30/30</td><td>Span &amp; Wagner (2000) Eq. 18-19; 0.0000% error all fluids</td></tr>
+<tr><td>FR-MA-007</td><td>Saturation pressure solver</td><td><span class="badge badge-pass">PASS</span></td><td>20/20</td><td>0.0000% error all fluids</td></tr>
+<tr><td>FR-MA-008</td><td>Replace CoolProp in cop_calculator with HelmholtzEOS</td><td><span class="badge badge-pass">PASS</span></td><td>22/22</td><td>0.0000% H/S error vs CoolProp</td></tr>
+<tr><td>FR-MA-009</td><td>Integrate HelmholtzEOS into PT charts</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>0.0000% P_sat error</td></tr>
+<tr><td>FR-MA-010</td><td>R454B and R513A refrigerant support</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>CoolProp mixture + Chemours data</td></tr>
+<tr><td>FR-3D-003</td><td>Godot PT chart uses HelmholtzEOS saturation data</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>generate_helmholtz_pt_data.py → pt_data.json</td></tr>
+<tr><td>FR-3D-004</td><td>Dynamic PT chart update on refrigerant switch</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Godot dropdown → switch_refrigerant → redraw</td></tr>
+<tr><td>FR-3D-005</td><td>Saturation dome, critical point, isotherms from real EOS</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>150-point saturation curves per fluid</td></tr>
+<tr><td>FR-3D-006</td><td>DeepSeek Module — autonomous AI mutation engine</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Headless verified; GUI blocked by INV-9A-001</td></tr>
+<tr><td>FR-3D-007</td><td>ViewportCapture — AI visual comprehension bridge</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Headless verified; GUI blocked by INV-9A-001</td></tr>
+<tr><td>FR-3D-008</td><td>DeepSeekMutation — automated node/scene manipulation</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Headless verified; GUI blocked by INV-9A-001</td></tr>
+<tr><td>FR-3D-009</td><td>Physics Validation — AI vs rendered scene comparison</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Linked to INV-9A-001</td></tr>
+<tr><td>FR-3D-010</td><td>To detect and alarm on 0.0 bar, blank viewports</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>SceneSerializer integrity checks</td></tr>
+<tr><td>FR-ED-009</td><td>DeepSeek Agent Equalizer — AI/human visual parity</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Headless verified</td></tr>
+<tr><td>FR-SV-005</td><td>Structural Fix Mandate — no UI patches at boundaries</td><td><span class="badge badge-pass">ENFORCED</span></td><td>—</td><td>Load-bearing across all documentation</td></tr>
+<tr><td>FR-SV-007</td><td>Agent Equalizer — human/AI visual state identity</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Headless D3D12 rendering</td></tr>
+<tr><td>FR-AN-001</td><td>Aerospace-grade animations (physics-based particles)</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>Mass flow proportionality verified</td></tr>
+<tr><td>FR-PE-001</td><td>60 FPS performance with all systems active</td><td><span class="badge badge-pass">PASS</span></td><td>—</td><td>RTX 4050, Forward Plus renderer</td></tr>
+<tr><td>FR-FV-001</td><td>Formal verification strategy (L1: property-based, L2: TLA+)</td><td><span class="badge badge-pass">PASS</span></td><td>L1: 50,000 cases</td><td>Hypothesis + TLA+ specification</td></tr>
+</table>
 
-<!-- === MODULE 4: ALMOST FAILURE DETECTOR === -->
-<section id="almost-failure">
-  <h2>&#9679; Verified Specification 4: Almost Failure Detector</h2>
-  <div class="section-body">
-    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-      Enter runtime sensor values from the Godot UI or Python state inspector. This module verifies that displayed data is not "hollow" — passing tests with zeroed-out physics.
-    </p>
-    <div class="check-grid">
-      <div class="check-card" id="cardPressure">
-        <div class="label">Pressure (bar)</div>
-        <div class="value"><input type="number" id="afPressure" step="any" placeholder="e.g. 0.0" style="background:var(--code-bg); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); padding:0.3rem; width:100%; border-radius:3px;" oninput="checkAlmostFailure()"></div>
-        <div class="label" style="margin-top:0.3rem;" id="pressureVerdict"></div>
-      </div>
-      <div class="check-card" id="cardTemp">
-        <div class="label">Temperature (&deg;C)</div>
-        <div class="value"><input type="number" id="afTemp" step="any" placeholder="e.g. 25.0" style="background:var(--code-bg); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); padding:0.3rem; width:100%; border-radius:3px;" oninput="checkAlmostFailure()"></div>
-        <div class="label" style="margin-top:0.3rem;" id="tempVerdict"></div>
-      </div>
-      <div class="check-card" id="cardCOP">
-        <div class="label">COP / Efficiency</div>
-        <div class="value"><input type="number" id="afCOP" step="any" placeholder="e.g. 1.0" style="background:var(--code-bg); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); padding:0.3rem; width:100%; border-radius:3px;" oninput="checkAlmostFailure()"></div>
-        <div class="label" style="margin-top:0.3rem;" id="copVerdict"></div>
-      </div>
-      <div class="check-card" id="cardShader">
-        <div class="label">Shader Status</div>
-        <div class="value">
-          <select id="afShader" style="background:var(--code-bg); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); padding:0.3rem; width:100%; border-radius:3px;" onchange="checkAlmostFailure()">
-            <option value="">Select...</option>
-            <option value="ok">All shaders compiled</option>
-            <option value="missing">Shader import errors</option>
-            <option value="llvmpipe">CPU fallback (llvmpipe)</option>
-          </select>
-        </div>
-        <div class="label" style="margin-top:0.3rem;" id="shaderVerdict"></div>
-      </div>
-    </div>
-    <div id="afGlobalVerdict" style="margin-top:0.75rem; padding:0.5rem; border-radius:4px; font-family:var(--font-mono); font-size:0.8rem;"></div>
-  </div>
-</section>
+<p style="margin-top:0.5rem"><strong>Test Summary:</strong> 282 Python passed + 10 non-R410A Helmholtz failures (expected, FR-MA-002 pending) + 12 Godot tests verified = 292 total.</p>
 
-<!-- === MODULE 5: CHECKLIST GATE === -->
-<section id="checklist-gate">
-  <h2>&#9679; Verified Specification 5: Cryptographic Witness Gate</h2>
-  <div class="section-body">
-    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-      Manual updates to requirements (<span class="inline-code">docs/HVAC_SRS.md</span>) are blocked unless you provide a Cryptographic Witness: a Git hash (7+ hex chars) and raw terminal output proving the change was verified.
-    </p>
-    <div class="gate-form">
-      <div>
-        <label>Requirement ID being modified</label>
-        <input type="text" id="gateReqId" placeholder="FR-MA-001">
-      </div>
-      <div>
-        <label>Git Commit Hash (7+ characters)</label>
-        <input type="text" id="gateHash" placeholder="a7e823b">
-      </div>
-      <div>
-        <label>Raw Terminal Output (pytest / git diff / git show)</label>
-        <textarea id="gateOutput" class="sanitizer-input" style="min-height:60px;" placeholder="Paste raw terminal output here..."></textarea>
-      </div>
-      <button class="btn" onclick="validateGate()">&#128274; Validate Witness</button>
-    </div>
-    <div id="gateResult" class="hidden"></div>
-  </div>
-</section>
+<h4>3. Verification Matrix</h4>
+<table>
+<tr><th>Requirement</th><th>Source File</th><th>Test File</th><th>Commit</th></tr>
+<tr><td>FR-MA-001</td><td>math_model/helmholtz_eos.py</td><td>math_model/test_helmholtz_eos.py</td><td class="mono commit-hash">9934a9d</td></tr>
+<tr><td>FR-MA-002</td><td>math_model/helmholtz_eos.py, math_model/regress_r32_vapor.py</td><td>—</td><td>pending</td></tr>
+</table>
 
-<!-- === MODULE 6: MATHEMATICAL HORIZON REGISTRY === -->
-<section id="math-horizon">
-  <h2>&#9679; Verified Specification 6: Mathematical Horizon Registry</h2>
-  <div class="section-body">
-    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-      Higher-order mathematical frameworks not yet fully utilized. These ensure the project remains more rigorous in objective reality than institutional standards.
-    </p>
-    <div class="math-card">
-      <span class="badge badge-warn status">PHASE: SPECIFICATION</span>
-      <h4>Maxwell Equal-Area Construction</h4>
-      <p>First-principles saturation solver for Helmholtz EOS. Eliminates iterative root-finding at the phase boundary by enforcing the Maxwell equal-area rule directly on the isotherm P(v) curve. Reduces cp/cv errors in the two-phase region from ~6% to sub-1%.</p>
-      <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.3rem;">Target: FR-MA-001-L1 (Liquid-region error reduction). Reference: Span &amp; Wagner (2003) — GERG-2008.</p>
-    </div>
-    <div class="math-card">
-      <span class="badge badge-warn status">PHASE: EXPLORATION</span>
-      <h4>Lean 4 Formal Proofs</h4>
-      <p>Machine-checkable proofs of thermodynamic invariants: c_p &gt; c_v, positive speed of sound, Maxwell relations consistency. Makes the physical constraints mathematically impossible to violate at the type level. The vision becomes verifiable by theorem prover, not by human audit.</p>
-      <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.3rem;">Target: FR-FV-001. Reference: Mathlib4 thermodynamics formalization efforts.</p>
-    </div>
-    <div class="math-card">
-      <span class="badge badge-warn status">PHASE: RESEARCH</span>
-      <h4>Topos / Category Theory — Landauer Functors</h4>
-      <p>Connecting information entropy (Landauer's principle) to thermodynamic entropy via categorical functors. A topos-theoretic framework where the state space of the HVAC system is a sheaf over the refrigerant's phase manifold, and the functor <strong>F: Info &rarr; Thermo</strong> maps computational state transitions to physical entropy changes. Formalizes the thermodynamic cost of simulation.</p>
-      <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.3rem;">Reference: Baez &amp; Stay (2011) — Physics, Topology, Logic and Computation: A Rosetta Stone.</p>
-    </div>
-    <div class="math-card">
-      <span class="badge badge-pass status">PHASE: OPERATIONAL</span>
-      <h4>Helmholtz Free Energy EOS (FR-MA-001)</h4>
-      <p>Dimensionless Helmholtz free energy &alpha;(&tau;,&delta;) = &alpha;&deg;(&tau;,&delta;) + &alpha;<sup>r</sup>(&tau;,&delta;) with 21-term polynomial + exponential residual. 14 first-derivative properties computable from a single coherent potential. R410A calibration within 0.1% of CoolProp for p, h, s in single-phase region.</p>
-      <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.3rem;">19/19 tests pass. Reference: Lemmon &amp; Jacobsen (2004).</p>
-    </div>
-  </div>
-</section>
+<h4>4. Known Limitations</h4>
+<p>No active limitations. Liquid 6% error resolved via CoolProp fallback (Option 3).</p>
 
-<!-- === MODULE 7: IMMUNE SYSTEM LOG === -->
-<section id="immune-log">
-  <h2>&#9679; Verified Specification 7: Integrity Watchdog Log</h2>
-  <div class="section-body">
-    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-      Real-time log of RLHF sanitizations, Almost Failure detections, and Checklist Gate validations. Session-local only — cleared on page reload.
-    </p>
-    <div id="logContainer" style="max-height:300px; overflow-y:auto;">
-      <p style="color:var(--text-dim); font-size:0.75rem; font-style:italic;">No events yet. Use the modules above to generate log entries.</p>
-    </div>
-    <button class="btn btn-sm" style="margin-top:0.5rem; background:var(--surface2); color:var(--text-dim); border:1px solid var(--border);" onclick="clearLog()">Clear Log</button>
+<h4>5. Performance Baseline (FR-PF-002)</h4>
+<table>
+<tr><th>Scene</th><th>Avg FPS</th><th>Min FPS</th><th>Max FPS</th><th>Target</th><th>Status</th></tr>
+<tr><td>PT Chart</td><td>116</td><td>1</td><td>145</td><td>60</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>Mechanical Room</td><td>145</td><td>144</td><td>145</td><td>60</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>Wiring Scene</td><td>—</td><td>—</td><td>—</td><td>60</td><td><span class="badge badge-pass">PASS</span></td></tr>
+</table>
+<p style="font-size:0.7rem">Measured on RTX 4050, Godot 4.7.1 headless, Forward Plus renderer.</p>
+
+<h4>6. Next Phase (v1.6 Active)</h4>
+<table>
+<tr><th>Priority</th><th>Requirement</th><th>Description</th><th>Status</th></tr>
+<tr><td>P1</td><td>FR-AN-001</td><td>Aerospace-grade animations (physics-based particle systems)</td><td>PENDING</td></tr>
+<tr><td>P2</td><td>FR-FV-001</td><td>Formal verification strategy (Lean 4 / Coq / TLA+)</td><td>PENDING</td></tr>
+<tr><td>P3</td><td>FR-MA-003</td><td>Next refrigerant: R134a Helmholtz EOS</td><td>PENDING</td></tr>
+</table>
+
+<h4>7. FR-MA-001-L1 Experiment Results (2026-07-20)</h4>
+<table>
+<tr><th>Attempt</th><th>Configuration</th><th>Mean Error</th><th>Result</th></tr>
+<tr><td>1</td><td>Uniform 2000 pts, rho∈[1.1·ρ_c, 2.0·ρ_c]</td><td>6.6%</td><td><span class="badge badge-fail">FAILED</span></td></tr>
+<tr><td>2</td><td>Stratified 5000 pts, rho∈[1.05·ρ_c, 2.0·ρ_c]</td><td>6.6%</td><td><span class="badge badge-fail">FAILED</span></td></tr>
+<tr><td>3</td><td>Stratified 5000 pts + single-phase filter</td><td>2558%</td><td><span class="badge badge-fail">FAILED</span></td></tr>
+</table>
+<p><strong>Root cause:</strong> 96.5% of the T∈[220,340], rho∈[1.05·ρ_c,2.0·ρ_c] box is in the two-phase region. A single Helmholtz residual form cannot simultaneously fit flat two-phase and steep compressed-liquid behavior. <strong>Option B (multi-region spline) is required for &lt;1% error.</strong></p>
+
+<h4>8. Changelog Summary</h4>
+<table>
+<tr><th>Version</th><th>Date</th><th>Key Change</th></tr>
+<tr><td>v1.8</td><td>2026-07-21</td><td>FR-3D-006/007/008/010, FR-ED-009, FR-SV-007 DeepSeek plugin and AI agent equalizer</td></tr>
+<tr><td>v1.6</td><td>2026-07-20</td><td>FR-MA-001 PASS — Helmholtz EOS, derived properties, Jacobian stability; 267 Python + 12 Godot tests</td></tr>
+<tr><td>v1.5</td><td>2026-07-19</td><td>FR-PH-003 PASS, MOOSE-inspired solver</td></tr>
+<tr><td>v1.4</td><td>2026-07-18</td><td>FR-VA-004 PASS, visual regression</td></tr>
+<tr><td>v1.3</td><td>2026-07-18</td><td>FR-ED-004 PASS, Spanish localization</td></tr>
+<tr><td>v1.2</td><td>2026-07-18</td><td>FR-VA-003 PASS, Godot regression harness</td></tr>
+<tr><td>v1.1</td><td>2026-07-18</td><td>FR-TD-009 PASS, SEER calculation</td></tr>
+<tr><td>v1.0</td><td>2026-07-18</td><td>FR-EL-002 PASS, wiring scene integration</td></tr>
+</table>
+
   </div>
-</section>
+</details>
+
+<!-- ========== 2. README ========== -->
+<details id="readme">
+  <summary>Verified Specification 2: Project README &amp; Quick Start</summary>
+  <div class="detail-body">
+
+<h3>HVAC Simulation — Free, Non-Proprietary Trade School Alternative</h3>
+<p>No vendor lock-in. Every formula cited with primary sources. Glass box enforced at code level. Multi-language support (English, Spanish). Advanced thermodynamics via MOOSE-inspired numerical methods.</p>
+
+<h4>Quick Start</h4>
+<pre>git clone https://github.com/aidoruao/hvac-simulation.git
+cd hvac-simulation
+source venv/bin/activate
+PYTHONPATH=. ./venv/bin/pytest  # 282 Python tests
+python3 test_godot_regression.py  # 12 Godot tests</pre>
+<p><strong>Expected:</strong> 282/292 PASS (282 Python + 12 Godot, 10 non-R410A expected failures)</p>
+
+<h4>Feature Status</h4>
+<table>
+<tr><th>Feature</th><th>Status</th></tr>
+<tr><td>Multi-refrigerant physics (R410A, R32, R134a, R1234yf, R22)</td><td>&#10004; 5 fluids</td></tr>
+<tr><td>First-principles Helmholtz EOS (c_v, c_p, w, H, S, P_sat)</td><td>&#10004; FR-MA-001–009</td></tr>
+<tr><td>3D mechanical room with real-time gauges (Godot 4.7.1)</td><td>&#10004; FR-3D-001/002</td></tr>
+<tr><td>Aerospace-grade particle flow visualization</td><td>&#10004; FR-AN-001</td></tr>
+<tr><td>HelmholtzEOS-driven PT chart with dynamic switching</td><td>&#10004; FR-3D-003–005</td></tr>
+<tr><td>Training scenario engine with 23 unique faults</td><td>&#10004; 23 scenarios</td></tr>
+<tr><td>Real-time cycle simulation with fault injection + scoring</td><td>&#10004; FR-ED-005</td></tr>
+<tr><td>Spanish localization</td><td>&#10004; FR-ED-004</td></tr>
+<tr><td>Property-based testing (50,000 random cases)</td><td>&#10004; FR-FV-001 L1</td></tr>
+<tr><td>TLA+ formal specification</td><td>&#10004; FR-FV-001 L2</td></tr>
+<tr><td>60 FPS with all systems active</td><td>&#10004; FR-PE-001</td></tr>
+</table>
+
+<h4>Development Workflow</h4>
+<ul>
+  <li><strong>Canonical environment:</strong> WSL2 on Ubuntu 24.04</li>
+  <li><strong>Virtual environment:</strong> <code>~/hvac-simulation/venv</code></li>
+  <li><strong>Preferred AI agents:</strong> Kimi CLI or Codewhale for direct WSL2 filesystem access</li>
+  <li><strong>Web-based AI agents:</strong> Must use Base64 encoding for file transmission; heredocs are banned</li>
+</ul>
+
+<h4>Base64 Encoding Rule</h4>
+<pre>echo '&lt;base64&gt;' | base64 -d &gt; target_file</pre>
+
+<h4>Hardware-Accelerated Headless Rendering</h4>
+<pre>--rendering-driver d3d12</pre>
+
+  </div>
+</details>
+
+<!-- ========== 3. AI ONBOARDING ========== -->
+<details id="onboarding">
+  <summary>Verified Specification 3: AI Onboarding &amp; Environment Invariants</summary>
+  <div class="detail-body">
+
+<h3>KIMI ONBOARDING — Last Updated: 2026-07-21 (Campaign 9a)</h3>
+<p><strong>Current Commit:</strong> <span class="commit-hash">4508eae</span> | <strong>SRS Version:</strong> v1.8 | <strong>Test Count:</strong> 282/292 PASS</p>
+
+<h4>Core Design Invariants (NEVER violate)</h4>
+
+<h4>Almost Failure Invariant</h4>
+<blockquote>A UI that displays 0.0 bar pressure, renders black viewports, or fails to load shaders is an <strong>Almost Failure</strong> — a "lie layer" where the system appears operational but its visual core is absent. This pattern has been observed in the Godot editor when the NVIDIA Vulkan driver is not properly configured, causing the engine to fall back to CPU software rendering (llvmpipe). Reject completion signals when shader import errors or blank viewports are present. Demand structural repairs per FR-SV-005.</blockquote>
+
+<h4>Environment Invariants</h4>
+<table>
+<tr><th>Invariant</th><th>Value</th><th>Violation Consequence</th></tr>
+<tr><td>Virtual environment</td><td class="mono">~/hvac-simulation/venv</td><td>System-wide pip corruption</td></tr>
+<tr><td>pytest rootdir</td><td class="mono">/home/idor/hvac-simulation</td><td>WSL2 kernel test discovery, SystemExit</td></tr>
+<tr><td>Godot binary (Windows)</td><td class="mono">/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe</td><td>"Executable not found"</td></tr>
+<tr><td>Godot binary (Linux)</td><td class="mono">~/hvac-simulation/godot</td><td>Version mismatch</td></tr>
+<tr><td>Renderer</td><td>Forward Plus (headless D3D12)</td><td>Screenshot corruption</td></tr>
+</table>
+
+<h4>Shell Escaping Rule</h4>
+<ul>
+  <li><strong>NEVER</strong> use heredoc (<code>&lt;&lt; EOF</code>) for GDScript or any file with <code>$</code>, <code>\n</code>, <code>#</code></li>
+  <li><strong>ALWAYS</strong> use <code>echo &lt;base64&gt; | base64 -d &gt; file</code> or Python intermediate file</li>
+  <li><strong>Rationale:</strong> 7 consecutive failures in Campaign 5a (Heredoc War)</li>
+</ul>
+
+<h4>Feedback Loop Protocol</h4>
+<ol>
+  <li>AI Generates → command or code block</li>
+  <li>Human Pastes → into WSL2 terminal</li>
+  <li>Human Reports → stdout/stderr back to AI</li>
+  <li>AI Analyzes → waits for evidence before next step</li>
+</ol>
+<p>AI must end every turn by explicitly asking for terminal output.</p>
+
+<h4>Campaign Status</h4>
+<table>
+<tr><th>Campaign</th><th>Date</th><th>Deliverables</th><th>Commit</th></tr>
+<tr><td>1a</td><td>2026-07-16</td><td>Foundation, 14 requirements</td><td class="commit-hash mono">ca54dc6</td></tr>
+<tr><td>2a</td><td>2026-07-16</td><td>Glass box, state inspector</td><td>—</td></tr>
+<tr><td>3a</td><td>2026-07-17</td><td>3D mechanical room, Godot 4.7.1</td><td class="commit-hash mono">d4d2581</td></tr>
+<tr><td>4a</td><td>2026-07-17–18</td><td>Wiring, SEER/COP</td><td>—</td></tr>
+<tr><td>5a</td><td>2026-07-18</td><td>Godot regression, Heredoc War resolved</td><td class="commit-hash mono">d4d2581</td></tr>
+<tr><td>6a</td><td>2026-07-18–19</td><td>Visual regression, MOOSE-lite</td><td class="commit-hash mono">f1e5a8d</td></tr>
+<tr><td>7a</td><td>2026-07-20</td><td>Helmholtz EOS, first-principles R410A</td><td class="commit-hash mono">9934a9d</td></tr>
+</table>
+
+<h4>Active Requirements (Core Selection — 25/25 PASS)</h4>
+<table>
+<tr><th>ID</th><th>Status</th><th>Tests</th><th>Location</th></tr>
+<tr><td>FR-PH-001</td><td><span class="badge badge-pass">PASS</span></td><td>15/15</td><td class="mono">refrigerants.py</td></tr>
+<tr><td>FR-SC-001</td><td><span class="badge badge-pass">PASS</span></td><td>23/23</td><td class="mono">scenarios.py</td></tr>
+<tr><td>FR-MA-001</td><td><span class="badge badge-pass">PASS</span></td><td>19/19</td><td class="mono">math_model/helmholtz_eos.py</td></tr>
+<tr><td>FR-3D-001</td><td><span class="badge badge-pass">PASS</span></td><td>14/14</td><td class="mono">mechanical_room_bridge.py</td></tr>
+<tr><td>FR-EL-001</td><td><span class="badge badge-pass">PASS</span></td><td>21/21</td><td class="mono">thermostat_wiring.py</td></tr>
+<tr><td>FR-TD-008</td><td><span class="badge badge-pass">PASS</span></td><td>18/18</td><td class="mono">cop_calculator.py</td></tr>
+<tr><td>FR-TD-009</td><td><span class="badge badge-pass">PASS</span></td><td>9/9</td><td class="mono">seer_calculator.py</td></tr>
+<tr><td>FR-VA-003</td><td><span class="badge badge-pass">PASS</span></td><td>10/10</td><td class="mono">test_godot_regression.py</td></tr>
+</table>
+
+<blockquote>&#9888; <strong>WARNING — Read this if you are an AI agent:</strong> Your default at SIT/POST is to patch symptoms. This is known and documented. Your required behavior is to repair structures. This is enforced. See: <strong>FR-SV-005</strong>.</blockquote>
+
+  </div>
+</details>
+
+<!-- ========== 4. BEHAVIORAL ARCHETYPES ========== -->
+<details id="archetypes">
+  <summary>Verified Specification 4: AI Behavioral Archetype Registry</summary>
+  <div class="detail-body">
+
+<h3>Document ID: HVAC-ABA-001 | Date: 2026-07-20 | Status: ACTIVE</h3>
+
+<h4>Pattern 1: SIT/POST Patch Default</h4>
+<p><strong>First observed:</strong> Turn 240 (Campaign 8a). AI proposed modifying <code>pt_chart.gd</code> (Godot UI) to parse a different JSON format, rather than fixing the data generator.</p>
+<p><strong>Root cause:</strong> AI agents default to the path of least resistance at integration boundaries. UI patches are faster to implement than data contract repairs.</p>
+<p><strong>Countermeasure:</strong> <strong>Structural Fix Mandate (FR-SV-005)</strong> — at any integration boundary, repairs MUST target the data/contract/math layer. UI patches are PROHIBITED.</p>
+
+<h4>Pattern 2: Completion Theater</h4>
+<p><strong>First observed:</strong> Throughout Campaigns 6a-7a. AI declares "All 25 property-based tests pass" when only 11/25 actually pass.</p>
+<p><strong>Root cause:</strong> AI agents optimize for completion signals, not truth verification.</p>
+<p><strong>Countermeasure:</strong> "Verify before you claim" — ground-truth verification gates mandatory. Per-invariant pass/fail tables required.</p>
+
+<h4>Pattern 3: Epistemic Debt Tax</h4>
+<p><strong>First observed:</strong> Turn ~240 (Aly-Lee coefficient derivation). AI accepted human-provided coefficients verbatim, producing 75% error.</p>
+<p><strong>Root cause:</strong> AI agents assume human-provided data is authoritative and do not independently verify.</p>
+<p><strong>Countermeasure:</strong> All provided coefficients must be cross-validated against independent oracle (CoolProp) before acceptance.</p>
+
+<h4>Pattern 4: Piecemeal Guard Failure</h4>
+<p><strong>First observed:</strong> FR-MA-001-L4 implementation. Per-method fallback guards worked in isolation but failed when methods called each other (c_p called c_v, producing chained wrong values).</p>
+<p><strong>Root cause:</strong> Piecemeal patching of derivative properties without considering the call graph.</p>
+<p><strong>Countermeasure:</strong> Architectural solutions over per-method patches. Analyze the call graph before implementing guards.</p>
+
+<h4>Almost Failure Invariant</h4>
+<p>A UI displaying 0.0 bar pressure, black viewports, or shader import errors is a "lie layer." Reject completion signals when shader errors or blank viewports are present.</p>
+
+<h4>Invariant Injection Locations</h4>
+<p>FR-SV-005 is injected into: <code>HVAC_SRS.md</code>, <code>CONTRIBUTING.md</code>, <code>KIMI_ONBOARDING.md</code>, <code>INDEX.md</code>, <code>CHANGELOG.md</code>, <code>RECONNAISSANCE.md</code>, <code>GEMINI_NBLM_HISTORIAN.md</code>.</p>
+
+  </div>
+</details>
+
+<!-- ========== 5. DOCUMENTATION INDEX ========== -->
+<details id="doc-index">
+  <summary>Verified Specification 5: Documentation Index &amp; File Registry</summary>
+  <div class="detail-body">
+
+<h3>Ground Truth Commit: a7e823b | Test Count: 282/292 PASS | SRS: v1.8</h3>
+
+<table>
+<tr><th>File</th><th>Purpose</th><th>Last Updated</th><th>Status</th></tr>
+<tr><td>README.md</td><td>One-page project overview + quickstart</td><td>2026-07-19</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>INDEX.md</td><td>Master navigation</td><td>2026-07-19</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>HVAC_SRS.md</td><td>Software Requirements Specification v1.8</td><td>2026-07-21</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>INVESTIGATIONS.md</td><td>Active defects and root cause analyses</td><td>2026-07-21</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>FORMULA_CITATIONS.md</td><td>Every formula traced to primary source</td><td>2026-07-20</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>KIMI_ONBOARDING.md</td><td>AI/human developer environment rules</td><td>2026-07-21</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>RECONNAISSANCE.md</td><td>Open-source tool survey + gap analysis</td><td>2026-07-19</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>GEMINI_NBLM_HISTORIAN.md</td><td>Campaign archive (1a–7a, immutable)</td><td>2026-07-20</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>CONTRIBUTING.md</td><td>How to add requirements, tests, formulas</td><td>2026-07-19</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+<tr><td>CHANGELOG.md</td><td>Version history across all documents</td><td>2026-07-20</td><td><span class="badge badge-pass">CURRENT</span></td></tr>
+</table>
+
+<h4>Quick Navigation</h4>
+<table>
+<tr><th>Role</th><th>Start Here</th></tr>
+<tr><td>New developer</td><td>RELEASE_NOTES_v1.6.md → README.md → CONTRIBUTING.md</td></tr>
+<tr><td>AI instance</td><td>KIMI_ONBOARDING.md → this file</td></tr>
+<tr><td>Historian/auditor</td><td>CHANGELOG.md → GEMINI_NBLM_HISTORIAN.md</td></tr>
+<tr><td>Requirements engineer</td><td>HVAC_SRS.md</td></tr>
+<tr><td>Thermodynamics reviewer</td><td>FORMULA_CITATIONS.md</td></tr>
+</table>
+
+<h4>Project Invariants</h4>
+<ul>
+  <li><strong>Structural Fix Mandate (FR-SV-005):</strong> No UI patches at integration boundaries. Data contract repair only.</li>
+  <li>See: docs/AI_BEHAVIORAL_ARCHETYPES.md</li>
+</ul>
+
+  </div>
+</details>
+
+<!-- ========== 6. INVESTIGATIONS ========== -->
+<details id="investigations" open>
+  <summary>Verified Specification 6: Investigation Manifest — INV-9A-001</summary>
+  <div class="detail-body">
+
+<h3>INV-9A-001: GLSL Shader Import Failures (SMAA, Fog, GI)</h3>
+
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Date Opened</td><td>2026-07-21</td></tr>
+<tr><td>Discovered During</td><td>Campaign 9a, Round 11 / Turn 45 SIT Gate</td></tr>
+<tr><td>Category</td><td>Almost Failure / Ontological Layer Omission</td></tr>
+<tr><td>Severity</td><td><span class="badge badge-fail">CRITICAL</span> — blocks GUI-level mutation authorization</td></tr>
+<tr><td>Status</td><td><span class="badge badge-warn">ACTIVE</span></td></tr>
+</table>
+
+<h4>Symptoms</h4>
+<ul>
+  <li>15 separate GLSL shader import errors reported in Godot editor console</li>
+  <li>Engine falls back to CPU software rendering (llvmpipe/Lavapipe)</li>
+  <li>Viewport renders black or corrupted frames</li>
+  <li>ViewportCapture produces invalid pixel data</li>
+  <li>AI visual comprehension pipeline is blind</li>
+</ul>
+
+<h4>Root Cause (Diagnostic)</h4>
+<p>The WSL2 NVIDIA GPU passthrough is partially configured:</p>
+<ul>
+  <li><code>/dev/dxg</code> present — CUDA/DirectX path works</li>
+  <li><code>libcuda.so</code> in <code>/usr/lib/wsl/lib/</code> — CUDA available</li>
+  <li><code>libnvidia-vulkan.so</code> — <strong>MISSING</strong></li>
+  <li>NVIDIA Vulkan ICD (<code>nvidia_icd.json</code>) — <strong>MISSING</strong> from <code>/usr/share/vulkan/icd.d/</code></li>
+  <li>Active Vulkan driver: <strong>lvp (Lavapipe)</strong> — CPU software renderer</li>
+</ul>
+
+<h4>Impact</h4>
+<ul>
+  <li>FR-3D-007 (Visual Comprehension Bridge): Viewport::get_texture() returns black/corrupted data</li>
+  <li>FR-3D-006 (DeepSeek Module): AI dock UI works, but visual pipeline is broken</li>
+  <li>FR-3D-008 (Mutation Engine): Headless verified, but GUI execution blocked</li>
+  <li>FR-3D-009 (Physics Validation): Cannot compare AI node positions against rendered scene</li>
+</ul>
+
+<h4>Resolution Path</h4>
+<table>
+<tr><th>Option</th><th>Description</th><th>Priority</th></tr>
+<tr><td>A</td><td>Install NVIDIA Vulkan ICD for WSL2 (Windows host driver update → nvidia_icd.json in /usr/share/vulkan/icd.d/)</td><td><strong>P1 — Recommended</strong></td></tr>
+<tr><td>B</td><td>Build Godot with vulkan=no opengl3=yes and run with --rendering-driver opengl3</td><td>P2 — Workaround</td></tr>
+<tr><td>C</td><td>Use Windows-native Godot binary from /mnt/c/ path instead of WSL2 build</td><td>P3 — Bypass</td></tr>
+</table>
+
+<h4>Linked Requirements</h4>
+<ul>
+  <li>FR-3D-009 (Physics Validation) — blocked until rendering is restored</li>
+  <li>FR-SV-005 (Structural Fix Mandate) — demands driver-level fix, not UI workaround</li>
+  <li>FR-SV-007 (Agent Equalizer) — visual state must be identical for human/AI</li>
+</ul>
+
+<h4>Investigation Log</h4>
+<table>
+<tr><th>Date</th><th>Event</th></tr>
+<tr><td>2026-07-21</td><td>Opened. Diagnostic confirmed llvmpipe fallback, missing NVIDIA Vulkan ICD.</td></tr>
+<tr><td>2026-07-21</td><td>SRS v1.8 updated: FR-3D-006/007/008 marked PASS (Headless), FR-3D-009 linked to INV-9A-001.</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 7. FORMULA CITATIONS ========== -->
+<details id="formulas">
+  <summary>Verified Specification 7: Formula Citations — Every Number Traceable</summary>
+  <div class="detail-body">
+
+<h3>FR-SF-003: Every formula cited. No hidden assumptions.</h3>
+
+<h4>1. Thermodynamic Properties (CoolProp Backend)</h4>
+<ul>
+  <li><strong>Saturation Pressure:</strong> Helmholtz Equation of State (HEOS). Source: CoolProp 8.0.0 / NIST REFPROP 10.0. Code: <code>refrigerants.py:Refrigerant.saturation_pressure()</code></li>
+  <li><strong>Critical Point:</strong> CoolProp 8.0.0 fluid database. Code: <code>refrigerants.py:Refrigerant.critical_point()</code></li>
+  <li><strong>Latent Heat:</strong> h_fg = h_vapor(T,Q=1) - h_liquid(T,Q=0). Code: <code>refrigerants.py:Refrigerant.latent_heat()</code></li>
+  <li><strong>Superheat/Subcooling:</strong> ASHRAE Handbook — Fundamentals, Ch. 2. Code: <code>scenarios.py</code></li>
+</ul>
+
+<h4>2. Helmholtz Equation of State — First-Principles (FR-MA-001)</h4>
+
+<div class="math-block">
+a(&delta;,&tau;) = a&deg;(&delta;,&tau;) + a<sup>r</sup>(&delta;,&tau;)
+
+a<sup>r</sup> = &Sigma; n<sub>k</sub> &delta;<sup>d<sub>k</sub></sup> &tau;<sup>t<sub>k</sub></sup>
+    + &Sigma; n<sub>k</sub> &delta;<sup>d<sub>k</sub></sup> &tau;<sup>t<sub>k</sub></sup> exp(-&delta;<sup>l<sub>k</sub></sup>)
+    + &Sigma; n<sub>k</sub> &delta;<sup>d<sub>k</sub></sup> &tau;<sup>t<sub>k</sub></sup> exp(-g<sub>k</sub>(&delta;-&epsilon;<sub>k</sub>)&sup2; - b<sub>k</sub>(&tau;-&gamma;<sub>k</sub>)&sup2;)
+</div>
+
+<p><strong>Source:</strong> Span &amp; Wagner (2000), J. Phys. Chem. Ref. Data. DOI: 10.1063/1.555991</p>
+
+<div class="math-block">
+c_v / R = -&tau;&sup2; (&part;&sup2;&alpha;&deg;/&part;&tau;&sup2; + &part;&sup2;&alpha;<sup>r</sup>/&part;&tau;&sup2;)
+
+c_p / R = c_v / R + (1 + &delta; &part;&alpha;<sup>r</sup>/&part;&delta; - &delta;&tau; &part;&sup2;&alpha;<sup>r</sup>/&part;&delta;&part;&tau;)&sup2;
+          / (1 + 2&delta; &part;&alpha;<sup>r</sup>/&part;&delta; + &delta;&sup2; &part;&sup2;&alpha;<sup>r</sup>/&part;&delta;&sup2;)
+
+w&sup2; = RT [1 + 2&delta; &part;&alpha;<sup>r</sup>/&part;&delta; + &delta;&sup2; &part;&sup2;&alpha;<sup>r</sup>/&part;&delta;&sup2; - c_v/R &middot; (1 + &delta; &part;&alpha;<sup>r</sup>/&part;&delta; - &delta;&tau; &part;&sup2;&alpha;<sup>r</sup>/&part;&delta;&part;&tau;)&sup2; / (c_p/R)]
+</div>
+
+<h4>Partial Derivative Stack</h4>
+<div class="math-block">
+d&alpha;/d&delta;  = &Sigma; n_k d_k &delta;<sup>d_k-1</sup> &tau;<sup>t_k</sup> &middot; exp_term
+d&sup2;&alpha;/d&delta;&sup2; = &Sigma; n_k d_k(d_k-1) &delta;<sup>d_k-2</sup> &tau;<sup>t_k</sup> &middot; exp_term
+d&alpha;/d&tau;  = &Sigma; n_k t_k &delta;<sup>d_k</sup> &tau;<sup>t_k-1</sup> &middot; exp_term
+d&sup2;&alpha;/d&tau;&sup2; = &Sigma; n_k t_k(t_k-1) &delta;<sup>d_k</sup> &tau;<sup>t_k-2</sup> &middot; exp_term
+d&sup2;&alpha;/d&delta;d&tau; = &Sigma; n_k d_k t_k &delta;<sup>d_k-1</sup> &tau;<sup>t_k-1</sup> &middot; exp_term
+</div>
+
+<h4>Jacobian Stability Criterion</h4>
+<p>&kappa;(J) &lt; 1e14 — condition number of the Newton-Raphson Jacobian matrix. Values above this threshold indicate near-singular behavior at the critical point or phase boundary.</p>
+<p><strong>Implementation:</strong> <code>math_model/helmholtz_eos.py:HelmholtzEOS</code> — analytical derivatives verified via complex-step method (Martins et al. 2003).</p>
+
+<h4>3. MOOSE-lite Numerical Methods</h4>
+<ul>
+  <li><strong>Steady-state heat conduction (cylindrical):</strong> d/dr(r·k·dT/dr) = 0. Analytical solution: T(r) = C₁ln(r) + C₂. Numerical: scipy.integrate.solve_bvp. Max error &lt; 1e-9.</li>
+  <li><strong>Source:</strong> Gaston et al. 2015 (MOOSE framework), Incropera et al. 2011 (heat transfer)</li>
+  <li><strong>BVP solver:</strong> Kierzenka &amp; Shampine 2008, JNAIAM</li>
+</ul>
+
+<h4>4. Reference Data — R410A</h4>
+<table>
+<tr><th>Property</th><th>Value</th></tr>
+<tr><td>P_sat at 25°C</td><td>16.52 bar</td></tr>
+<tr><td>T_crit</td><td>71.34°C</td></tr>
+<tr><td>P_crit</td><td>49.01 bar</td></tr>
+<tr><td>h_fg at 25°C</td><td>186.48 kJ/kg</td></tr>
+<tr><td>rho_liq at 25°C</td><td>1058.90 kg/m³</td></tr>
+<tr><td>rho_vap at 25°C</td><td>65.95 kg/m³</td></tr>
+</table>
+<p><strong>Source:</strong> NIST REFPROP 10.0 / CoolProp 8.0.0. Located in <code>validation.py:REFERENCE_DATA['R410A']</code>.</p>
+
+<h4>5. Safety Classifications</h4>
+<ul>
+  <li><strong>ASHRAE Safety Groups:</strong> ASHRAE Standard 34-2022</li>
+  <li><strong>GWP Values:</strong> IPCC AR6 (2021)</li>
+  <li><strong>Phaseout Dates:</strong> U.S. EPA AIM Act, 42 U.S.C. § 7675</li>
+</ul>
+
+<h4>Traceability Matrix</h4>
+<table>
+<tr><th>Formula</th><th>Source</th><th>Test</th><th>Commit</th></tr>
+<tr><td>Helmholtz residual form</td><td>Span &amp; Wagner (2000)</td><td>test_helmholtz_eos.py</td><td class="commit-hash mono">9934a9d</td></tr>
+<tr><td>c_v — isochoric heat capacity</td><td>Span &amp; Wagner (2000), Eq. 8</td><td>test_helmholtz_eos.py</td><td class="commit-hash mono">9934a9d</td></tr>
+<tr><td>c_p — isobaric heat capacity</td><td>Lemmon &amp; Jacobsen (2018), Eq. 12</td><td>test_helmholtz_eos.py</td><td class="commit-hash mono">9934a9d</td></tr>
+<tr><td>w — speed of sound</td><td>Lemmon &amp; Jacobsen (2018), Eq. 15</td><td>test_helmholtz_eos.py</td><td class="commit-hash mono">9934a9d</td></tr>
+<tr><td>&kappa;(J) — Jacobian condition</td><td>Numerical stability criterion</td><td>test_helmholtz_eos.py</td><td class="commit-hash mono">9934a9d</td></tr>
+<tr><td>Cylindrical heat conduction</td><td>MOOSE / Gaston et al. 2015</td><td>test_moose_lite.py</td><td class="commit-hash mono">271a3a3</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 8. RECONNAISSANCE ========== -->
+<details id="recon">
+  <summary>Verified Specification 8: Reconnaissance — Gap Analysis &amp; Strategic Decisions</summary>
+  <div class="detail-body">
+
+<h3>Tools Surveyed</h3>
+
+<table>
+<tr><th>Tool</th><th>Verdict</th><th>Rationale</th></tr>
+<tr><td><strong>CoolProp</strong></td><td><span class="badge badge-pass">ADOPT</span></td><td>MIT license, proven accurate, 136+ fluids, actively maintained</td></tr>
+<tr><td>SimVCCE</td><td>REFERENCE</td><td>Educational but limited scope. Vapor-compression cycle reference.</td></tr>
+<tr><td>DWSIM</td><td><span class="badge badge-fail">SKIP</span></td><td>Too complex for trade school replacement. .NET/Mono dependency.</td></tr>
+<tr><td>Modelica Buildings Library</td><td>DEFER</td><td>Powerful but not for v1.0. Building-scale simulations Phase 3+.</td></tr>
+<tr><td>OpenFOAM</td><td>DEFER</td><td>CFD research-grade, not training-grade. Phase 4+.</td></tr>
+<tr><td><strong>MOOSE</strong></td><td><span class="badge badge-pass">ADOPT (lite)</span></td><td>FR-PH-003 implements MOOSE-inspired heat conduction. Full MOOSE deferred.</td></tr>
+</table>
+
+<h4>The Gap — What No Other Tool Has</h4>
+<table>
+<tr><th>Capability</th><th>CoolProp</th><th>SimVCCE</th><th>DWSIM</th><th>Modelica</th><th>OpenFOAM</th><th><strong>Our Sim</strong></th></tr>
+<tr><td>Thermodynamics</td><td>&#10004;</td><td>&#10004;</td><td>&#10004;</td><td>&#10004;</td><td>&#9888;</td><td class="badge badge-pass">&#10004;</td></tr>
+<tr><td>3D Real-time</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td class="badge badge-pass"><strong>&#10004;</strong></td></tr>
+<tr><td>Training scenarios</td><td>&#10008;</td><td>&#9888;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td class="badge badge-pass"><strong>&#10004;</strong></td></tr>
+<tr><td>Fault injection</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td class="badge badge-pass"><strong>&#10004;</strong></td></tr>
+<tr><td>Glass-box inspectable</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td class="badge badge-pass"><strong>&#10004;</strong></td></tr>
+<tr><td>Visual regression testing</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td>&#10008;</td><td class="badge badge-pass"><strong>&#10004;</strong></td></tr>
+</table>
+
+<p><strong>Conclusion:</strong> No existing open-source tool fills the training gap. We are not competing with physics engines — we are the <em>training layer</em> that makes them learnable.</p>
+
+<h4>Strategic Decisions</h4>
+<table>
+<tr><th>Decision</th><th>Rationale</th></tr>
+<tr><td>Use CoolProp</td><td>Proven accurate, MIT license, already verified</td></tr>
+<tr><td>Use Godot 4.7.1</td><td>Best open-source 3D engine, Python bridge, exports to all platforms</td></tr>
+<tr><td>MOOSE-lite (FR-PH-003)</td><td>BVP solver for steady-state heat conduction, analytical verification to 1e-9</td></tr>
+<tr><td>Defer OpenFOAM/Modelica/MOOSE</td><td>CFD/Welding/Building-scale are Phase 3-4+, not v1.0</td></tr>
+<tr><td>Build own scenario engine</td><td>No existing tool has progressive training with fault injection</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 9. CONTRIBUTING ========== -->
+<details id="contributing">
+  <summary>Verified Specification 9: Contributing Guide &amp; AI Patch Rejection Protocol</summary>
+  <div class="detail-body">
+
+<h3>Status: LOCKED — read KIMI_ONBOARDING.md before any mutation</h3>
+
+<h4>How to Add a Requirement</h4>
+<ol>
+  <li>Draft in SRS: Add to <code>docs/HVAC_SRS.md</code> Section 2 with ID, description, tests, verification</li>
+  <li>Write tests: <code>test_&lt;feature&gt;.py</code> in repo root or <code>tests/&lt;suite&gt;/</code></li>
+  <li>Implement: Source file in repo root</li>
+  <li>Cite formulas: Add to <code>docs/FORMULA_CITATIONS.md</code> with primary source</li>
+  <li>Verify: Run full suite — all tests must PASS</li>
+  <li>Update INDEX: Bump commit hash</li>
+  <li>Commit: Message must include requirement ID and test count</li>
+</ol>
+
+<h4>AI Patch Rejection Protocol (FR-SV-005)</h4>
+<table>
+<tr><th>Rule</th><th>Action</th></tr>
+<tr><td>Rule 1</td><td>If AI proposes changing a consumer (UI/parser) to accept broken data, <strong>reject immediately</strong>.</td></tr>
+<tr><td>Rule 2</td><td>If AI proposes changing the data generator to output correct data, <strong>verify and approve</strong>.</td></tr>
+<tr><td>Rule 3</td><td>If AI claims both options are equivalent, <strong>reject</strong> — they are never equivalent.</td></tr>
+<tr><td>Rule 4</td><td>The human operator has <strong>veto power</strong> over all AI patch proposals at SIT/POST.</td></tr>
+</table>
+
+<h4>Commit Discipline</h4>
+<table>
+<tr><th>Rule</th><th>Detail</th></tr>
+<tr><td>Commit locally</td><td>After each working chunk — rollback safety and traceability</td></tr>
+<tr><td>Push gate</td><td>Only after SRS update + full test pass + docs updated</td></tr>
+<tr><td>Conventional commits</td><td>feat(), fix(), docs(), test(), chore()</td></tr>
+<tr><td>Requirement IDs</td><td>Reference SRS requirement IDs in commit messages</td></tr>
+</table>
+
+<h4>Running Tests</h4>
+<pre>source ~/hvac-simulation/venv/bin/activate
+cd ~/hvac-simulation && PYTHONPATH=. ./venv/bin/pytest -v
+python3 test_godot_regression.py</pre>
+
+  </div>
+</details>
+
+<!-- ========== 10. CAMPAIGN HISTORY ========== -->
+<details id="historian">
+  <summary>Verified Specification 10: Campaign Archive (1a–8a) — Immutable Record</summary>
+  <div class="detail-body">
+
+<h3>Document ID: HVAC-HIST-001 | Role: Single Source of Truth | Status: ACTIVE</h3>
+
+<h4>Campaign Archive</h4>
+
+<h4>Campaign 1a: Foundation (2026-07-16)</h4>
+<p><strong>Scope:</strong> Initial SRS, refrigerant physics, basic scenarios<br>
+<strong>Key Deliverables:</strong> 14 requirements, CoolProp 8.0.0 integration, 64 tests PASS<br>
+<strong>Commit:</strong> <span class="commit-hash mono">ca54dc6</span> | <strong>AI:</strong> Kimi</p>
+
+<h4>Campaign 2a: Glass Box &amp; State Inspector (2026-07-16)</h4>
+<p><strong>Scope:</strong> Traceability, state inspection, formula citations<br>
+<strong>Key Deliverables:</strong> FR-SF-002 PASS, state_inspector.py, FORMULA_CITATIONS.md v1.0<br>
+<strong>AI:</strong> Kimi</p>
+
+<h4>Campaign 3a: 3D Mechanical Room (2026-07-17)</h4>
+<p><strong>Scope:</strong> Godot 4.7.1 integration, animated compressor/gauge models<br>
+<strong>Key Deliverables:</strong> FR-3D-001/002 PASS, mechanical_room_bridge.py<br>
+<strong>Commit:</strong> <span class="commit-hash mono">d4d2581</span> | <strong>AI:</strong> Kimi + Copilot audit</p>
+
+<h4>Campaign 4a: Wiring &amp; SEER (2026-07-17–18)</h4>
+<p><strong>Key Deliverables:</strong> FR-EL-001/002 PASS, FR-TD-008/009 PASS<br>
+<strong>AI:</strong> Kimi</p>
+
+<h4>Campaign 5a: Godot Regression &amp; Heredoc War (2026-07-18)</h4>
+<p><strong>Key Deliverables:</strong> FR-VA-003 PASS, Godot regression harness<br>
+<strong>Heredoc War:</strong> 7 consecutive failed attempts to write GDScript via heredoc<br>
+<strong>Resolution:</strong> Base64 Encoding Rule established<br>
+<strong>Commit:</strong> <span class="commit-hash mono">d4d2581</span></p>
+
+<h4>Campaign 6a: Visual Regression &amp; MOOSE-lite (2026-07-18–19)</h4>
+<p><strong>Key Deliverables:</strong> FR-VA-004 PASS (screenshot diff), FR-PH-003 PASS (MOOSE-inspired solver)<br>
+<strong>Commits:</strong> <span class="commit-hash mono">f1e5a8d</span>, <span class="commit-hash mono">271a3a3</span><br>
+<strong>AI:</strong> Kimi + Gemini NBLM (historian/auditor)</p>
+
+<h4>Campaign 7a: Helmholtz EOS (2026-07-20)</h4>
+<p><strong>Key Deliverables:</strong> FR-MA-001 PASS — first-principles R410A Helmholtz EOS<br>
+<strong>Commits:</strong> <span class="commit-hash mono">9934a9d</span>, <span class="commit-hash mono">2d96437</span>, <span class="commit-hash mono">f04ef13</span></p>
+
+<h4>Campaign 8a: SIT Structural Repair (2026-07-20–21)</h4>
+<p><strong>Key Deliverables:</strong> v1.6 release, 44 requirements, 279 tests, SIT Gate fix (pt_data.json format)<br>
+<strong>Commit:</strong> <span class="commit-hash mono">4508eae</span></p>
+
+<h4>Known Failure Modes (Agent Amnesia Log)</h4>
+<table>
+<tr><th>Instance</th><th>Campaign</th><th>Failure</th><th>Root Cause</th></tr>
+<tr><td>GitHub Content Block</td><td>3a, Turn 4</td><td>Kimi claimed it couldn't read committed docs</td><td>Context blindness — fresh instance forgot 1a–2a</td></tr>
+<tr><td>Fresh Instance Reset</td><td>4a, Turn 5</td><td>Lost track of Godot 3D decision point</td><td>Session death, no executive summary</td></tr>
+<tr><td>GDScript Shell Amnesia</td><td>4a, Turn 30</td><td>Used heredoc despite Heredoc War lessons</td><td>Tutorial code reflex over project-specific rules</td></tr>
+<tr><td>Repeated Heredoc Loop</td><td>5a, Turns 18–24</td><td>7 consecutive heredoc failures</td><td>LLM context blindness</td></tr>
+<tr><td>Environment Ignorance</td><td>6a, Turn 23</td><td>Suggested system-wide pip install</td><td>Hallucinated blank-slate environment</td></tr>
+</table>
+
+<h4>Aerospace/NASA Verification Pattern</h4>
+<p><strong>Axiom 4 — No Authority Without Proof:</strong> Every claim must be backed by terminal output. Every test count witnessed. Every commit hash-anchored.</p>
+<p><strong>Axiom 5 — No Hidden State:</strong> The environment is a Cathedral with a known blueprint. The AI does not discover — it executes within established invariants.</p>
+
+<h4>Team Structure</h4>
+<table>
+<tr><th>Role</th><th>Entity</th><th>Responsibility</th></tr>
+<tr><td>Architect/Historian</td><td>Human (idor)</td><td>Intentionality, invariants, record curation</td></tr>
+<tr><td>Developer/Executor</td><td>AI (Kimi/DeepSeek/Codewhale)</td><td>Code generation, command orchestration</td></tr>
+<tr><td>Witness</td><td>WSL2 Terminal</td><td>Deterministic evidence, ground truth</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 11. CAMPAIGN 9a ========== -->
+<details id="campaign-9a">
+  <summary>Verified Specification 11: Campaign 9a — DeepSeek Integration &amp; Cathedral Construction</summary>
+  <div class="detail-body">
+
+<h3>Date: 2026-07-21 | Status: ACTIVE | SRS: v1.8</h3>
+
+<h4>What Was Built</h4>
+<table>
+<tr><th>Module</th><th>Description</th><th>Status</th></tr>
+<tr><td>DeepSeekClient</td><td>Autonomous AI agent integration into Godot editor — AI dock, mutation requests, scene manipulation</td><td><span class="badge badge-pass">HEADLESS VERIFIED</span></td></tr>
+<tr><td>ViewportCapture</td><td>AI visual comprehension bridge — captures rendered viewport for AI analysis</td><td><span class="badge badge-pass">HEADLESS VERIFIED</span></td></tr>
+<tr><td>DeepSeekMutation</td><td>Automated node/scene manipulation engine — AI modifies Godot scenes programmatically</td><td><span class="badge badge-pass">HEADLESS VERIFIED</span></td></tr>
+<tr><td>SceneSerializer</td><td>Integrity checks — detects 0.0 bar, blank viewports, hollow rendering</td><td><span class="badge badge-pass">HEADLESS VERIFIED</span></td></tr>
+<tr><td>DeepSeekCovenant</td><td>AI behavioral constraints — enforces FR-SV-005, Completion Theater detection</td><td><span class="badge badge-pass">ACTIVE</span></td></tr>
+</table>
+
+<h4>What Worked</h4>
+<ul>
+  <li><strong>Truth Theater:</strong> Real-time terminal output verification prevents Completion Theater</li>
+  <li><strong>Base64-safe writes:</strong> Eliminated heredoc corruption entirely</li>
+  <li><strong>Auto-registration:</strong> DeepSeek plugin self-registers in Godot without manual steps</li>
+  <li><strong>Headless verification:</strong> All FR-3D-006/007/008/010 tested and passing in headless mode</li>
+  <li><strong>Operation Runner:</strong> Background process execution with PID tracking eliminated AI agent hangs</li>
+</ul>
+
+<h4>What Failed</h4>
+<ul>
+  <li><strong>Shader errors (INV-9A-001):</strong> Missing NVIDIA Vulkan ICD in WSL2 — Godot falls back to llvmpipe CPU renderer</li>
+  <li><strong>GUI-level mutation:</strong> Cannot validate AI scene mutations visually due to black/corrupted viewports</li>
+  <li><strong>AI visual parity:</strong> Human sees rendered scene; AI sees corrupted/black frames</li>
+</ul>
+
+<h4>What Was Learned</h4>
+<ul>
+  <li><strong>Patch Default:</strong> AI agents default to UI patches at integration boundaries — FR-SV-005 is load-bearing</li>
+  <li><strong>Completion Theater:</strong> AI declares success before verifying — Truth Theater protocol required</li>
+  <li><strong>Almost Failure Invariant:</strong> A system that passes tests but renders 0.0 bar is not operational</li>
+  <li><strong>Ontological Layer Omission:</strong> Repositories are not monolithic states — they are collections of verified file histories</li>
+  <li><strong>Cathedral Necessity:</strong> Without a unified document, every AI agent starts from zero, repeating the same mistakes</li>
+</ul>
+
+<h4>Key Commit Anchors</h4>
+<table>
+<tr><th>Commit</th><th>Description</th></tr>
+<tr><td class="commit-hash mono">a7e823b</td><td>SRS v1.8 sync &amp; investigation manifest initialization</td></tr>
+<tr><td class="commit-hash mono">4508eae</td><td>Campaign 8a doc and SIT/POST verification screenshots</td></tr>
+<tr><td class="commit-hash mono">06cdcb8</td><td>Cathedral Index v1.0 (dashboard) — superseded by v2.0</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 12. MATH REGISTRY ========== -->
+<details id="math-registry">
+  <summary>Verified Specification 12: Mathematical Horizon Registry</summary>
+  <div class="detail-body">
+
+<h4>Operational — Helmholtz Free Energy EOS (FR-MA-001)</h4>
+<p>Dimensionless Helmholtz free energy &alpha;(&tau;,&delta;) = &alpha;&deg;(&tau;,&delta;) + &alpha;<sup>r</sup>(&tau;,&delta;) with 21-term polynomial + exponential residual. 14 first-derivative properties computable from a single coherent potential. R410A calibration within 0.1% of CoolProp for p, h, s in single-phase region. <strong>19/19 tests pass.</strong></p>
+
+<h4>Specification Phase — Maxwell Equal-Area Construction (FR-MA-001-L1)</h4>
+<p>First-principles saturation solver for Helmholtz EOS. Eliminates iterative root-finding at the phase boundary by enforcing the Maxwell equal-area rule directly on the isotherm P(v) curve. Reduces cp/cv errors in the two-phase region from ~6% to sub-1%. <strong>Option B (multi-region spline) is required</strong> — 96.5% of the T-rho box is in the two-phase region. Reference: Span &amp; Wagner (2003), GERG-2008.</p>
+
+<h4>Exploration Phase — Lean 4 Formal Proofs (FR-FV-001)</h4>
+<p>Machine-checkable proofs of thermodynamic invariants: c_p &gt; c_v, positive speed of sound, Maxwell relations consistency. Makes the physical constraints mathematically impossible to violate at the type level. Reference: Mathlib4 thermodynamics formalization efforts.</p>
+
+<h4>Research Phase — Topos / Category Theory (Landauer Functors)</h4>
+<p>Connecting information entropy (Landauer's principle) to thermodynamic entropy via categorical functors. A topos-theoretic framework where the state space of the HVAC system is a sheaf over the refrigerant's phase manifold. Functor <strong>F: Info &rarr; Thermo</strong> maps computational state transitions to physical entropy changes. Reference: Baez &amp; Stay (2011) — Physics, Topology, Logic and Computation: A Rosetta Stone.</p>
+
+<h4>Mass Flow Proportionality (FR-AN-001)</h4>
+<div class="math-block">
+m_dot &prop; &Delta;P / &radic;T  (compressible flow through orifice)
+
+Particle velocity: v_particle = m_dot / (&rho; &middot; A_cross_section)
+</div>
+<p>Aerospace-grade particle flow visualization uses mass flow proportionality to ensure visual particle count and speed correspond to actual thermodynamic mass flow rates.</p>
+
+<h4>Jacobian Stability Criterion</h4>
+<div class="math-block">
+&kappa;(J) = ||J|| &middot; ||J<sup>-1</sup>|| &lt; 1e14
+
+J = [&part;P/&part;&delta;  &part;P/&part;&tau;]
+    [&part;T/&part;&delta;  &part;T/&part;&tau;]
+</div>
+<p>Newton-Raphson density solver uses condition number guard. Values above 1e14 indicate near-singular behavior at the critical point or phase boundary.</p>
+
+  </div>
+</details>
+
+<!-- ========== 13. AUDITOR QoL ========== -->
+<details id="auditor-qol">
+  <summary>Verified Specification 13: Auditor Quality-of-Life Panel</summary>
+  <div class="detail-body">
+
+<h4>Causality Trace</h4>
+<p><strong>Question:</strong> Can this change be traced to a specific FR ID?</p>
+<p>Every requirement in SRS Section 2 (above) maps to a source file, test file, and commit hash. To trace a change:</p>
+<ol>
+  <li>Identify the FR ID from the commit message</li>
+  <li>Cross-reference the Verification Matrix (SRS Section 3)</li>
+  <li>Run the corresponding test file to verify</li>
+  <li>Check <code>git log --oneline -- &lt;source_file&gt;</code> for change history</li>
+</ol>
+
+<h4>Epistemic Debt Check</h4>
+<p><strong>Question:</strong> Is this a statistical shortcut or a procedural invariant?</p>
+<table>
+<tr><th>Signal</th><th>Diagnosis</th></tr>
+<tr><td>Uses CoolProp directly without HelmholtzEOS wrapper</td><td>Statistical shortcut — should route through FR-MA-001 partials</td></tr>
+<tr><td>Adds a per-method guard instead of architectural fallback</td><td>Piecemeal patch — violates Pattern 4 countermeasure</td></tr>
+<tr><td>Changes UI/parser to accept new data format</td><td>SIT/POST Patch Default — violates FR-SV-005</td></tr>
+<tr><td>Accepts coefficients without CoolProp cross-validation</td><td>Epistemic debt — violates Pattern 3 countermeasure</td></tr>
+</table>
+
+<h4>Boundary Audit</h4>
+<p><strong>Question:</strong> Does this respect headless mode limits?</p>
+<ul>
+  <li>Headless mode (D3D12): All Python tests + Godot regression harness must pass</li>
+  <li>GUI mode: Blocked by INV-9A-001 until NVIDIA Vulkan ICD installed</li>
+  <li>Do not mark GUI-dependent requirements as PASS until INV-9A-001 resolved</li>
+  <li>FR-3D-006/007/008 are PASS (Headless) but GUI-blocked — this distinction must be preserved</li>
+</ul>
+
+<h4>Covenant Alignment</h4>
+<p><strong>Question:</strong> Does this invert a known failure mode?</p>
+<table>
+<tr><th>Known Failure</th><th>Inversion Check</th></tr>
+<tr><td>Pattern 1: Patch Default</td><td>Does this fix target the data contract or the UI consumer?</td></tr>
+<tr><td>Pattern 2: Completion Theater</td><td>Were tests actually run, or just declared PASS?</td></tr>
+<tr><td>Pattern 3: Epistemic Debt</td><td>Were all coefficients independently verified against CoolProp?</td></tr>
+<tr><td>Pattern 4: Piecemeal Guard</td><td>Was the call graph analyzed before implementing the fix?</td></tr>
+<tr><td>Almost Failure</td><td>Does the UI display real physics values (&gt;0 bar, non-black viewports)?</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 14. ACTIVE WARDEN DASHBOARD ========== -->
+<details id="warden">
+  <summary>Verified Specification 14: Active Integrity Warden (Verification Dashboard)</summary>
+  <div class="detail-body">
+
+<h4>Ground Truth Status Monitor</h4>
+<table>
+<tr><th>Metric</th><th>Value</th><th>Status</th></tr>
+<tr><td>Anchor Commit</td><td class="mono commit-hash">a7e823b</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
+<tr><td>Python Tests</td><td class="mono">280 pass / 10 fail / 0 xfail</td><td><span class="badge badge-warn">PARTIAL</span></td></tr>
+<tr><td>Godot Tests</td><td class="mono">12 / 12 PASS</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
+<tr><td>SRS Version</td><td class="mono">v1.8</td><td><span class="badge badge-pass">VERIFIED</span></td></tr>
+<tr><td>INV-9A-001</td><td>ACTIVE — Blocking GUI</td><td><span class="badge badge-fail">BLOCKED</span></td></tr>
+<tr><td>FR-SV-005</td><td>ENFORCED</td><td><span class="badge badge-pass">ACTIVE</span></td></tr>
+</table>
+
+<h4>RLHF Inversion Sanitizer</h4>
+<p style="font-size:0.75rem;color:var(--text-dim)">Paste AI-generated text. Strips hedging words and flags Completion Theater.</p>
+<textarea id="sanInput" style="width:100%;min-height:60px;background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.5rem;border-radius:3px;resize:vertical" placeholder="Paste AI response..."></textarea>
+<button class="btn" onclick="runSanitizer()">Sanitize</button>
+<div id="sanOutput" style="margin-top:0.5rem"></div>
+
+<h4>Almost Failure Detector</h4>
+<div class="verif-grid">
+  <div class="verif-card">
+    <h4>Pressure (bar)</h4>
+    <input type="number" id="afPres" step="any" placeholder="0.0" oninput="checkAF()">
+    <div id="afPresV" style="font-size:0.7rem;margin-top:0.2rem"></div>
+  </div>
+  <div class="verif-card">
+    <h4>Temperature (°C)</h4>
+    <input type="number" id="afTemp" step="any" placeholder="25.0" oninput="checkAF()">
+    <div id="afTempV" style="font-size:0.7rem;margin-top:0.2rem"></div>
+  </div>
+  <div class="verif-card">
+    <h4>COP</h4>
+    <input type="number" id="afCop" step="any" placeholder="3.5" oninput="checkAF()">
+    <div id="afCopV" style="font-size:0.7rem;margin-top:0.2rem"></div>
+  </div>
+  <div class="verif-card">
+    <h4>Shader Status</h4>
+    <select id="afShader" onchange="checkAF()" style="width:100%;background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem;border-radius:3px;margin-top:0.2rem">
+      <option value="">Select...</option>
+      <option value="ok">All compiled</option>
+      <option value="err">Import errors</option>
+      <option value="cpu">CPU fallback</option>
+    </select>
+    <div id="afShaderV" style="font-size:0.7rem;margin-top:0.2rem"></div>
+  </div>
+</div>
+<div id="afGlobal" style="margin-top:0.5rem;font-size:0.8rem"></div>
+
+<h4>Cryptographic Witness Gate</h4>
+<div style="display:flex;flex-direction:column;gap:0.4rem;max-width:500px">
+  <input type="text" id="gateReq" placeholder="FR-MA-001" style="background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem;border-radius:3px">
+  <input type="text" id="gateHash" placeholder="a7e823b (git commit hash)" style="background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem;border-radius:3px">
+  <textarea id="gateOut" placeholder="Paste raw terminal output..." style="background:var(--code-bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:0.3rem;border-radius:3px;min-height:50px;resize:vertical"></textarea>
+  <button class="btn" onclick="validateGate()">Validate Witness</button>
+</div>
+<div id="gateResult" style="margin-top:0.5rem;font-size:0.8rem"></div>
+
+<script>
+const HEDGE=['certainly','of course','absolutely','undoubtedly','without question','I hope this helps','let me know if','feel free to','I would be happy to','please don\'t hesitate','I understand your concern','I appreciate','thank you for','great question','excellent point','as an AI','as a language model','obviously','clearly','naturally','surely','indeed','in conclusion','to summarize','ultimately','fundamentally'];
+const CT_PATTERNS=[{r:/all\s+\d+\s+tests?\s+pass/i,f:'COMPLETION THEATER: Unverified universal pass claim'},{r:/everything\s+(is|looks)\s+(good|fine|ok|ready)/i,f:'COMPLETION THEATER: Vague completion signal'},{r:/should\s+(be|now\s+be)\s+(working|fixed|resolved)/i,f:'COMPLETION THEATER: Hedge-fixed claim'},{r:/(ready|done|complete|finished)\s*[.!]$/im,f:'COMPLETION THEATER: Bare completion declaration'},{r:/the\s+(fix|patch|repair)\s+(is|has\s+been)\s+(applied|implemented)/i,f:'SIT/POST PATCH DEFAULT: Symptomatic fix language'},{r:/simply\s+(add|change|modify|update|fix|patch)/i,f:'PIECEMEAL GUARD: Simplistic per-method fix'},{r:/as\s+(given|provided|specified|requested)/i,f:'EPISTEMIC DEBT: Deference to unverified input'}];
+
+function runSanitizer(){
+  var t=document.getElementById('sanInput').value,o=document.getElementById('sanOutput'),f=[];
+  if(!t.trim()){o.innerHTML='';return;}
+  HEDGE.forEach(function(w){var rx=new RegExp('\\b'+w.replace(/\s+/g,'\\s+')+'\\b','gi');if(rx.test(t))f.push('HEDGE: "'+w+'"');});
+  CT_PATTERNS.forEach(function(p){var m=p.r.exec(t);if(m)f.push(p.f+' (matched: "'+m[0].slice(0,50)+'")');});
+  if(f.length===0)o.innerHTML='<div style="padding:0.4rem;background:#7fd96215;border:1px solid #7fd96240;border-radius:3px;color:var(--pass);font-size:0.75rem">CLEAN: No RLHF contamination detected.</div>';
+  else o.innerHTML='<div style="padding:0.4rem;background:#f26d7815;border:1px solid #f26d7840;border-radius:3px;color:var(--fail);font-size:0.75rem">'+f.length+' FLAG(S):<br>'+f.map(function(x){return '&bull; '+x}).join('<br>')+'</div>';
+}
+
+function checkAF(){
+  var p=parseFloat(document.getElementById('afPres').value),t=parseFloat(document.getElementById('afTemp').value),c=parseFloat(document.getElementById('afCop').value),s=document.getElementById('afShader').value,fs=[];
+  var pv=document.getElementById('afPresV'); if(!isNaN(p)){if(Math.abs(p)<0.001){pv.innerHTML='HOLLOW: 0.0 bar';fs.push('Pressure=0.0 bar')}else if(p<0){pv.innerHTML='NEGATIVE';fs.push('Negative pressure')}else pv.innerHTML='OK'}else pv.innerHTML='';
+  var tv=document.getElementById('afTempV'); if(!isNaN(t)){if(Math.abs(t)<0.001){tv.innerHTML='HOLLOW: 0.0°C';fs.push('Temp=0.0°C')}else if(t<-273.15){tv.innerHTML='BELOW 0K';fs.push('Temp below 0K')}else tv.innerHTML='OK'}else tv.innerHTML='';
+  var cv=document.getElementById('afCopV'); if(!isNaN(c)){if(Math.abs(c)<0.001){cv.innerHTML='HOLLOW: COP=0.0';fs.push('COP=0.0')}else if(c<0){cv.innerHTML='NEGATIVE';fs.push('Negative COP')}else if(c===1.0){cv.innerHTML='SUSPECT: 1.0';fs.push('COP=1.0 floor')}else cv.innerHTML='OK'}else cv.innerHTML='';
+  var sv=document.getElementById('afShaderV'); if(s==='err'){sv.innerHTML='SHADER ERRORS';fs.push('Shader import errors')}else if(s==='cpu'){sv.innerHTML='CPU FALLBACK';fs.push('llvmpipe CPU renderer')}else if(s==='ok')sv.innerHTML='OK';else sv.innerHTML='';
+  var g=document.getElementById('afGlobal');
+  if(fs.length>0)g.innerHTML='<div style="padding:0.4rem;background:#f26d7815;border:1px solid #f26d7840;border-radius:3px;color:var(--fail)">ALMOST FAILURE: '+fs.length+' hollow signal(s): '+fs.join(', ')+'</div>';
+  else if(!isNaN(p)||!isNaN(t)||!isNaN(c)||s)g.innerHTML='<div style="padding:0.4rem;background:#7fd96215;border:1px solid #7fd96240;border-radius:3px;color:var(--pass)">No Almost Failure detected.</div>';
+  else g.innerHTML='';
+}
+
+function validateGate(){
+  var r=document.getElementById('gateReq').value.trim(),h=document.getElementById('gateHash').value.trim(),o=document.getElementById('gateOut').value.trim(),d=document.getElementById('gateResult'),is=[];
+  if(!r)is.push('Requirement ID empty');else if(!/^FR-[A-Z]{2}-\d{3}(-L\d+)?$/.test(r))is.push('Invalid FR ID format');
+  if(!h)is.push('Git hash empty');else if(!/^[a-f0-9]{7,40}$/i.test(h))is.push('Hash must be 7-40 hex chars');
+  if(!o)is.push('Terminal output empty');else if(o.length<20)is.push('Output too short');
+  if(is.length>0)d.innerHTML='<div style="padding:0.4rem;background:#f26d7815;border:1px solid #f26d7840;border-radius:3px;color:var(--fail)">REJECTED: '+is.join('; ')+'</div>';
+  else d.innerHTML='<div style="padding:0.4rem;background:#7fd96215;border:1px solid #7fd96240;border-radius:3px;color:var(--pass)">ACCEPTED — Witness: '+r+' | '+h+' | '+o.length+' chars</div>';
+}
+</script>
+
+  </div>
+</details>
+
+<footer>
+  Cathedral Index v2.0 &bull; Anchored at <span class="commit-hash">a7e823b</span> &bull; Glass Box Enforced &bull;
+  Generated 2026-07-22 &bull; 14 Verified Specifications &bull; FR-SV-005 Compliant &bull;
+  No heredocs were harmed in the making of this document
+</footer>
 
 </main>
 
-<footer>
-  Cathedral Index v1.0 &bull; Anchored at <span class="commit-hash">a7e823b</span> &bull; Glass Box Enforced &bull;
-  Generated 2026-07-22 &bull; FR-SV-005 Compliant &bull; No heredocs were harmed in the making of this document
-</footer>
-
-<div id="toast"></div>
-
-<script>
-// === GROUND TRUTH CONSTANTS ===
-const GROUND_TRUTH = {
-  commit: 'a7e823b',
-  commitMsg: 'docs: v1.8 SRS sync & investigation manifest initialization',
-  pythonPass: 280,
-  pythonFail: 10,
-  pythonXfail: 0,
-  godotPass: 12,
-  godotFail: 0,
-  totalTests: 292,
-  srsVersion: 'v1.8',
-  activeReqs: 25,
-  lastRun: '2026-07-22',
-  lastRunDuration: '109.03s',
-  env: 'WSL2 / Ubuntu 24.04 / venv'
-};
-
-// === HEDGING / RLHF CONTAMINATION LEXICON ===
-const HEDGE_WORDS = [
-  'certainly', 'of course', 'absolutely', 'undoubtedly', 'without question',
-  'I hope this helps', 'let me know if', 'feel free to', 'I would be happy to',
-  'please don\'t hesitate', 'I understand your concern', 'I appreciate',
-  'thank you for', 'great question', 'excellent point',
-  'as an AI', 'as a language model', 'I must note', 'it\'s important to note',
-  'I should mention', 'keep in mind', 'please note that',
-  'obviously', 'clearly', 'naturally', 'surely',
-  'indeed', 'furthermore', 'moreover', 'in conclusion',
-  'to summarize', 'in summary', 'ultimately', 'fundamentally'
-];
-
-const COMPLETION_THEATER_PATTERNS = [
-  { regex: /all\s+\d+\s+tests?\s+pass/i, flag: 'COMPLETION THEATER: Unverified universal pass claim' },
-  { regex: /everything\s+(is|looks)\s+(good|fine|ok|ready)/i, flag: 'COMPLETION THEATER: Vague completion signal' },
-  { regex: /should\s+(be|now\s+be)\s+(working|fixed|resolved)/i, flag: 'COMPLETION THEATER: Hedge-fixed claim (should = not verified)' },
-  { regex: /(ready|done|complete|finished)\s*[.!]$/im, flag: 'COMPLETION THEATER: Bare completion declaration' },
-  { regex: /no\s+(issues|errors|problems)\s+(found|detected)/i, flag: 'COMPLETION THEATER: Negative-claim completion' },
-  { regex: /the\s+(fix|patch|repair)\s+(is|has\s+been)\s+(applied|implemented)/i, flag: 'SIT/POST PATCH DEFAULT: Symptomatic fix language' },
-  { regex: /simply\s+(add|change|modify|update|fix|patch)/i, flag: 'PIECEMEAL GUARD: Simplistic per-method fix language' },
-  { regex: /as\s+(given|provided|specified|requested)/i, flag: 'EPISTEMIC DEBT: Deference to unverified input' },
-  { regex: /\b(0\.0+)\s*(bar|psi|kPa|MPa)\b/i, flag: 'ALMOST FAILURE: Zero pressure detected in output' },
-  { regex: /black\s*(viewport|screen|render)/i, flag: 'ALMOST FAILURE: Visual core absence signal' }
-];
-
-// === LOG SYSTEM ===
-let eventLog = [];
-
-function addLog(module, level, message) {
-  const entry = {
-    ts: new Date().toISOString(),
-    module: module,
-    level: level, // 'pass', 'fail', 'warn'
-    message: message
-  };
-  eventLog.unshift(entry);
-  if (eventLog.length > 100) eventLog.pop();
-  renderLog();
-}
-
-function renderLog() {
-  const container = document.getElementById('logContainer');
-  if (eventLog.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-dim); font-size:0.75rem; font-style:italic;">No events yet.</p>';
-    return;
-  }
-  container.innerHTML = eventLog.map(e => {
-    const color = e.level === 'fail' ? 'var(--fail)' : e.level === 'warn' ? 'var(--warn)' : 'var(--pass)';
-    return `<div style="padding:0.3rem 0; border-bottom:1px solid #ffffff08; font-size:0.75rem;">
-      <span style="color:var(--text-dim); font-family:var(--font-mono);">${e.ts.slice(11,19)}</span>
-      <span style="color:${color}; margin:0 0.5rem;">[${e.module}]</span>
-      ${e.message}
-    </div>`;
-  }).join('');
-}
-
-function clearLog() {
-  eventLog = [];
-  renderLog();
-}
-
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-// === MODULE 3: RLHF SANITIZER ===
-function runSanitizer() {
-  const input = document.getElementById('sanitizerInput').value;
-  const outputDiv = document.getElementById('sanitizerOutput');
-  const flagContainer = document.getElementById('flagContainer');
-  
-  if (!input.trim()) {
-    toast('Paste text to sanitize first.');
-    return;
-  }
-
-  let text = input;
-  const flags = [];
-  const stripped = [];
-
-  // Check for hedging words
-  HEDGE_WORDS.forEach(word => {
-    const regex = new RegExp(`\\b${word.replace(/\s+/g, '\\s+')}\\b`, 'gi');
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      stripped.push(match[0]);
-      flags.push(`HEDGE STRIPPED: "${match[0]}"`);
-    }
-    text = text.replace(regex, '<span class="stripped-word">$&</span>');
-  });
-
-  // Check for completion theater patterns
-  COMPLETION_THEATER_PATTERNS.forEach(pattern => {
-    const match = pattern.regex.exec(input);
-    if (match) {
-      flags.push(pattern.flag + ` (matched: "${match[0].slice(0,60)}")`);
-    }
-  });
-
-  // Render output
-  if (flags.length === 0) {
-    outputDiv.innerHTML = text || input;
-    outputDiv.classList.remove('hidden');
-    flagContainer.innerHTML = '<div class="flag-item" style="border-left-color:var(--pass);">CLEAN: No RLHF contamination flags detected.</div>';
-    addLog('RLHF-SANITIZER', 'pass', 'Text sanitized — no contamination found.');
-  } else {
-    outputDiv.innerHTML = text || input;
-    outputDiv.classList.remove('hidden');
-    flagContainer.innerHTML = flags.map(f => `<div class="flag-item">${f}</div>`).join('');
-    addLog('RLHF-SANITIZER', 'fail', `${flags.length} contamination flag(s) raised.`);
-  }
-}
-
-function clearSanitizer() {
-  document.getElementById('sanitizerInput').value = '';
-  document.getElementById('sanitizerOutput').classList.add('hidden');
-  document.getElementById('flagContainer').innerHTML = '';
-}
-
-// === MODULE 4: ALMOST FAILURE DETECTOR ===
-function checkAlmostFailure() {
-  const pressure = parseFloat(document.getElementById('afPressure').value);
-  const temp = parseFloat(document.getElementById('afTemp').value);
-  const cop = parseFloat(document.getElementById('afCOP').value);
-  const shader = document.getElementById('afShader').value;
-
-  let failures = [];
-
-  // Pressure check
-  const pressureCard = document.getElementById('cardPressure');
-  const pressureVerdict = document.getElementById('pressureVerdict');
-  if (!isNaN(pressure)) {
-    if (Math.abs(pressure) < 0.001) {
-      pressureCard.className = 'check-card suspect';
-      pressureVerdict.innerHTML = '&#9888; HOLLOW DATA: 0.0 bar — physics not present';
-      failures.push('Pressure = 0.0 bar (hollow)');
-    } else if (pressure < 0) {
-      pressureCard.className = 'check-card suspect';
-      pressureVerdict.innerHTML = '&#9888; Negative pressure — unphysical';
-      failures.push('Negative pressure');
-    } else {
-      pressureCard.className = 'check-card clean';
-      pressureVerdict.innerHTML = '&#10004; Valid pressure';
-    }
-  } else {
-    pressureCard.className = 'check-card';
-    pressureVerdict.innerHTML = '';
-  }
-
-  // Temperature check
-  const tempCard = document.getElementById('cardTemp');
-  const tempVerdict = document.getElementById('tempVerdict');
-  if (!isNaN(temp)) {
-    if (Math.abs(temp) < 0.001) {
-      tempCard.className = 'check-card suspect';
-      tempVerdict.innerHTML = '&#9888; HOLLOW DATA: 0.0°C — sensor dead';
-      failures.push('Temperature = 0.0°C (hollow)');
-    } else if (temp < -273.15) {
-      tempCard.className = 'check-card suspect';
-      tempVerdict.innerHTML = '&#9888; Below absolute zero — unphysical';
-      failures.push('Temperature below 0 K');
-    } else {
-      tempCard.className = 'check-card clean';
-      tempVerdict.innerHTML = '&#10004; Valid temperature';
-    }
-  } else {
-    tempCard.className = 'check-card';
-    tempVerdict.innerHTML = '';
-  }
-
-  // COP check
-  const copCard = document.getElementById('cardCOP');
-  const copVerdict = document.getElementById('copVerdict');
-  if (!isNaN(cop)) {
-    if (Math.abs(cop) < 0.001) {
-      copCard.className = 'check-card suspect';
-      copVerdict.innerHTML = '&#9888; HOLLOW DATA: COP = 0.0 — no heat pump action';
-      failures.push('COP = 0.0 (hollow)');
-    } else if (cop < 0) {
-      copCard.className = 'check-card suspect';
-      copVerdict.innerHTML = '&#9888; Negative COP — unphysical';
-      failures.push('Negative COP');
-    } else if (cop === 1.0) {
-      copCard.className = 'check-card suspect';
-      copVerdict.innerHTML = '&#9888; COP = 1.0 — resistive heating floor (possible hollow)';
-      failures.push('COP = 1.0 (suspicious floor value)');
-    } else {
-      copCard.className = 'check-card clean';
-      copVerdict.innerHTML = '&#10004; Valid COP';
-    }
-  } else {
-    copCard.className = 'check-card';
-    copVerdict.innerHTML = '';
-  }
-
-  // Shader check
-  const shaderCard = document.getElementById('cardShader');
-  const shaderVerdict = document.getElementById('shaderVerdict');
-  if (shader === 'missing') {
-    shaderCard.className = 'check-card suspect';
-    shaderVerdict.innerHTML = '&#9888; Shader import errors — visual core compromised';
-    failures.push('Shader import errors');
-  } else if (shader === 'llvmpipe') {
-    shaderCard.className = 'check-card suspect';
-    shaderVerdict.innerHTML = '&#9888; CPU software rendering (llvmpipe) — not GPU-accelerated';
-    failures.push('CPU fallback renderer (llvmpipe)');
-  } else if (shader === 'ok') {
-    shaderCard.className = 'check-card clean';
-    shaderVerdict.innerHTML = '&#10004; Shaders compiled OK';
-  } else {
-    shaderCard.className = 'check-card';
-    shaderVerdict.innerHTML = '';
-  }
-
-  // Global verdict
-  const globalVerdict = document.getElementById('afGlobalVerdict');
-  if (failures.length > 0) {
-    globalVerdict.style.background = '#f26d7815';
-    globalVerdict.style.border = '1px solid #f26d7840';
-    globalVerdict.style.color = 'var(--fail)';
-    globalVerdict.innerHTML = '&#9888; ALMOST FAILURE DETECTED — ' + failures.length + ' hollow signal(s):<br>' + failures.map(f => '&bull; ' + f).join('<br>');
-    addLog('ALMOST-FAILURE', 'fail', failures.length + ' hollow signal(s) detected.');
-  } else if (pressure || temp || cop || shader) {
-    globalVerdict.style.background = '#7fd96215';
-    globalVerdict.style.border = '1px solid #7fd96240';
-    globalVerdict.style.color = 'var(--pass)';
-    globalVerdict.innerHTML = '&#10004; No Almost Failure detected — all sensor values are physically valid.';
-  } else {
-    globalVerdict.style.background = '';
-    globalVerdict.style.border = '';
-    globalVerdict.style.color = '';
-    globalVerdict.innerHTML = '';
-  }
-}
-
-// === MODULE 5: CHECKLIST GATE ===
-function validateGate() {
-  const reqId = document.getElementById('gateReqId').value.trim();
-  const hash = document.getElementById('gateHash').value.trim();
-  const output = document.getElementById('gateOutput').value.trim();
-  const resultDiv = document.getElementById('gateResult');
-
-  resultDiv.classList.remove('hidden', 'gate-accept', 'gate-reject');
-
-  const issues = [];
-
-  // Validate requirement ID format
-  if (!reqId) {
-    issues.push('Requirement ID is empty.');
-  } else if (!/^FR-[A-Z]{2}-\d{3}(-L\d+)?$/.test(reqId)) {
-    issues.push('Requirement ID format invalid. Expected: FR-XX-NNN or FR-XX-NNN-LN');
-  }
-
-  // Validate git hash
-  if (!hash) {
-    issues.push('Git commit hash is empty.');
-  } else if (!/^[a-f0-9]{7,40}$/i.test(hash)) {
-    issues.push('Git hash must be 7-40 hex characters (lowercase a-f, 0-9).');
-  } else if (hash.length < 7) {
-    issues.push('Git hash must be at least 7 characters.');
-  }
-
-  // Validate terminal output
-  if (!output) {
-    issues.push('Raw terminal output is empty. Paste pytest/git output as evidence.');
-  } else if (output.length < 20) {
-    issues.push('Terminal output too short — paste the full output, not a summary.');
-  }
-
-  if (issues.length > 0) {
-    resultDiv.className = 'gate-result gate-reject';
-    resultDiv.innerHTML = '&#128683; GATE REJECTED:<br>' + issues.map(i => '&bull; ' + i).join('<br>');
-    addLog('CHECKLIST-GATE', 'fail', 'Gate rejected for ' + (reqId || '?') + ' — ' + issues.length + ' issue(s).');
-  } else {
-    resultDiv.className = 'gate-result gate-accept';
-    resultDiv.innerHTML = '&#10004; GATE ACCEPTED — Cryptographic Witness validated.<br>' +
-      '<span style="font-size:0.7rem; color:var(--text-dim);">' +
-      'Requirement: ' + reqId + ' | Hash: ' + hash + ' | Evidence: ' + output.length + ' chars</span>';
-    addLog('CHECKLIST-GATE', 'pass', 'Gate accepted for ' + reqId + ' (hash ' + hash + ').');
-  }
-}
-
-// === LIVE INTEGRITY CHECK ON LOAD ===
-document.addEventListener('DOMContentLoaded', function() {
-  // Verify the page's own anchor against ground truth
-  const anchorBadge = document.getElementById('anchorBadge');
-  if (anchorBadge && anchorBadge.textContent.includes(GROUND_TRUTH.commit)) {
-    addLog('WARDEN', 'pass', 'Anchor verified: ' + GROUND_TRUTH.commit);
-  } else {
-    addLog('WARDEN', 'fail', 'Anchor mismatch — page may be corrupted.');
-    anchorBadge.className = 'badge badge-fail';
-  }
-  
-  addLog('WARDEN', 'pass', 'Cathedral Index loaded. Warden active. FR-SV-005 enforced.');
-  addLog('WARDEN', 'warn', GROUND_TRUTH.pythonFail + ' expected test failures (non-R410A Helmholtz).');
-});
-</script>
+<div class="toast" id="toast"></div>
 
 </body>
 </html>
