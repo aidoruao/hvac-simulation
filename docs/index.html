@@ -84,6 +84,13 @@ footer{text-align:center;padding:1.5rem;color:var(--text-dim);font-size:0.65rem;
   <a href="#math-registry">12. Math Registry</a>
   <a href="#auditor-qol">13. Auditor QoL</a>
   <a href="#warden">14. Active Warden</a>
+  <a href="#ecosystem">15. Ecosystem</a>
+  <a href="#covenant">16. COVENANT.json</a>
+  <a href="#horizon">17. Horizon Registry</a>
+  <a href="#releases">18. Release History</a>
+  <a href="#ma001-spec">19. FR-MA-001 Spec</a>
+  <a href="#inventory">20. File Inventory</a>
+  <a href="#references">21. References</a>
   <hr style="border-color:var(--border);margin:0.5rem 0.7rem">
   <a href="#top" style="font-size:0.7rem">&#9650; Top</a>
   <div style="padding:0.5rem 1rem;font-size:0.65rem;color:var(--text-dim);margin-top:0.5rem">
@@ -956,9 +963,327 @@ function validateGate(){
   </div>
 </details>
 
+<!-- ========== 15. ECOSYSTEM ARCHITECTURE ========== -->
+<details id="ecosystem">
+  <summary>Verified Specification 15: Ecosystem Architecture — hvac-simulation &#8644; godot-OE</summary>
+  <div class="detail-body">
+
+<h3>The Two-Repository Architecture</h3>
+
+<div class="math-block">
+hvac-simulation (Python, ~/hvac-simulation)
+&#9500;&#9472;&#9472; math_model/helmholtz_eos.py  &rarr;  First-principles thermodynamics engine
+&#9500;&#9472;&#9472; refrigerants.py              &rarr;  Multi-fluid physics (7 fluids)
+&#9500;&#9472;&#9472; mechanical_room_bridge.py    &rarr;  Python &#8644; Godot JSON bridge
+&#9500;&#9472;&#9472; cop_calculator.py            &rarr;  COP/SEER calculations
+&#9500;&#9472;&#9472; scenarios.py                 &rarr;  23-scenario training engine
+&#9500;&#9472;&#9472; godot_project/               &rarr;  Godot scenes, scripts, assets
+&#9500;&#9472;&#9472; docs/index.html              &rarr;  THIS DOCUMENT — Cathedral Index
+&#9492;&#9472;&#9472; 15 test files, 21 source files, 14 screenshots
+
+godot-OE (C++, ~/godot-OE) — Fork of Godot 4.x
+&#9500;&#9472;&#9472; modules/deepseek/             &rarr;  AI-native engine module (10 files)
+&#9500;&#9472;&#9472; &#9500;&#9472; deepseek_client.cpp/h    &rarr;  DeepSeek API integration
+&#9500;&#9472;&#9472; &#9500;&#9472; deepseek_mutation.cpp/h  &rarr;  Scene manipulation engine
+&#9500;&#9472;&#9472; &#9500;&#9472; viewport_capture.cpp/h   &rarr;  Visual comprehension bridge
+&#9500;&#9472;&#9472; &#9500;&#9472; scene_serializer.cpp/h   &rarr;  Integrity checks (0.0 bar detection)
+&#9500;&#9472;&#9472; &#9500;&#9472; ai_assistant_dock.cpp/h  &rarr;  Godot editor dock UI
+&#9500;&#9472;&#9472; &#9492;&#9472; deepseek_covenant.cpp/h  &rarr;  Behavioral constraints
+&#9500;&#9472;&#9472; COVENANT.json                 &rarr;  AI rules + audit checklist
+&#9500;&#9472;&#9472; scenes/mechanical_room/       &rarr;  mechanical_room.tscn
+&#9492;&#9472;&#9472; bin/godot.linuxbsd.editor     &rarr;  Built binary (175MB)
+</div>
+
+<h4>Data Flow</h4>
+<pre>Python (helmholtz_eos.py)
+  &darr; JSON bridge (pt_data.json, hvac_state.json)
+Godot (mechanical_room.gd, pt_chart.gd)
+  &darr; ViewportCapture (modules/deepseek/viewport_capture.cpp)
+DeepSeek AI (deepseek_client.cpp)
+  &darr; Mutation tags [ADD_NODE, SET_PROP, EDIT_SCRIPT]
+Godot Scene Tree (deepseek_mutation.cpp)
+  &darr; Integrity check (scene_serializer.cpp)
+Audit loop back to Python verification</pre>
+
+<h4>Repository Anchors</h4>
+<table>
+<tr><th>Repository</th><th>Latest Commit</th><th>Remote</th></tr>
+<tr><td>hvac-simulation</td><td class="mono commit-hash">a7ec136</td><td class="mono">github.com/aidoruao/hvac-simulation</td></tr>
+<tr><td>godot-OE</td><td class="mono commit-hash">aac1c92</td><td class="mono">github.com/godotengine/godot (fork)</td></tr>
+</table>
+
+<h4>Environment Invariants</h4>
+<table>
+<tr><th>Invariant</th><th>Value</th></tr>
+<tr><td>WSL2 distribution</td><td>Ubuntu 24.04</td></tr>
+<tr><td>Python venv</td><td class="mono">~/hvac-simulation/venv</td></tr>
+<tr><td>Godot binary (Linux)</td><td class="mono">~/hvac-simulation/godot (4.3.stable)</td></tr>
+<tr><td>Godot binary (Windows)</td><td class="mono">/mnt/c/Users/Aidor/Godot_v4.7.1-stable_win64.exe</td></tr>
+<tr><td>Godot-OE build</td><td class="mono">~/godot-OE/bin/godot.linuxbsd.editor.x86_64</td></tr>
+<tr><td>Renderer (headless)</td><td>Forward Plus (D3D12 on Windows, Vulkan on Linux blocked by INV-9A-001)</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 16. COVENANT.json ========== -->
+<details id="covenant">
+  <summary>Verified Specification 16: COVENANT.json — AI Behavioral Constitution</summary>
+  <div class="detail-body">
+
+<h3>Source: <span class="mono">~/godot-OE/COVENANT.json</span> | Anchor: <span class="commit-hash">aac1c92</span></h3>
+
+<h4>Rule 1: FR-SV-005 — Structural Fix Mandate</h4>
+<blockquote>All fixes must be structural (C++ or scene changes). Do NOT propose UI patches, CSS workarounds, or cosmetic-only changes. Use [ADD_NODE], [SET_PROP], or [EDIT_SCRIPT] mutation tags for all changes.</blockquote>
+
+<h4>Rule 2: FR-3D-006 — AI-Native Engine</h4>
+<blockquote>You have access to the Godot scene tree and viewport screenshot. Use the provided [Scene Tree] context to target nodes by their exact paths. Use [SET_PROP: path, property, value] to modify node properties.</blockquote>
+
+<h4>Rule 3: FR-3D-007 — Visual Comprehension Bridge</h4>
+<blockquote>Analyze the [Viewport Screenshot] to understand the visual state of the scene. Correlate visual elements with the [Scene Tree] entries to identify missing or misconfigured components.</blockquote>
+
+<h4>Rule 4: FR-3D-008 — AI Mutation Engine</h4>
+<blockquote>You can modify the scene directly using mutation tags. All changes are UndoRedo-wrapped so the human architect can revert errors. Available tags: [ADD_NODE: Type, Name, ParentPath], [SET_PROP: NodePath, Property, Value], [EDIT_SCRIPT: res://path] code [/EDIT_SCRIPT].</blockquote>
+
+<h4>Rule 5: HVAC-AUDIT-001 — Mechanical Room Completeness</h4>
+<blockquote>Audit the scene for HVAC completeness. Required components: compressor, condenser coil, evaporator coil, expansion valve, refrigerant lines, thermostat wiring. Report any missing components.</blockquote>
+
+<h4>Rule 6: HVAC-AUDIT-002 — Refrigerant Cycle Validation</h4>
+<blockquote>Verify the refrigerant cycle path: Compressor &rarr; Condenser &rarr; Expansion Valve &rarr; Evaporator &rarr; Compressor. Check that all connections are present and pipe nodes are properly named.</blockquote>
+
+<h4>Audit Checklist</h4>
+<ol>
+  <li>Compressor node present</li>
+  <li>Condenser coil node present</li>
+  <li>Evaporator coil node present</li>
+  <li>Expansion valve node present</li>
+  <li>Refrigerant pipe connections complete</li>
+  <li>Thermostat wiring connections complete</li>
+  <li>All nodes have correct properties (temperature, pressure, flow rate)</li>
+</ol>
+
+  </div>
+</details>
+
+<!-- ========== 17. HORIZON REGISTRY ========== -->
+<details id="horizon">
+  <summary>Verified Specification 17: Horizon Registry — Future Oughts, Visions &amp; Roadmap</summary>
+  <div class="detail-body">
+
+<h4>Active Horizon — v1.7 (Delivered)</h4>
+<table>
+<tr><th>Requirement</th><th>Feature</th><th>Status</th></tr>
+<tr><td>FR-ED-005</td><td>Real-time cycle simulation with fault injection + scoring</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>FR-ED-006</td><td>Full 23-scenario fault mapping</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>FR-ED-007</td><td>Interactive fault UI + diagnosis panel (23 buttons, 4-choice, timer)</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>FR-ED-008</td><td>Mobile optimization (particle LOD, simplified gauges, platform detection)</td><td><span class="badge badge-pass">PASS</span></td></tr>
+</table>
+<p><strong>48/48 requirements PASS.</strong> 279 tests (267 Python + 12 Godot). 0 xfailed.</p>
+
+<h4>Near Horizon — v1.8 (Current / In Progress)</h4>
+<table>
+<tr><th>Priority</th><th>Requirement</th><th>Description</th><th>Status</th></tr>
+<tr><td>P1</td><td>FR-3D-006/007/008/010</td><td>DeepSeek plugin — AI mutation engine, viewport capture, scene serializer</td><td><span class="badge badge-pass">HEADLESS PASS</span> <span class="badge badge-fail">GUI BLOCKED</span></td></tr>
+<tr><td>P1</td><td>INV-9A-001</td><td>Install NVIDIA Vulkan ICD — unblock GUI rendering</td><td><span class="badge badge-fail">ACTIVE</span></td></tr>
+<tr><td>P2</td><td>FR-MA-001-L1</td><td>Maxwell Equal-Area construction — two-phase region error reduction</td><td><span class="badge badge-warn">PLANNING</span></td></tr>
+<tr><td>P2</td><td>FR-MA-002/003/004</td><td>Complete R32/R134a/R1234yf Helmholtz EOS (liquid coefficients)</td><td><span class="badge badge-warn">PLANNING</span></td></tr>
+<tr><td>P3</td><td>FR-FV-001 L3</td><td>Lean 4 formal proof — derivative correctness + NR convergence</td><td><span class="badge badge-warn">EXPLORATION</span></td></tr>
+</table>
+
+<h4>Far Horizon — v1.9+</h4>
+<table>
+<tr><th>Priority</th><th>Feature</th><th>Description</th></tr>
+<tr><td>P1</td><td>Multiplayer/remote instruction</td><td>WebRTC-based instructor-student remote session. Deferred from v1.8.</td></tr>
+<tr><td>P2</td><td>R454B/R513A support</td><td>CoolProp mixture refrigerants + Chemours data. Blocked by CoolProp 8.1.</td></tr>
+<tr><td>P3</td><td>CI/CD pipeline</td><td>GitHub Actions: pytest + Godot regression on push. Medium effort.</td></tr>
+<tr><td>P4</td><td>Docker dev environment</td><td>Reproducible container with all dependencies. Small effort.</td></tr>
+<tr><td>P5</td><td>MC/DC coverage ≥ 95%</td><td>Modified Condition/Decision Coverage for safety-critical paths (FR-NF-001).</td></tr>
+</table>
+
+<h4>Research Horizon — Mathematical Frontiers</h4>
+<div class="math-card" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0.6rem;margin:0.3rem 0">
+  <h4 style="color:var(--warn);font-size:0.8rem">Maxwell Equal-Area Construction</h4>
+  <p style="font-size:0.75rem">First-principles saturation solver eliminating iterative root-finding. Enforces Maxwell equal-area rule on P(v) isotherm. Target: sub-1% cp/cv error in two-phase. Reference: Span &amp; Wagner (2003), GERG-2008.</p>
+</div>
+<div class="math-card" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0.6rem;margin:0.3rem 0">
+  <h4 style="color:var(--warn);font-size:0.8rem">Lean 4 Formal Proofs</h4>
+  <p style="font-size:0.75rem">Machine-checkable proofs: c_p &gt; c_v, positive speed of sound, Maxwell relations consistency, Newton-Raphson convergence. Makes physics constraints type-level impossible to violate. Reference: Mathlib4.</p>
+</div>
+<div class="math-card" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:0.6rem;margin:0.3rem 0">
+  <h4 style="color:var(--warn);font-size:0.8rem">Topos / Category Theory — Landauer Functors</h4>
+  <p style="font-size:0.75rem">Connecting information entropy (Landauer) to thermodynamic entropy via categorical functors. F: Info &rarr; Thermo maps computational state transitions to physical entropy changes. Reference: Baez &amp; Stay (2011).</p>
+</div>
+
+<h4>Gap Summary (from v1.7 Stability Audit)</h4>
+<table>
+<tr><th>Gap</th><th>Current</th><th>Target</th></tr>
+<tr><td>Scenario-Fault mapping</td><td>23/23 (v1.7)</td><td><span class="badge badge-pass">DONE</span></td></tr>
+<tr><td>Fault type coverage</td><td>23 fault types</td><td><span class="badge badge-pass">DONE</span></td></tr>
+<tr><td>Godot interactive UI</td><td>Instructor + student panels (v1.7)</td><td><span class="badge badge-pass">DONE</span></td></tr>
+<tr><td>Mobile optimization</td><td>Particle LOD, simplified gauges (v1.7)</td><td><span class="badge badge-pass">DONE</span></td></tr>
+<tr><td>Non-R410A liquid EOS</td><td>6.6% max error</td><td>&lt;1% (Maxwell construction)</td></tr>
+<tr><td>Formal verification L3</td><td>L1 (property-based) + L2 (TLA+) done</td><td>Lean 4 proofs</td></tr>
+<tr><td>Multiplayer</td><td>Not implemented</td><td>WebRTC (v1.9+)</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 18. RELEASE HISTORY ========== -->
+<details id="releases">
+  <summary>Verified Specification 18: Release History — v1.6 &amp; v1.7</summary>
+  <div class="detail-body">
+
+<h4>v1.7 — Educational Features (2026-07-20)</h4>
+<p><strong>48/48 PASS, 279 tests, 0 xfailed. SRS v1.7.</strong></p>
+<table>
+<tr><th>Feature</th><th>v1.6</th><th>v1.7</th></tr>
+<tr><td>Fault types</td><td>4</td><td><strong>23</strong></td></tr>
+<tr><td>Instructor UI</td><td>Text readout</td><td><strong>Interactive 23-button panel</strong></td></tr>
+<tr><td>Student diagnosis</td><td>None</td><td><strong>4-choice + timer + scoring</strong></td></tr>
+<tr><td>Mobile support</td><td>None</td><td><strong>Particle LOD, simplified gauges</strong></td></tr>
+<tr><td>Requirements</td><td>45</td><td><strong>48</strong></td></tr>
+</table>
+<p><strong>Key commits:</strong> FR-ED-005 (real-time cycle), FR-ED-006 (23 fault mapping), FR-ED-007 (interactive UI), FR-ED-008 (mobile optimization).</p>
+
+<h4>v1.6 — Helmholtz EOS (2026-07-20)</h4>
+<p><strong>44/44 PASS, 279 tests, 0 xfailed. SRS v1.6. Tag: v1.6.</strong></p>
+<table>
+<tr><th>Feature</th><th>Description</th></tr>
+<tr><td>FR-MA-001</td><td>Helmholtz EOS core — first-principles R410A (19/19 tests)</td></tr>
+<tr><td>FR-MA-002–005</td><td>R32, R134a, R1234yf, R22 vapor coefficients (&lt;0.3% mean error)</td></tr>
+<tr><td>FR-MA-006</td><td>Enthalpy and entropy from partials (30/30 tests, 0.0000% error)</td></tr>
+<tr><td>FR-MA-007</td><td>Saturation pressure solver (20/20 tests, 0.0000% error)</td></tr>
+<tr><td>FR-MA-008</td><td>HelmholtzEOS in cop_calculator (22/22 tests)</td></tr>
+<tr><td>FR-FV-001</td><td>Property-based testing (50,000 Hypothesis cases) + TLA+ spec</td></tr>
+<tr><td>FR-AN-001</td><td>Aerospace-grade particle flow visualization</td></tr>
+</table>
+<p><strong>Known limitations (v1.6):</strong> Non-R410A edge cases up to 6.5%, integration constants C,D=0, two-phase sound speed CoolProp incompatibility, near-T_c density solver edge case.</p>
+
+<h4>v1.8 — AI Integration (Current, 2026-07-21)</h4>
+<p>DeepSeek plugin (FR-3D-006/007/008/010), Agent Equalizer (FR-SV-007), SRS v1.8. GUI blocked by INV-9A-001.</p>
+
+  </div>
+</details>
+
+<!-- ========== 19. FR-MA-001 SPEC ========== -->
+<details id="ma001-spec">
+  <summary>Verified Specification 19: FR-MA-001 — Helmholtz EOS Implementation Spec</summary>
+  <div class="detail-body">
+
+<h3>Source: <span class="mono">FR_MA_001_Spec.md</span> | Document ID: HVAC-MA-001 | Status: COMPLETE</h3>
+
+<h4>Deliverables (All Complete)</h4>
+<table>
+<tr><th>ID</th><th>Description</th><th>Verification</th></tr>
+<tr><td>EOS-HEOS-001</td><td>Helmholtz residual form: a(&delta;,&tau;) = a&deg; + a<sup>r</sup></td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>EOS-DER-001</td><td>First partials: (&part;a/&part;&delta;)_&tau;, (&part;a/&part;&tau;)_&delta;</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>EOS-DER-002</td><td>Second partials: all 3 cross-derivatives</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>EOS-PROP-001</td><td>Derived properties: P, u, s, h, c_p, c_v, w</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>EOS-CONV-001</td><td>Newton-Raphson &delta;(P,T) solver</td><td><span class="badge badge-pass">PASS</span></td></tr>
+<tr><td>EOS-JAC-001</td><td>Analytical Jacobian, condition number &lt; 1e14</td><td><span class="badge badge-pass">PASS</span></td></tr>
+</table>
+
+<h4>Reduced Variables</h4>
+<div class="math-block">&delta; = &rho;/&rho;_c    (reduced density)
+&tau; = T_c/T    (inverse reduced temperature)</div>
+
+<h4>Verification Tolerances</h4>
+<table>
+<tr><th>Test</th><th>Method</th><th>Tolerance</th><th>Reference</th></tr>
+<tr><td>Derivative check</td><td>Complex step differentiation</td><td>1e-15</td><td>Martins et al. 2003</td></tr>
+<tr><td>Cross-derivative symmetry</td><td>&part;&sup2;a/&part;&delta;&part;&tau; == &part;&sup2;a/&part;&tau;&part;&delta;</td><td>1e-14</td><td>Mathematical identity</td></tr>
+<tr><td>Round-trip P&rarr;&delta;&rarr;P</td><td>Full EOS cycle</td><td>1e-9 relative</td><td>CoolProp 8.0.0</td></tr>
+<tr><td>Critical point convergence</td><td>&delta;&rarr;1, &tau;&rarr;1</td><td>1e-12</td><td>NIST REFPROP 10.0</td></tr>
+</table>
+
+<h4>Implementation Files</h4>
+<table>
+<tr><th>Phase</th><th>File</th><th>Content</th></tr>
+<tr><td>P0</td><td class="mono">math_model/helmholtz_eos.py</td><td>Base EOS class with 5-fluid coefficients</td></tr>
+<tr><td>P0</td><td class="mono">math_model/test_helmholtz_eos.py</td><td>Derivative and round-trip tests (82 tests)</td></tr>
+<tr><td>P1</td><td class="mono">math_model/helmholtz_eos.py</td><td>NR solver with analytical Jacobian (inline)</td></tr>
+<tr><td>P2</td><td class="mono">math_model/helmholtz_eos.py</td><td>c_p, c_v, w, s, h from EOS partials</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 20. FILE INVENTORY ========== -->
+<details id="inventory">
+  <summary>Verified Specification 20: File Inventory — Complete Tracked File Census</summary>
+  <div class="detail-body">
+
+<h3>Repository: hvac-simulation | Anchor: <span class="commit-hash">a7ec136</span> | 144 tracked files</h3>
+
+<table>
+<tr><th>Category</th><th>Count</th><th>Files</th></tr>
+<tr><td>Documentation (docs/)</td><td class="mono">17</td><td>index.html, HVAC_SRS.md, README.md, KIMI_ONBOARDING.md, AI_BEHAVIORAL_ARCHETYPES.md, INDEX.md, INVESTIGATIONS.md, CHANGELOG.md, FORMULA_CITATIONS.md, RECONNAISSANCE.md, CONTRIBUTING.md, GEMINI_NBLM_HISTORIAN.md, RELEASE_NOTES_v1.6.md, RELEASE_NOTES_v1.7.md, V1.7_ROADMAP.md, formal_spec/helmholtz.cfg, formal_spec/helmholtz.tla</td></tr>
+<tr><td>Campaign Logs</td><td class="mono">10</td><td>Campaigns 1a-9a (raw turn-by-turn logs, ~3.3MB total)</td></tr>
+<tr><td>Screenshots</td><td class="mono">14</td><td>SIT/POST verification PNGs (Campaigns 3a-8a)</td></tr>
+<tr><td>Python Sources</td><td class="mono">16</td><td>refrigerants.py, cop_calculator.py, seer_calculator.py, mechanical_room_bridge.py, pt_charts.py, scenarios.py, scenarios_extended.py, scenarios_localized.py, session_tracker.py, state_inspector.py, validation.py, i18n.py, locale_generator.py, thermostat_wiring.py, generate_helmholtz_pt_data.py, generate_pt_fast.py, benchmark_latency.py</td></tr>
+<tr><td>Math Model</td><td class="mono">8+</td><td>math_model/helmholtz_eos.py, coefficient files, regression scripts, test suite</td></tr>
+<tr><td>Test Files</td><td class="mono">17</td><td>test_refrigerants.py, test_cop_calculator.py, test_seer_calculator.py, test_physics.py, test_scenarios.py, test_scenarios_extended.py, test_scenarios_localization.py, test_session_tracker.py, test_state_inspector.py, test_validation.py, test_mechanical_room_bridge.py, test_mechanical_room_animated.py, test_thermostat_wiring.py, test_wiring_scene.py, test_frame_rate_benchmark.py, test_godot_regression.py, test_i18n.py, test_property_based_fv001.py</td></tr>
+<tr><td>Godot Project</td><td class="mono">7+</td><td>project.godot, 5 scenes (.tscn), 1 script (.gd), pt_data.json</td></tr>
+<tr><td>Assets</td><td class="mono">6</td><td>assets/pt_charts/ (5 individual + 1 comparison PNG)</td></tr>
+<tr><td>Config/Meta</td><td class="mono">5</td><td>.gitignore, LICENSE, FR_MA_001_Spec.md, hvac_state.json, Godot binary</td></tr>
+</table>
+
+<h4>Repository: godot-OE | Anchor: <span class="commit-hash">aac1c92</span></h4>
+
+<table>
+<tr><th>Category</th><th>Count</th><th>Files</th></tr>
+<tr><td>DeepSeek Module</td><td class="mono">10</td><td>modules/deepseek/ — deepseek_client, deepseek_mutation, viewport_capture, scene_serializer, ai_assistant_dock, deepseek_covenant, register_types (+headers)</td></tr>
+<tr><td>AI Constitution</td><td class="mono">1</td><td>COVENANT.json — 6 rules + audit checklist</td></tr>
+<tr><td>Scene Assets</td><td class="mono">1</td><td>scenes/mechanical_room/mechanical_room.tscn</td></tr>
+<tr><td>Built Binary</td><td class="mono">1</td><td>bin/godot.linuxbsd.editor.x86_64 (175MB)</td></tr>
+</table>
+
+  </div>
+</details>
+
+<!-- ========== 21. EXTERNAL REFERENCES ========== -->
+<details id="references">
+  <summary>Verified Specification 21: External References — Cryptographic Anchors to Evidence</summary>
+  <div class="detail-body">
+
+<h3>Universal Filter: Evidence artifacts are REFERENCED, not included inline.</h3>
+
+<table>
+<tr><th>Artifact</th><th>Repository</th><th>Path</th><th>Commit Hash</th></tr>
+<tr><td>Campaign 9a raw log</td><td>hvac-simulation</td><td class="mono">root</td><td class="mono commit-hash">a7ec136</td></tr>
+<tr><td>Campaign 8a raw log</td><td>hvac-simulation</td><td class="mono">root</td><td class="mono commit-hash">4508eae</td></tr>
+<tr><td>Campaign 7a raw log</td><td>hvac-simulation</td><td class="mono">root</td><td class="mono commit-hash">f04ef13</td></tr>
+<tr><td>Campaign logs 1a-6a</td><td>hvac-simulation</td><td class="mono">root</td><td class="mono commit-hash">various</td></tr>
+<tr><td>SIT Screenshots (14 PNGs)</td><td>hvac-simulation</td><td class="mono">root</td><td class="mono commit-hash">4508eae</td></tr>
+<tr><td>DeepSeek Module Source</td><td>godot-OE</td><td class="mono">modules/deepseek/</td><td class="mono commit-hash">aac1c92</td></tr>
+<tr><td>COVENANT.json</td><td>godot-OE</td><td class="mono">root</td><td class="mono commit-hash">aac1c92</td></tr>
+<tr><td>TLA+ Formal Spec</td><td>hvac-simulation</td><td class="mono">docs/formal_spec/</td><td class="mono commit-hash">0b8b701</td></tr>
+<tr><td>RELEASE_NOTES v1.6</td><td>hvac-simulation</td><td class="mono">docs/RELEASE_NOTES_v1.6.md</td><td class="mono commit-hash">0b8b701</td></tr>
+<tr><td>RELEASE_NOTES v1.7</td><td>hvac-simulation</td><td class="mono">docs/RELEASE_NOTES_v1.7.md</td><td class="mono commit-hash">0b8b701</td></tr>
+<tr><td>V1.7_ROADMAP</td><td>hvac-simulation</td><td class="mono">docs/V1.7_ROADMAP.md</td><td class="mono commit-hash">0b8b701</td></tr>
+<tr><td>FR_MA_001_Spec</td><td>hvac-simulation</td><td class="mono">root/FR_MA_001_Spec.md</td><td class="mono commit-hash">0b8b701</td></tr>
+<tr><td>Godot Built Binary</td><td>godot-OE</td><td class="mono">bin/</td><td class="mono commit-hash">aac1c92</td></tr>
+<tr><td>mechanical_room.tscn</td><td>godot-OE</td><td class="mono">scenes/mechanical_room/</td><td class="mono commit-hash">aac1c92</td></tr>
+<tr><td>Terminal Session Logs</td><td>hvac-simulation</td><td class="mono">root (idor@Tony ~*)</td><td class="mono commit-hash">various</td></tr>
+</table>
+
+<h4>How to Verify Any Reference</h4>
+<pre># Check that a file exists at a specific commit
+git show &lt;commit_hash&gt;:&lt;path&gt;
+
+# List all tracked files
+cd ~/hvac-simulation && git ls-files
+
+# Check file history
+git log --oneline -- &lt;path&gt;</pre>
+
+  </div>
+</details>
+
 <footer>
-  Cathedral Index v2.0 &bull; Anchored at <span class="commit-hash">a7e823b</span> &bull; Glass Box Enforced &bull;
-  Generated 2026-07-22 &bull; 14 Verified Specifications &bull; FR-SV-005 Compliant &bull;
+  Cathedral Index v3.0 &bull; Anchored at <span class="commit-hash">a7ec136</span> &bull; Glass Box Enforced &bull;
+  Generated 2026-07-22 &bull; 21 Verified Specifications &bull; FR-SV-005 Compliant &bull;
   No heredocs were harmed in the making of this document
 </footer>
 
