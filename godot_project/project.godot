@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="HVAC Simulation"
 config/description="Physics-accurate HVAC training simulator"
-run/main_scene="res://scenes/mechanical_room/mechanical_room.tscn"
+run/main_scene="res://scenes/house_exterior/house_exterior.tscn"
 config/features=PackedStringArray("4.8", "Forward Plus")
 
 [autoload]

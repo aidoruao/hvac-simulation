@@ -1,0 +1,99 @@
+[gd_scene load_steps=5 format=3 uid="uid://house_ext"]
+
+[sub_resource type="StandardMaterial3D" id="siding"]
+albedo_color = Color(0.75, 0.7, 0.6)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="roof"]
+albedo_color = Color(0.3, 0.25, 0.2)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="grass"]
+albedo_color = Color(0.2, 0.5, 0.15)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="concrete"]
+albedo_color = Color(0.6, 0.6, 0.58)
+roughness = 0.7
+
+[node name="HouseExterior" type="Node3D"]
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = PlaneMesh.new()
+mesh.size = Vector2(20, 20)
+material_override = SubResource("grass")
+
+[node name="House" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -5)
+
+[node name="Walls" type="MeshInstance3D" parent="House"]
+mesh = BoxMesh.new()
+mesh.size = Vector2(8, 3, 6)
+material_override = SubResource("siding")
+
+[node name="Roof" type="MeshInstance3D" parent="House"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = PrismMesh.new()
+mesh.size = Vector2(9, 2, 7)
+material_override = SubResource("roof")
+
+[node name="Door" type="MeshInstance3D" parent="House"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 3.05)
+mesh = BoxMesh.new()
+mesh.size = Vector2(1.2, 2.1, 0.1)
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.4, 0.25, 0.1)
+
+[node name="Windows" type="MeshInstance3D" parent="House"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 1, 3.05)
+mesh = BoxMesh.new()
+mesh.size = Vector2(1.5, 1.2, 0.1)
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.7, 0.85, 0.95)
+
+[node name="CondenserPad" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.05, 2)
+mesh = BoxMesh.new()
+mesh.size = Vector2(1.2, 0.1, 1)
+material_override = SubResource("concrete")
+
+[node name="Condenser" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.6, 2)
+
+[node name="Body" type="MeshInstance3D" parent="Condenser"]
+mesh = BoxMesh.new()
+mesh.size = Vector2(0.8, 0.8, 0.6)
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.85, 0.85, 0.9)
+
+[node name="FanGrill" type="MeshInstance3D" parent="Condenser"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.41, 0)
+mesh = CylinderMesh.new()
+mesh.top_radius = 0.35
+mesh.bottom_radius = 0.35
+mesh.height = 0.05
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.2, 0.2, 0.2)
+
+[node name="Lineset" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.5, 2.5)
+mesh = CylinderMesh.new()
+mesh.top_radius = 0.03
+mesh.bottom_radius = 0.03
+mesh.height = 3
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.6, 0.5, 0.3)
+
+[node name="DisconnectBox" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 1.2, 2.5)
+mesh = BoxMesh.new()
+mesh.size = Vector2(0.2, 0.3, 0.1)
+material_override = StandardMaterial3D.new()
+material_override.albedo_color = Color(0.1, 0.1, 0.1)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707, -0.354, 0.612, 0, 0.866, 0.5, -0.707, -0.354, 0.612, 8, 5, 8)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.5, 0, 0.5, 0.866, 0, 0, 0, 1, 5, 10, 5)
