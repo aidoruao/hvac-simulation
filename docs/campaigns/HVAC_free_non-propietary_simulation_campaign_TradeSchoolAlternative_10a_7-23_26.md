@@ -1778,19 +1778,805 @@ Paste that verbatim. Report all five steps' output here.
 
 
 
-8}
+8} cw wsl2 dsv4: tool done · 0/5 · 0%
+
+checklist: work\_update
+
+v opens details
+
+run done · mkdir -p /home/idor/hvac-simulation/docs/campaigns /h...
+
+run done · cp "/mnt/c/Users/Aidor/Downloads/push commit to hvac ...
 
 
 
-9}
+run done · head -100 /home/idor/hvac-simulation/docs/campaigns/H...
+
+patch done · <84 chars>
 
 
 
-10}
+run done · cd /home/idor/hvac-simulation \&\& source venv/bin/acti...
 
 
 
-11}
+run done · cd /home/idor/hvac-simulation \&\& git add docs/campaig...
+
+time: 1.97s
+
+
+
+tool done · 5/5 · 100%
+
+checklist: work\_update
+
+v opens details
+
+
+
+────────────────────────────────────────────────────────────
+
+
+
+Steps complete — Campaign 10a production assets
+
+
+
+Step 1 — Campaign 10a log ✅
+
+docs/campaigns/HVAC\_free\_non-propietary\_simulation\_campaign\_TradeSchoolAlternative\_10a\_7-23\_26.md
+
+3,030 lines. The forensic investigation log from Kimi to Codewhale.
+
+
+
+Step 2 — Detailed condenser ✅
+
+condenser\_detailed.gd — 80 lines, extends Node3D:
+
+
+
+┌───────────────────────┬───────────────────────┬───────────────────────┐
+
+Component             │ Mesh                  │ Material              │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Body                  │ BoxMesh 0.8×0.8×0.6   │ Steel (metallic 0.3,  │
+
+&#x20;                     │                       │ rough 0.4)            │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+4× Fins               │ BoxMesh               │ Aluminum (metallic    │
+
+&#x20;                     │ 0.75×0.02×0.55 each   │ 0.7, rough 0.3)       │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Fan                   │ CylinderMesh r=0.35,  │ Dark gray + noise     │
+
+&#x20;                     │ h=0.05                │ texture               │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Fan Guard             │ CylinderMesh r=0.38,  │ Dark metal (metallic  │
+
+&#x20;                     │ h=0.02                │ 0.8)                  │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Label                 │ Label3D "HVAC-SIM"    │ Dark gray, 32pt       │
+
+└───────────────────────┴───────────────────────┴───────────────────────┘
+
+
+
+Animation: Fan spins continuously via create\_tween().set\_loops() — 1 full rotation per second.
+
+
+
+Step 3 — Noise texture ✅
+
+assets/textures/fan\_grill\_noise.png — 256×256 grayscale, applied to fan material as albedo\_texture.
+
+
+
+Step 4 — Production-grade differentiation
+
+
+
+┌───────────────────────────────────┬───────────────────────────────────┐
+
+Before (CSG boxes)                │ After (Campaign 10a)              │
+
+├───────────────────────────────────┼───────────────────────────────────┤
+
+Condenser: 1 CSGBox               │ Body + 4 fins + fan + guard +     │
+
+&#x20;                                 │ label                             │
+
+├───────────────────────────────────┼───────────────────────────────────┤
+
+Fan: CSGCylinder, static          │ CylinderMesh with noise texture,  │
+
+&#x20;                                 │ animated                          │
+
+├───────────────────────────────────┼───────────────────────────────────┤
+
+Materials: default gray           │ PBR: steel (metallic), aluminum   │
+
+&#x20;                                 │ fins, dark guard                  │
+
+├───────────────────────────────────┼───────────────────────────────────┤
+
+No labels                         │ "HVAC-SIM" brand label            │
+
+├───────────────────────────────────┼───────────────────────────────────┤
+
+No animation                      │ tween\_property fan rotation       │
+
+└───────────────────────────────────┴───────────────────────────────────┘
+
+
+
+Step 5 — Commit ✅
+
+56b2a46 feat(Campaign 10a): detailed condenser with PBR steel, aluminum fins, 
+
+&#x20;        animated fan, noise texture, label — production-grade assets
+
+
+
+────────────────────────────────────────────────────────────
+
+
+
+Current Campaign 10a scene — what's built
+
+
+
+┌───────────────────────┬───────────────────────┬───────────────────────┐
+
+Asset                 │ Status                │ Commit                │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+House exterior        │ ✅ Grass, siding,     │ 4988728               │
+
+(.tscn)               │ roof, door, windows   │                       │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Condenser pad         │ ✅ Concrete           │ 4988728               │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Lineset               │ ✅ Copper cylinder    │ 4988728               │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Disconnect box        │ ✅ Black box          │ 4988728               │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Detailed condenser    │ ✅ Animated fan, PBR  │ 56b2a46               │
+
+&#x20;                     │ materials, label      │                       │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Procedural compressor │ ✅ Code wired,        │ 4988728               │
+
+&#x20;                     │ add\_compressor.gd     │                       │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Campaign 10a log      │ ✅ Archived           │ 56b2a46               │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Forensic report       │ ✅ 122 commits        │ 1c5ce03               │
+
+&#x20;                     │ analyzed              │                       │
+
+└───────────────────────┴───────────────────────┴───────────────────────┘
+
+
+
+Still not UE5 quality — honest gaps
+
+
+
+┌───────────────────────┬───────────────────────┬───────────────────────┐
+
+UE5 feature           │ Current state         │ Gap                   │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Nanite geometry       │ BoxMeshes (\~12        │ Need detailed 3D      │
+
+(millions of polys)   │ triangles each)       │ models                │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Lumen GI              │ One                   │ Need Environment +    │
+
+&#x20;                     │ DirectionalLight3D    │ reflection probes     │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+PBR textures (base    │ Flat colors + one     │ Need Substance/PBR    │
+
+color, normal,        │ noise texture         │ texture pipeline      │
+
+roughness maps)       │                       │                       │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Physics interactions  │ None                  │ Need soft body hoses, │
+
+&#x20;                     │                       │ collision             │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Character models      │ None                  │ Need technician with  │
+
+&#x20;                     │                       │ tools                 │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Weather/day-night     │ None                  │ Need sky shader,      │
+
+&#x20;                     │                       │ particle rain         │
+
+├───────────────────────┼───────────────────────┼───────────────────────┤
+
+Niagara particles     │ None                  │ Need refrigerant      │
+
+&#x20;                     │                       │ vapor particles       │
+
+└───────────────────────┴───────────────────────┴───────────────────────┘
+
+
+
+9} kimi: The user is right to be frustrated. Campaign 10a has produced a house with a box-shaped condenser and a spinning fan — better than a void, but not "multi-million dollar UE5 quality." The forensic report shows 122 commits, 46 docs-only, 0 scene-only. The gap between what exists and what trade schools need is massive.
+
+
+
+The user's Campaign 10a log is now in the repo. I need to read it to understand what the user actually expects from this campaign. But more importantly, I need to stop producing incremental improvements and address the core structural problem: \*\*the project has been optimizing documentation and verification while the actual training experience is empty.\*\*
+
+
+
+What a trade school replacement actually needs:
+
+
+
+1\. \*\*A student walks up to a house\*\* — The house exterior exists now (grass, siding, roof). Good start.
+
+2\. \*\*The student goes inside, checks the thermostat\*\* — No interior exists. No thermostat on the wall. No rooms.
+
+3\. \*\*The student goes outside, looks at the condenser\*\* — The condenser exists but is a box with a spinning cylinder. No brand name, no model plate, no refrigerant type label, no sight glass, no service valves.
+
+4\. \*\*The student connects gauges\*\* — No manifold set. No hoses. No gauge ports on the condenser.
+
+5\. \*\*The student reads pressures\*\* — No pressure readings visible. No gauges that show numbers.
+
+6\. \*\*The student diagnoses the fault\*\* — No fault injection system visible. No way to say "this system is low on charge" and see the evidence (bubbling sight glass, warm suction line, low pressure).
+
+7\. \*\*The student repairs it\*\* — No tools. No way to add refrigerant. No way to replace a capacitor.
+
+8\. \*\*The student tests it\*\* — No way to verify the repair worked. No superheat calculation. No amp draw on the compressor.
+
+
+
+The backend Python code can calculate all of this. The frontend shows none of it.
+
+
+
+The user's question: "Why is it not automatic production grade multi million dollar unreal engine 5 quality everything?"
+
+
+
+The honest answer: Because building that takes a team of 20 artists and engineers 2 years. One person with AI assistance in 7 days cannot produce UE5 quality. But one person with AI assistance CAN produce \*\*sufficient quality\*\* — recognizable equipment, readable gauges, believable interactions — if the work is focused on what trainees actually do, not on documentation.
+
+
+
+The house exterior is sufficient. The condenser needs service valves, a sight glass, a data plate, and gauge ports. The interior needs a thermostat on the wall and a furnace in the basement. The tools need to exist as 3D objects. The gauges need to show numbers.
+
+
+
+These are not UE5 features. These are \*\*game design\*\* features. They require knowing what a technician does and building those interactions.
+
+
+
+\---
+
+
+
+\## What You Need to Tell Codewhale
+
+
+
+```
+
+Stop building assets. Start building interactions. The student must be able to:
+
+1\. Walk to the condenser
+
+2\. See service valves (high side, low side)
+
+3\. Connect manifold set (click to attach hoses)
+
+4\. Read pressures (gauges show actual numbers from backend)
+
+5\. Inject a fault (click menu: "low charge")
+
+6\. See evidence (bubbling sight glass, low pressure)
+
+7\. Fix it (click menu: "add refrigerant")
+
+8\. Verify (pressures return to normal, superheat calculated)
+
+
+
+Execute sequentially. Report stdout/stderr for each.
+
+
+
+Step 1 — Add service valves and sight glass to condenser:
+
+cat > /home/idor/hvac-simulation/godot\_project/scenes/house\_exterior/condenser\_interactive.gd << 'EOF'
+
+extends Node3D
+
+
+
+\# Service valve ports (where gauges connect)
+
+var high\_side\_port: MeshInstance3D
+
+var low\_side\_port: MeshInstance3D
+
+var sight\_glass: MeshInstance3D
+
+
+
+\# Current refrigerant state (from backend)
+
+var pressure\_high: float = 250.0  # psig
+
+var pressure\_low: float = 70.0    # psig
+
+var refrigerant\_level: float = 0.8  # 0-1
+
+
+
+func \_ready():
+
+&#x20;   # High side service valve (smaller, on liquid line)
+
+&#x20;   high\_side\_port = MeshInstance3D.new()
+
+&#x20;   high\_side\_port.name = "HighSidePort"
+
+&#x20;   high\_side\_port.mesh = CylinderMesh.new()
+
+&#x20;   high\_side\_port.mesh.top\_radius = 0.04
+
+&#x20;   high\_side\_port.mesh.bottom\_radius = 0.04
+
+&#x20;   high\_side\_port.mesh.height = 0.08
+
+&#x20;   high\_side\_port.material\_override = StandardMaterial3D.new()
+
+&#x20;   high\_side\_port.material\_override.albedo\_color = Color(0.7, 0.5, 0.3)  # Brass
+
+&#x20;   high\_side\_port.position = Vector3(0.3, 0.2, 0.35)
+
+&#x20;   add\_child(high\_side\_port)
+
+&#x20;   
+
+&#x20;   # Low side service valve (larger, on suction line)
+
+&#x20;   low\_side\_port = MeshInstance3D.new()
+
+&#x20;   low\_side\_port.name = "LowSidePort"
+
+&#x20;   low\_side\_port.mesh = CylinderMesh.new()
+
+&#x20;   low\_side\_port.mesh.top\_radius = 0.05
+
+&#x20;   low\_side\_port.mesh.bottom\_radius = 0.05
+
+&#x20;   low\_side\_port.mesh.height = 0.08
+
+&#x20;   low\_side\_port.material\_override = StandardMaterial3D.new()
+
+&#x20;   low\_side\_port.material\_override.albedo\_color = Color(0.7, 0.5, 0.3)  # Brass
+
+&#x20;   low\_side\_port.position = Vector3(-0.3, 0.2, 0.35)
+
+&#x20;   add\_child(low\_side\_port)
+
+&#x20;   
+
+&#x20;   # Sight glass (on liquid line, shows bubbles when low charge)
+
+&#x20;   sight\_glass = MeshInstance3D.new()
+
+&#x20;   sight\_glass.name = "SightGlass"
+
+&#x20;   sight\_glass.mesh = CylinderMesh.new()
+
+&#x20;   sight\_glass.mesh.top\_radius = 0.06
+
+&#x20;   sight\_glass.mesh.bottom\_radius = 0.06
+
+&#x20;   sight\_glass.mesh.height = 0.1
+
+&#x20;   sight\_glass.material\_override = StandardMaterial3D.new()
+
+&#x20;   sight\_glass.material\_override.albedo\_color = Color(0.9, 0.9, 1.0)  # Clear
+
+&#x20;   sight\_glass.material\_override.transparency = BaseMaterial3D.TRANSPARENCY\_ALPHA
+
+&#x20;   sight\_glass.position = Vector3(0, 0.1, 0.35)
+
+&#x20;   add\_child(sight\_glass)
+
+&#x20;   
+
+&#x20;   # Data plate
+
+&#x20;   var plate = Label3D.new()
+
+&#x20;   plate.name = "DataPlate"
+
+&#x20;   plate.text = "R-410A\\n3.5 TON\\nSEER 16\\nMFG: 2024"
+
+&#x20;   plate.font\_size = 32
+
+&#x20;   plate.position = Vector3(0, -0.2, 0.31)
+
+&#x20;   add\_child(plate)
+
+&#x20;   
+
+&#x20;   print("INTERACTIVE\_CONDENSER: ports, sight glass, data plate added")
+
+
+
+func update\_state(p\_high: float, p\_low: float, ref\_level: float):
+
+&#x20;   pressure\_high = p\_high
+
+&#x20;   pressure\_low = p\_low
+
+&#x20;   refrigerant\_level = ref\_level
+
+&#x20;   
+
+&#x20;   # Sight glass shows bubbles when low charge (< 0.5)
+
+&#x20;   if sight\_glass:
+
+&#x20;       var mat = sight\_glass.material\_override as StandardMaterial3D
+
+&#x20;       if refrigerant\_level < 0.5:
+
+&#x20;           mat.albedo\_color = Color(0.7, 0.8, 1.0, 0.6)  # Bubbly, less clear
+
+&#x20;       else:
+
+&#x20;           mat.albedo\_color = Color(0.9, 0.9, 1.0, 0.9)  # Clear
+
+
+
+func \_on\_fault\_low\_charge():
+
+&#x20;   update\_state(180.0, 45.0, 0.3)  # Low pressures, low refrigerant
+
+&#x20;   print("FAULT\_INJECTED: Low charge — sight glass bubbling")
+
+
+
+func \_on\_repair\_add\_refrigerant():
+
+&#x20;   update\_state(250.0, 70.0, 0.9)  # Normal pressures, full charge
+
+&#x20;   print("REPAIR: Refrigerant added — system normal")
+
+EOF
+
+
+
+Step 2 — Create interactive manifold gauge set:
+
+cat > /home/idor/hvac-simulation/godot\_project/scenes/house\_exterior/manifold\_set.gd << 'EOF'
+
+extends Node3D
+
+
+
+var high\_gauge: Label3D
+
+var low\_gauge: Label3D
+
+var connected: bool = false
+
+
+
+func \_ready():
+
+&#x20;   # Manifold body
+
+&#x20;   var body = MeshInstance3D.new()
+
+&#x20;   body.mesh = BoxMesh.new()
+
+&#x20;   body.mesh.size = Vector3(0.3, 0.2, 0.05)
+
+&#x20;   body.material\_override = StandardMaterial3D.new()
+
+&#x20;   body.material\_override.albedo\_color = Color(0.2, 0.2, 0.2)
+
+&#x20;   add\_child(body)
+
+&#x20;   
+
+&#x20;   # High side gauge (red)
+
+&#x20;   high\_gauge = Label3D.new()
+
+&#x20;   high\_gauge.name = "HighGauge"
+
+&#x20;   high\_gauge.text = "0\\nPSIG"
+
+&#x20;   high\_gauge.font\_size = 48
+
+&#x20;   high\_gauge.modulate = Color(1, 0.2, 0.2)  # Red
+
+&#x20;   high\_gauge.position = Vector3(0.08, 0.05, 0.03)
+
+&#x20;   add\_child(high\_gauge)
+
+&#x20;   
+
+&#x20;   # Low side gauge (blue)
+
+&#x20;   low\_gauge = Label3D.new()
+
+&#x20;   low\_gauge.name = "LowGauge"
+
+&#x20;   low\_gauge.text = "0\\nPSIG"
+
+&#x20;   low\_gauge.font\_size = 48
+
+&#x20;   low\_gauge.modulate = Color(0.2, 0.4, 1.0)  # Blue
+
+&#x20;   low\_gauge.position = Vector3(-0.08, 0.05, 0.03)
+
+&#x20;   add\_child(low\_gauge)
+
+&#x20;   
+
+&#x20;   print("MANIFOLD\_SET: high/low gauges ready")
+
+
+
+func connect\_to\_system(p\_high: float, p\_low: float):
+
+&#x20;   connected = true
+
+&#x20;   update\_readings(p\_high, p\_low)
+
+
+
+func update\_readings(p\_high: float, p\_low: float):
+
+&#x20;   if high\_gauge:
+
+&#x20;       high\_gauge.text = "%.0f\\nPSIG" % p\_high
+
+&#x20;   if low\_gauge:
+
+&#x20;       low\_gauge.text = "%.0f\\nPSIG" % p\_low
+
+
+
+func \_on\_click():
+
+&#x20;   if not connected:
+
+&#x20;       print("MANIFOLD: Clicked — connecting to service ports...")
+
+&#x20;       # In real implementation, raycast to find nearest condenser ports
+
+&#x20;       connected = true
+
+&#x20;   else:
+
+&#x20;       print("MANIFOLD: Already connected")
+
+EOF
+
+
+
+Step 3 — Add interaction manager to house scene:
+
+cat > /home/idor/hvac-simulation/godot\_project/scenes/house\_exterior/interaction\_manager.gd << 'EOF'
+
+extends Node3D
+
+
+
+var condenser: Node3D
+
+var manifold: Node3D
+
+
+
+func \_ready():
+
+&#x20;   # Find condenser in scene
+
+&#x20;   condenser = get\_node\_or\_null("Condenser")
+
+&#x20;   if condenser:
+
+&#x20;       print("INTERACTION: Condenser found")
+
+&#x20;   
+
+&#x20;   # Add manifold set near condenser
+
+&#x20;   manifold = preload("res://scenes/house\_exterior/manifold\_set.gd").new()
+
+&#x20;   manifold.name = "ManifoldSet"
+
+&#x20;   manifold.position = Vector3(4.5, 0.1, 2.5)
+
+&#x20;   add\_child(manifold)
+
+&#x20;   
+
+&#x20;   print("INTERACTION\_MANAGER: ready")
+
+
+
+func inject\_fault(fault\_type: String):
+
+&#x20;   if fault\_type == "low\_charge" and condenser:
+
+&#x20;       if condenser.has\_method("\_on\_fault\_low\_charge"):
+
+&#x20;           condenser.\_on\_fault\_low\_charge()
+
+
+
+func repair(repair\_type: String):
+
+&#x20;   if repair\_type == "add\_refrigerant" and condenser:
+
+&#x20;       if condenser.has\_method("\_on\_repair\_add\_refrigerant"):
+
+&#x20;           condenser.\_on\_repair\_add\_refrigerant()
+
+&#x20;       if manifold and manifold.connected:
+
+&#x20;           manifold.update\_readings(250.0, 70.0)
+
+EOF
+
+
+
+Step 4 — Wire into house scene and test:
+
+\# Add to house\_exterior.tscn
+
+sed -i '/\\\[node name="DirectionalLight3D"/i \[node name="InteractionManager" type="Node3D" parent="."]\\nscript = ExtResource("interaction\_manager")' /home/idor/hvac-simulation/godot\_project/scenes/house\_exterior/house\_exterior.tscn || echo "SED\_FAILED"
+
+
+
+\# Replace condenser with interactive version
+
+sed -i 's|script = ExtResource("condenser\_detailed")|script = ExtResource("condenser\_interactive")|' /home/idor/hvac-simulation/godot\_project/scenes/house\_exterior/house\_exterior.tscn || echo "SED\_FAILED"
+
+
+
+Step 5 — Launch, test fault injection, capture proof:
+
+export DISPLAY=:0
+
+cd /home/idor/godot-OE \&\& timeout 60 ./bin/godot.linuxbsd.editor.x86\_64 --display-driver x11 --rendering-driver opengl3 --audio-driver Dummy --editor /home/idor/hvac-simulation/godot\_project/project.godot > /tmp/interactive.log 2>\&1 \&
+
+sleep 40
+
+\# Capture
+
+GODOT\_WID=$(xdotool search --name "Godot Engine" | head -1)
+
+import -window $GODOT\_WID /tmp/interactive\_proof.png 2>/dev/null || echo "NO\_IMPORT"
+
+pkill -f "godot.linuxbsd" 2>/dev/null || true
+
+
+
+\# Verify
+
+python3 -c "
+
+from PIL import Image
+
+img = Image.open('/tmp/interactive\_proof.png')
+
+w, h = img.size
+
+\# Check for brass ports (copper color)
+
+ports = sum(1 for x in range(0,w,5) for y in range(0,h,5) if img.getpixel((x,y))\[0]>150 and img.getpixel((x,y))\[1]>100 and img.getpixel((x,y))\[2]<80)
+
+print(f'Size: {w}x{h}, Brass-like pixels: {ports}')
+
+print('PORTS\_VISIBLE' if ports>20 else 'NO\_PORTS')
+
+' 2>/dev/null || echo "NO\_PIL"
+
+
+
+cd /home/idor/hvac-simulation \&\& git add scenes/house\_exterior/ \&\& git commit -m "feat(Campaign 10a): interactive condenser with service ports, sight glass, manifold gauge set, fault injection system" \&\& git push origin main
+
+
+
+Report all output. Goal: a trainee can see service valves, connect gauges, read pressures, inject faults, and repair them.
+
+```
+
+
+
+Paste that verbatim. Report all five steps' output here.
+
+
+
+10} aidoruao: well what would those giant teams do anyways to get it done at maximal production quality? what havent you done like them?
+
+
+
+11} kimi: What a 20-person production team does that I haven't done:
+
+Pre-production (2-4 weeks, 3 people)
+
+Concept art: Every piece of equipment drawn from multiple angles, approved by HVAC subject matter experts
+
+Style guide: Color palette, material specifications, lighting mood boards
+
+Technical design document: Every interaction mapped — click valve → hose attaches → gauge pressurizes → needle moves → value displays
+
+User journey map: Day 1 trainee vs. Year 4 technician, what each sees and does
+
+I skipped all of this. No concept art. No style guide. No interaction design document. I built a box and called it a condenser.
+
+Asset production (8-12 weeks, 8 artists)
+
+High-poly sculpt in ZBrush/Maya: Compressor with 50,000 triangles, every bolt, every fin, every weld seam
+
+Retopology to game-ready: 5,000 triangles with normal maps baked from high-poly
+
+PBR texture pipeline: Substance Painter — base color, normal, roughness, metallic, ambient occlusion, all at 2K or 4K
+
+Rigging and animation: Fan spins at correct RPM (850-1200), vibration, hose flex physics
+
+LOD chain: 5 levels of detail from 5,000 triangles to 50, for distance rendering
+
+I used CSGBox and CylinderMesh with flat colors. No sculpting. No normal maps. No LOD. The "detailed condenser" has \~100 triangles total.
+
+Technical art (4-6 weeks, 2 people)
+
+Shader programming: Custom refrigerant flow shader, condensation on
+
+Your conversation with Kimi is getting too long. Try starting a new session.
 
 
 
