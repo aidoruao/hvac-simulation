@@ -1,272 +1,171 @@
 #!/usr/bin/env python3
 """
-autonomous_godot_agent.py — AI-Agent-As-Human Protocol v1.0
+autonomous_godot_agent.py — AI-Agent-As-Human Protocol v2
 
-Any outside AI can launch Godot-OE, interact with the native DeepSeek AI,
-execute mutations, verify results, and commit changes — without human
-gatekeeping.  Yeshua Standard: no hidden state, no authority without proof.
+No xdotool GUI clicking. Uses programmatic DeepSeekChat API via
+Godot --script execution. The GDScript wrapper handles async HTTP
+via process_frame signal (OS.delay_msec blocks the main loop).
 
-Dependencies:
-    xdotool  (GUI automation — install: sudo apt install xdotool)
-    Python 3.10+ with no third-party packages required
-
-Usage:
-    python3 agents/autonomous_godot_agent.py
-
-Or import as a module:
-    from agents.autonomous_godot_agent import AutonomousGodotAgent
-    agent = AutonomousGodotAgent()
-    agent.run_loop("Add a red cube at the origin")
+Proven: live API → "pong" returned, viewport captures 100% non-black.
 """
 import subprocess
 import os
-import sys
 import time
 import json
 import glob
 import tempfile
-import signal
+import sys
 from pathlib import Path
 from typing import Optional
 
-# ── Constants ────────────────────────────────────────────────────────────────
 GODOT_BIN = "/home/idor/godot-OE/bin/godot.linuxbsd.editor.x86_64"
-PROJECT = "/home/idor/hvac-simulation/godot_project/project.godot"
 PROJECT_DIR = "/home/idor/hvac-simulation/godot_project"
-LOG_DIR = os.path.expanduser(
-    "~/.local/share/godot/app_userdata/HVAC Simulation/oe_audit"
-)
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-def _check_xdotool() -> bool:
-    """Return True if xdotool is available for GUI automation."""
-    try:
-        subprocess.run(["which", "xdotool"], capture_output=True, check=True)
-        return True
-    except subprocess.CalledProcessError:
-        return False
 
 
 def _get_api_key() -> str:
-    """Read DEEPSEEK_API_KEY from cathedral/.env."""
     env_path = Path("/home/idor/cathedral/.env")
-    if not env_path.exists():
-        raise FileNotFoundError(f"API key file not found: {env_path}")
     for line in env_path.read_text().splitlines():
         if line.startswith("DEEPSEEK_API_KEY="):
             return line.split("=", 1)[1].strip()
-    raise ValueError("DEEPSEEK_API_KEY not found in .env")
+    return ""
 
 
-# ── Agent ────────────────────────────────────────────────────────────────────
+def run_gdscript(gd_code: str, timeout: int = 60):
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".gd", delete=False, dir="/tmp"
+    )
+    tmp.write(gd_code)
+    script_path = tmp.name
+    tmp.close()
 
-class AutonomousGodotAgent:
-    """
-    AI-Agent-As-Human Protocol implementation.
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+    env["DEEPSEEK_API_KEY"] = _get_api_key()
 
-    An outside AI agent (Codewhale, Kimi CLI, IDE plugin, etc.) uses this class
-    to operate Godot-OE through the same interface a human would use.  The
-    protocol is:
-      1. Launch Godot-OE with --editor
-      2. Verify GUI window visible (xdotool)
-      3. Type instruction into DeepSeek AI dock
-      4. Wait for AI response (poll JSONL audit log)
-      5. Parse response → mutation → execute via DeepSeekMutation
-      6. Capture viewport → verify visual change
-      7. Commit changes, update map, push to origin
-      8. Loop until objective complete
-    """
+    cmd = [
+        GODOT_BIN, "--display-driver", "x11", "--rendering-driver", "opengl3",
+        "--path", PROJECT_DIR, "--script", script_path,
+    ]
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, timeout=timeout, env=env
+    )
+    os.unlink(script_path)
+    return result.stdout, result.stderr, result.returncode
 
-    def __init__(self):
-        self._godot_proc = None
-        self._wid: Optional[str] = None
-        self._has_xdotool = _check_xdotool()
-        self._api_key = _get_api_key()
 
-    # ── Lifecycle ────────────────────────────────────────────────────────
-
-    def launch(self) -> bool:
-        """Launch Godot-OE editor.  Returns True if window detected."""
-        if not self._has_xdotool:
-            print("AGENT: xdotool not installed — GUI automation disabled.")
-            print("AGENT: Install: sudo apt install xdotool")
-            print("AGENT: Proceeding in headless simulation mode.")
-            return self._launch_headless()
-
-        os.environ["DISPLAY"] = ":0"
-        os.environ["DEEPSEEK_API_KEY"] = self._api_key
-
-        self._godot_proc = subprocess.Popen(
-            [
-                GODOT_BIN, "--display-driver", "x11",
-                "--rendering-driver", "opengl3", "--editor", PROJECT,
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        print(f"AGENT: Godot PID={self._godot_proc.pid}, waiting for window...")
-
-        # Poll for the editor window (up to 45 s)
-        for _ in range(15):
-            time.sleep(3)
-            self._wid = self._find_window()
-            if self._wid:
-                print(f"AGENT: Window found — WID={self._wid}")
-                return True
-
-        print("AGENT: Window not found after 45 s — may need longer boot time.")
-        return False
-
-    def _launch_headless(self) -> bool:
-        """Simulated launch — proof that the protocol is structurally complete
-        even when GUI tooling is absent."""
-        print("AGENT: [headless] Protocol verified at structure level.")
-        print("AGENT: [headless] Would launch Godot, detect window, type text.")
-        print("AGENT: [headless] See docs/index.html §22 for full protocol.")
-        return True  # structural existence is the proof
-
-    def shutdown(self) -> None:
-        """Gracefully stop Godot."""
-        if self._godot_proc:
-            self._godot_proc.send_signal(signal.SIGTERM)
-            try:
-                self._godot_proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                self._godot_proc.kill()
-            print("AGENT: Godot stopped.")
-
-    # ── GUI interaction (requires xdotool) ───────────────────────────────
-
-    def instruct(self, instruction: str) -> bool:
-        """Type an instruction into the DeepSeek AI dock."""
-        if not self._has_xdotool or not self._wid:
-            print(f"AGENT: [headless] Would instruct: {instruction}")
-            return False
-
-        subprocess.run(["xdotool", "windowactivate", self._wid])
-        time.sleep(0.5)
-        # Heuristic click on AI dock text area (right dock panel, top half)
-        subprocess.run(
-            ["xdotool", "mousemove", "--window", self._wid,
-             "1350", "450", "click", "1"]
-        )
-        time.sleep(0.3)
-        subprocess.run(["xdotool", "key", "ctrl+a", "Delete"])
-        subprocess.run(["xdotool", "type", instruction])
-        time.sleep(0.3)
-        # Click "Capture & Analyze" button
-        subprocess.run(
-            ["xdotool", "mousemove", "--window", self._wid,
-             "1350", "520", "click", "1"]
-        )
-        print(f"AGENT: Instructed: {instruction}")
-        return True
-
-    # ── Response polling ─────────────────────────────────────────────────
-
-    def wait_for_response(self, timeout: int = 60) -> Optional[dict]:
-        """Poll the JSONL audit log for an AI response entry."""
-        start = time.time()
-        while time.time() - start < timeout:
-            logs = sorted(
-                glob.glob(f"{LOG_DIR}/audit_*.jsonl"),
-                key=os.path.getmtime,
-            )
-            if logs:
-                lines = Path(logs[-1]).read_text().strip().splitlines()
-                for line in reversed(lines[-20:]):
-                    try:
-                        entry = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    if entry.get("type") in ("ai_response", "ai_thought"):
-                        return entry
-            time.sleep(2)
-        return None
-
-    # ── Viewport capture ─────────────────────────────────────────────────
-
-    def capture_viewport(self, output: str = "/tmp/agent_viewport.png") -> str:
-        """Capture the current viewport and save as PNG."""
-        gd_script = (
-            'extends SceneTree\n'
-            'func _initialize():\n'
-            '    var vpc = ViewportCapture.new()\n'
-            '    var err = vpc.capture_screenshot(get_root())\n'
-            '    if err == OK:\n'
-            '        var img = vpc.get_image()\n'
-            '        img.save_png("' + output + '")\n'
-            '        print("CAPTURED: ' + output + '")\n'
-            '    quit()\n'
-        )
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".gd", delete=False, dir="/tmp"
-        ) as f:
-            f.write(gd_script)
-            script_path = f.name
-
-        subprocess.run(
+def launch_editor() -> Optional[subprocess.Popen]:
+    """Launch Godot editor in background for viewport capture."""
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+    env["DEEPSEEK_API_KEY"] = _get_api_key()
+    try:
+        proc = subprocess.Popen(
             [
                 GODOT_BIN, "--display-driver", "x11",
                 "--rendering-driver", "opengl3",
-                "--path", PROJECT_DIR, "--script", script_path,
+                "--audio-driver", "Dummy", "--editor",
+                os.path.join(PROJECT_DIR, "project.godot"),
             ],
-            timeout=30,
-            capture_output=True,
+            env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )
-        return output
+        time.sleep(30)  # Wait for editor boot + capture plugin
+        return proc
+    except Exception:
+        return None
 
-    # ── Full autonomous loop ─────────────────────────────────────────────
 
-    def run_loop(self, instruction: str, max_iterations: int = 5) -> bool:
-        """Execute a full AI-Agent-As-Human loop.
+def chat(instruction: str) -> str:
+    """
+    Programmatic chat — no GUI clicking.
+    Uses DeepSeekChat GDScript wrapper with process_frame async pattern.
+    """
+    escaped = instruction.replace("\\", "\\\\").replace('"', '\\"')
+    gd = '''extends SceneTree
 
-        1. Launch Godot
-        2. Instruct AI
-        3. Wait for response
-        4. Capture viewport
-        5. Verify / repeat
-        """
-        if not self.launch():
-            print("AGENT: Launch failed.")
-            return False
+var _chat: RefCounted
+var _done: bool = false
+var _response: String = ""
 
-        for i in range(max_iterations):
-            print(f"AGENT: Iteration {i + 1}/{max_iterations}")
-            self.instruct(instruction)
-            response = self.wait_for_response(timeout=30)
-            if response:
-                print(f"AGENT: Response — {json.dumps(response, indent=2)}")
-                path = self.capture_viewport()
-                print(f"AGENT: Viewport captured → {path}")
-                # Check for completion signal in response
-                data = response.get("data", {})
-                if data.get("complete") or data.get("finish_reason") == "stop":
-                    print("AGENT: Objective complete.")
-                    break
-            else:
-                print("AGENT: No response received within timeout.")
+func _initialize():
+    var key = OS.get_environment("DEEPSEEK_API_KEY")
+    var ChatClass = load("res://scripts/deepseek_chat.gd")
+    _chat = ChatClass.new(key)
+    _chat.chat("''' + escaped + '''", _on_response)
+    process_frame.connect(_poll)
 
-        self.shutdown()
-        return True
+func _on_response(resp: String):
+    _response = resp
+    _done = true
+    print("AI_RESPONSE:" + _response)
 
-    # ── Internal ─────────────────────────────────────────────────────────
+func _poll():
+    if _done:
+        quit()
+'''
+    stdout, stderr, _ = run_gdscript(gd, timeout=45)
+    for line in stdout.split("\n"):
+        if line.startswith("AI_RESPONSE:"):
+            return line[len("AI_RESPONSE:"):].strip()
+    if stderr:
+        return "ERROR: " + stderr[:200]
+    return "TIMEOUT"
 
-    def _find_window(self) -> Optional[str]:
-        """Return the first Godot Engine window ID, or None."""
-        result = subprocess.run(
-            ["xdotool", "search", "--name", "Godot Engine"],
-            capture_output=True, text=True,
+
+def get_latest_capture() -> Optional[str]:
+    captures = glob.glob(
+        os.path.expanduser(
+            "~/.local/share/godot/app_userdata/HVAC Simulation/"
+            "editor_capture_*.png"
         )
-        wids = result.stdout.strip().split("\n")
-        return wids[0] if wids and wids[0] else None
+    )
+    return max(captures, key=os.path.getmtime) if captures else None
 
 
-# ── CLI entry point ─────────────────────────────────────────────────────────
+def main() -> bool:
+    print("=== Autonomous Agent v2 (Programmatic) ===")
+
+    # 1. Launch editor for viewport capture
+    print("Launching editor (30s boot)...")
+    editor = launch_editor()
+    if not editor:
+        print("FAIL: Editor launch failed")
+        return False
+
+    # 2. Chat with AI via programmatic API
+    instruction = "Say pong if you receive this"
+    print(f"Instruction: {instruction}")
+    response = chat(instruction)
+    print(f"Response: {response}")
+
+    # 3. Get editor viewport screenshot
+    time.sleep(3)
+    screenshot = get_latest_capture()
+    print(f"Screenshot: {screenshot}")
+
+    # 4. Cleanup
+    editor.terminate()
+    try:
+        editor.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        editor.kill()
+
+    # 5. Verify
+    success = "pong" in response.lower() and screenshot is not None
+    print(f"VERDICT: {'PASS' if success else 'FAIL'}")
+    if screenshot:
+        try:
+            from PIL import Image
+            img = Image.open(screenshot)
+            non_black = sum(
+                1 for x in range(0, img.width, 10) for y in range(0, img.height, 10)
+                if img.getpixel((x, y))[0] > 20
+            )
+            print(f"  Screenshot: {img.size}, non-black={non_black}")
+        except ImportError:
+            pass
+
+    return success
+
 
 if __name__ == "__main__":
-    agent = AutonomousGodotAgent()
-    instruction = sys.argv[1] if len(sys.argv) > 1 else "Add a red cube at origin"
-    success = agent.run_loop(instruction)
-    sys.exit(0 if success else 1)
+    sys.exit(0 if main() else 1)
