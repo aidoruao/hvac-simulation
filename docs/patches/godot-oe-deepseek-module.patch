@@ -1,0 +1,735 @@
+diff --git a/modules/deepseek/ai_assistant_dock.cpp b/modules/deepseek/ai_assistant_dock.cpp
+new file mode 100644
+index 0000000..2e858b0
+--- /dev/null
++++ b/modules/deepseek/ai_assistant_dock.cpp
+@@ -0,0 +1,411 @@
++/**************************************************************************/
++/*  ai_assistant_dock.cpp  --  DeepSeek AI Assistant Editor Panel (v3)   */
++/**************************************************************************/
++
++#ifdef TOOLS_ENABLED
++
++#include "ai_assistant_dock.h"
++
++#include "deepseek_client.h"
++#include "deepseek_covenant.h"
++#include "deepseek_mutation.h"
++#include "scene_serializer.h"
++#include "viewport_capture.h"
++
++#include "core/object/callable_mp.h"
++#include "core/string/print_string.h"
++#include "editor/editor_node.h"
++#include "scene/gui/box_container.h"
++#include "scene/gui/button.h"
++#include "scene/gui/label.h"
++#include "scene/gui/panel_container.h"
++#include "scene/gui/rich_text_label.h"
++#include "scene/gui/separator.h"
++#include "scene/gui/text_edit.h"
++#include "core/io/file_access.h"
++#include "core/io/dir_access.h"
++#include "core/os/os.h"
++#include "core/os/time.h"
++
++// ---------------------------------------------------------------------------
++// Glass Box logger — prints to console AND appends to JSONL audit log.
++// Shared with GDScript AuditLogger: same directory, same format.
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_log(const String &p_msg) {
++	print_line("[DeepSeekAI] " + p_msg);
++
++	// Build JSONL entry
++	String timestamp = Time::get_singleton()->get_datetime_string_from_system(true);
++	String escaped_msg = p_msg.json_escape();
++	String jsonl = "{\"timestamp\":\"" + timestamp + "\",\"type\":\"ai_dock\",\"data\":{\"message\":\"" + escaped_msg + "\"}}\n";
++
++	// Ensure audit directory exists
++	String audit_dir = OS::get_singleton()->get_user_data_dir().path_join("oe_audit");
++	Ref<DirAccess> dir = DirAccess::open(OS::get_singleton()->get_user_data_dir());
++	if (dir.is_valid()) {
++		dir->make_dir_recursive("oe_audit");
++	}
++
++	// Append to shared audit log
++	String audit_path = audit_dir.path_join("audit_cpp.jsonl");
++	Ref<FileAccess> f = FileAccess::open(audit_path, FileAccess::WRITE_READ);
++	if (f.is_valid()) {
++		f->seek_end();
++		f->store_string(jsonl);
++	}
++}
++
++// ---------------------------------------------------------------------------
++// Construction
++// ---------------------------------------------------------------------------
++DeepSeekAIAssistant::DeepSeekAIAssistant() {
++	// RefCounted backends created in NOTIFICATION_ENTER_TREE.
++}
++
++// ---------------------------------------------------------------------------
++// Notification handler: build UI on enter, poll client every frame.
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_notification(int p_what) {
++	switch (p_what) {
++		case NOTIFICATION_ENTER_TREE: {
++			client.instantiate();
++			capture.instantiate();
++			covenant.instantiate();
++			mutation_engine.instantiate();
++			serializer.instantiate();
++
++			// Load project covenant.
++			String covenant_path = "res://COVENANT.json";
++			covenant->load_covenant(covenant_path);
++
++			_build_ui();
++			_log("DeepSeek AI Assistant dock initialized (v4 — covenant + serializer).");
++			set_process(true);
++		} break;
++
++		case NOTIFICATION_PROCESS: {
++			_poll_and_update();
++		} break;
++	}
++}
++
++// ---------------------------------------------------------------------------
++// Build the dock UI layout.
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_build_ui() {
++	PanelContainer *panel = memnew(PanelContainer);
++	panel->set_name("DeepSeek AI");
++
++	VBoxContainer *vbox = memnew(VBoxContainer);
++
++	// Title.
++	Label *title = memnew(Label);
++	title->set_text("DeepSeek V4 Pro — AI Assistant");
++	title->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
++	vbox->add_child(title);
++
++	vbox->add_child(memnew(HSeparator));
++
++	// Prompt input.
++	Label *prompt_label = memnew(Label);
++	prompt_label->set_text("Instructions (use [ADD_NODE:...] [SET_PROP:...] tags):");
++	vbox->add_child(prompt_label);
++
++	prompt_edit = memnew(TextEdit);
++	prompt_edit->set_custom_minimum_size(Size2(0, 80));
++	prompt_edit->set_placeholder("Describe what you want the AI to analyze in the viewport...");
++	vbox->add_child(prompt_edit);
++
++	// Capture & Analyze button.
++	capture_btn = memnew(Button);
++	capture_btn->set_text("Capture & Analyze");
++	capture_btn->connect("pressed", callable_mp(this, &DeepSeekAIAssistant::_on_capture_and_analyze));
++	vbox->add_child(capture_btn);
++
++	// Status label.
++	status_label = memnew(Label);
++	status_label->set_text("Ready. Set your API key, then click Capture & Analyze.");
++	status_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
++	status_label->set_modulate(Color(0.7, 0.7, 0.7));
++	vbox->add_child(status_label);
++
++	vbox->add_child(memnew(HSeparator));
++
++	// Output.
++	Label *output_title = memnew(Label);
++	output_title->set_text("AI Response:");
++	vbox->add_child(output_title);
++
++	output_label = memnew(RichTextLabel);
++	output_label->set_custom_minimum_size(Size2(0, 160));
++	output_label->set_selection_enabled(true);
++	output_label->set_scroll_follow(true);
++	vbox->add_child(output_label);
++
++	panel->add_child(vbox);
++	add_control_to_dock(DOCK_SLOT_RIGHT_BL, panel);
++}
++
++// ---------------------------------------------------------------------------
++// "Capture & Analyze" button handler
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_on_capture_and_analyze() {
++	if (request_in_flight) {
++		_log("Request already in flight — ignoring button press.");
++		return;
++	}
++
++	// 1. Validate API key.
++	if (client->get_api_key().is_empty()) {
++		status_label->set_text("ERROR: API key not set. Use client.set_api_key() first.");
++		_log("ERROR: API key not set.");
++		return;
++	}
++
++	// 2. Capture viewport.
++	Viewport *vp = EditorNode::get_singleton()->get_scene_root();
++	if (!vp) {
++		status_label->set_text("ERROR: No scene viewport available.");
++		_log("ERROR: get_scene_root() returned null.");
++		return;
++	}
++
++	_log("Capturing viewport...");
++	Error err = capture->capture_screenshot(vp);
++	if (err != OK) {
++		status_label->set_text("ERROR: Viewport capture failed (code " + itos(err) + ").");
++		_log("ERROR: capture_screenshot() failed: " + itos(err));
++		return;
++	}
++
++	String b64 = capture->get_base64_png();
++	int b64_len = b64.length();
++	_log("Capture complete. Base64 PNG: " + itos(b64_len) + " chars.");
++
++	// 3. Serialize scene tree for AI context.
++	Node *scene_root = EditorNode::get_editor_data().get_edited_scene_root(0);
++	if (scene_root) {
++		serializer->serialize_tree(scene_root);
++		String tree_data = serializer->get_compressed_tree();
++		_log("Scene tree serialized: " + itos(serializer->get_node_count()) +
++				" nodes, " + itos(tree_data.length()) + " chars.");
++	}
++
++	// 4. Build the prompt for the API.
++	String user_prompt = prompt_edit->get_text().strip_edges();
++	if (user_prompt.is_empty()) {
++		user_prompt = "Describe what you see in this viewport image.";
++	}
++
++	// Prepend Covenant, then scene tree, then user prompt, then screenshot.
++	String full_prompt;
++	full_prompt += covenant->get_prompt_prefix() + "\n";
++	if (serializer->get_node_count() > 0) {
++		full_prompt += "Context:\n[Scene Tree]\n" + serializer->get_compressed_tree() + "\n";
++	}
++	full_prompt += "User Instruction: " + user_prompt + "\n";
++	full_prompt += "\n[Viewport Screenshot — Base64 PNG (" + itos(b64_len) + " chars)]\n" + b64;
++
++	_log("Combined prompt: " + itos(full_prompt.length()) + " chars total.");
++
++	status_label->set_text("Sending request to DeepSeek...");
++	output_label->set_text("[Sending...]");
++	request_in_flight = true;
++	capture_btn->set_disabled(true);
++
++	_log("Initiating API request (" + itos(b64_len) + " bytes base64 image).");
++	client->request_completion(full_prompt);
++}
++
++// ---------------------------------------------------------------------------
++// Frame polling: drive the HTTPClient state machine, update UI.
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_poll_and_update() {
++	if (!request_in_flight) {
++		return;
++	}
++
++	client->poll();
++
++	DeepSeekClient::State s = client->get_state();
++
++	switch (s) {
++		case DeepSeekClient::STATE_CONNECTING:
++			status_label->set_text("Connecting to DeepSeek API...");
++			break;
++
++		case DeepSeekClient::STATE_REQUESTING:
++			status_label->set_text("Waiting for response...");
++			break;
++
++		case DeepSeekClient::STATE_COMPLETE: {
++			String response = client->get_response_text();
++			output_label->set_text(response);
++			status_label->set_text("Response received.");
++			_log("Request complete. Response: " + itos(response.length()) + " chars.");
++
++			// Process mutation tags from the AI response.
++			_process_mutation_tags(response);
++
++			request_in_flight = false;
++			capture_btn->set_disabled(false);
++		} break;
++
++		case DeepSeekClient::STATE_ERROR: {
++			String err = client->get_last_error();
++			output_label->set_text("[Error: " + err + "]");
++			status_label->set_text("ERROR: " + err);
++			_log("Request failed: " + err);
++			request_in_flight = false;
++			capture_btn->set_disabled(false);
++		} break;
++
++		default:
++			break;
++	}
++}
++
++// ---------------------------------------------------------------------------
++// Mutation tag parser: scans AI response for structured tags and executes them.
++// Supported tags:
++//   [ADD_NODE: Type, Name, ParentPath]
++//   [SET_PROP: NodePath, Property, Value]
++//   [EDIT_SCRIPT: res://path] ... content ... [/EDIT_SCRIPT]
++// ---------------------------------------------------------------------------
++void DeepSeekAIAssistant::_process_mutation_tags(const String &p_response) {
++	if (p_response.is_empty()) {
++		return;
++	}
++
++	_log("Scanning response for mutation tags...");
++	int tags_executed = 0;
++
++	// --- ADD_NODE tags ---
++	{
++		const String prefix = "[ADD_NODE:";
++		int pos = 0;
++		while ((pos = p_response.find(prefix, pos)) != -1) {
++			int start = pos + prefix.length();
++			int end = p_response.find("]", start);
++			if (end == -1) {
++				break;
++			}
++
++			String body = p_response.substr(start, end - start).strip_edges();
++			String type = body.get_slice(",", 0).strip_edges();
++			String name = body.get_slice(",", 1).strip_edges();
++			String parent = body.get_slice(",", 2).strip_edges();
++			if (parent.is_empty()) {
++				parent = ".";
++			}
++
++			if (type.is_empty() || name.is_empty()) {
++				_log("  SKIP malformed [ADD_NODE] tag: " + body);
++				pos = end + 1;
++				continue;
++			}
++
++			_log("  [ADD_NODE] " + type + " '" + name + "' → " + parent);
++			Error err = mutation_engine->add_node(type, name, parent);
++			if (err == OK) {
++				tags_executed++;
++				_log("    → OK");
++			} else {
++				_log("    → FAILED (error " + itos(err) + ")");
++			}
++
++			pos = end + 1;
++		}
++	}
++
++	// --- SET_PROP tags ---
++	{
++		const String prefix = "[SET_PROP:";
++		int pos = 0;
++		while ((pos = p_response.find(prefix, pos)) != -1) {
++			int start = pos + prefix.length();
++			int end = p_response.find("]", start);
++			if (end == -1) {
++				break;
++			}
++
++			String body = p_response.substr(start, end - start).strip_edges();
++			String path = body.get_slice(",", 0).strip_edges();
++			String prop = body.get_slice(",", 1).strip_edges();
++			String val_str = body.get_slice(",", 2).strip_edges();
++
++			if (path.is_empty() || prop.is_empty()) {
++				_log("  SKIP malformed [SET_PROP] tag: " + body);
++				pos = end + 1;
++				continue;
++			}
++
++			// Try numeric coercion.
++			Variant value;
++			if (val_str.is_valid_float()) {
++				value = val_str.to_float();
++			} else if (val_str == "true") {
++				value = true;
++			} else if (val_str == "false") {
++				value = false;
++			} else {
++				value = val_str;
++			}
++
++			_log("  [SET_PROP] " + path + "." + prop + " = " + val_str);
++			Error err = mutation_engine->set_node_property(path, prop, value);
++			if (err == OK) {
++				tags_executed++;
++				_log("    → OK");
++			} else {
++				_log("    → FAILED (error " + itos(err) + ")");
++			}
++
++			pos = end + 1;
++		}
++	}
++
++	// --- EDIT_SCRIPT tags ---
++	{
++		const String open_tag = "[EDIT_SCRIPT:";
++		const String close_tag = "[/EDIT_SCRIPT]";
++		int pos = 0;
++		while ((pos = p_response.find(open_tag, pos)) != -1) {
++			int path_start = pos + open_tag.length();
++			int path_end = p_response.find("]", path_start);
++			if (path_end == -1) {
++				break;
++			}
++
++			String path = p_response.substr(path_start, path_end - path_start).strip_edges();
++			int content_start = path_end + 1;
++			int content_end = p_response.find(close_tag, content_start);
++			if (content_end == -1) {
++				_log("  SKIP [EDIT_SCRIPT] missing closing tag: " + path);
++				pos = path_end + 1;
++				continue;
++			}
++
++			String content = p_response.substr(content_start, content_end - content_start);
++
++			_log("  [EDIT_SCRIPT] " + path + " (" + itos(content.length()) + " chars)");
++			Error err = mutation_engine->edit_script(path, content);
++			if (err == OK) {
++				tags_executed++;
++				_log("    → OK");
++			} else {
++				_log("    → FAILED (error " + itos(err) + ")");
++			}
++
++			pos = content_end + close_tag.length();
++		}
++	}
++
++	if (tags_executed > 0) {
++		status_label->set_text("Response received. Executed " + itos(tags_executed) + " mutation(s).");
++	} else {
++		_log("No mutation tags found in response.");
++	}
++}
++
++#endif // TOOLS_ENABLED
+diff --git a/modules/deepseek/deepseek_client.cpp b/modules/deepseek/deepseek_client.cpp
+new file mode 100644
+index 0000000..de4b522
+--- /dev/null
++++ b/modules/deepseek/deepseek_client.cpp
+@@ -0,0 +1,312 @@
++/**************************************************************************/
++/*  deepseek_client.cpp  --  DeepSeek V4 Pro API Client                   */
++/**************************************************************************/
++
++#include "deepseek_client.h"
++
++#include "core/io/http_client.h"
++#include "core/io/json.h"
++#include "core/io/stream_peer_tls.h"
++#include "core/object/class_db.h"
++#include "core/os/os.h"
++#include "core/string/print_string.h"
++#include "core/variant/array.h"
++#include "core/variant/dictionary.h"
++
++// ---------------------------------------------------------------------------
++// Glass Box logger — every request and raw response lands in the editor console.
++// ---------------------------------------------------------------------------
++void DeepSeekClient::_log(const String &p_prefix, const String &p_msg) {
++	String line = "[DeepSeekClient] " + p_prefix + ": " + p_msg;
++	print_line(line);
++}
++
++void DeepSeekClient::_transition(State p_new_state) {
++	state = p_new_state;
++}
++
++void DeepSeekClient::_fail(const String &p_error) {
++	last_error = p_error;
++	state = STATE_ERROR;
++	_log("ERROR", p_error);
++}
++
++// ---------------------------------------------------------------------------
++// Property accessors
++// ---------------------------------------------------------------------------
++void DeepSeekClient::set_api_key(const String &p_key) {
++	api_key = p_key;
++}
++
++String DeepSeekClient::get_api_key() const {
++	return api_key;
++}
++
++void DeepSeekClient::set_model(const String &p_model) {
++	model = p_model;
++}
++
++String DeepSeekClient::get_model() const {
++	return model;
++}
++
++void DeepSeekClient::set_endpoint(const String &p_endpoint) {
++	endpoint = p_endpoint;
++}
++
++String DeepSeekClient::get_endpoint() const {
++	return endpoint;
++}
++
++DeepSeekClient::State DeepSeekClient::get_state() const {
++	return state;
++}
++
++String DeepSeekClient::get_response_text() const {
++	return response_text;
++}
++
++String DeepSeekClient::get_last_error() const {
++	return last_error;
++}
++
++// ---------------------------------------------------------------------------
++// Construction / destruction
++// ---------------------------------------------------------------------------
++DeepSeekClient::DeepSeekClient() :
++		state(STATE_IDLE),
++		port(443),
++		use_tls(true) {
++	http = Ref<HTTPClient>(HTTPClient::create());
++	model = "deepseek-chat";
++	endpoint = "https://api.deepseek.com/v1/chat/completions";
++
++	// FR-SV-005: fall back to environment variable if key not explicitly set.
++	if (api_key.is_empty()) {
++		String env_key = OS::get_singleton()->get_environment("DEEPSEEK_API_KEY");
++		if (!env_key.is_empty()) {
++			api_key = env_key;
++			print_line("[DeepSeekClient] API key loaded from DEEPSEEK_API_KEY environment (" + itos(api_key.length()) + " chars)");
++		}
++	}
++}
++
++DeepSeekClient::~DeepSeekClient() {
++	if (state != STATE_IDLE && state != STATE_COMPLETE && state != STATE_ERROR) {
++		http->close();
++	}
++}
++
++// ---------------------------------------------------------------------------
++// Async request entry point
++// ---------------------------------------------------------------------------
++void DeepSeekClient::request_completion(const String &p_prompt) {
++	if (state != STATE_IDLE && state != STATE_COMPLETE && state != STATE_ERROR) {
++		_log("WARN", "Request already in flight — ignoring.");
++		return;
++	}
++
++	if (api_key.is_empty()) {
++		_fail("API key not set. Call set_api_key() first.");
++		return;
++	}
++
++	// Reset response accumulator.
++	response_text.clear();
++
++	// Parse endpoint URL.
++	String url = endpoint;
++	if (url.begins_with("https://")) {
++		url = url.substr(8);
++		use_tls = true;
++		port = 443;
++	} else if (url.begins_with("http://")) {
++		url = url.substr(7);
++		use_tls = false;
++		port = 80;
++	}
++
++	int slash = url.find("/");
++	if (slash != -1) {
++		host = url.substr(0, slash);
++		path = url.substr(slash);
++	} else {
++		host = url;
++		path = "/";
++	}
++
++	// Build JSON request body (Glass Box — logged before sending).
++	Array messages;
++
++	Dictionary sys_msg;
++	sys_msg["role"] = "system";
++	sys_msg["content"] = "You are a helpful AI assistant integrated into the Godot game engine.";
++	messages.push_back(sys_msg);
++
++	Dictionary user_msg;
++	user_msg["role"] = "user";
++	user_msg["content"] = p_prompt;
++	messages.push_back(user_msg);
++
++	Dictionary body_dict;
++	body_dict["model"] = model;
++	body_dict["messages"] = messages;
++	body_dict["temperature"] = 0.7;
++	body_dict["max_tokens"] = 2048;
++	body_dict["stream"] = false;
++
++	request_body = JSON::stringify(body_dict);
++	_log("REQUEST", request_body);
++
++	// Connect with TLS.
++	Ref<TLSOptions> tls;
++	if (use_tls) {
++		tls = TLSOptions::client();
++	}
++
++	Error err = http->connect_to_host(host, port, tls);
++	if (err != OK) {
++		_fail("connect_to_host failed: " + String::num_int64(err));
++		return;
++	}
++
++	_transition(STATE_CONNECTING);
++	_log("INFO", "Connecting to " + host + ":" + String::num_int64(port));
++}
++
++// ---------------------------------------------------------------------------
++// State-machine poll — call every frame until STATE_COMPLETE or STATE_ERROR.
++// ---------------------------------------------------------------------------
++void DeepSeekClient::poll() {
++	switch (state) {
++		case STATE_IDLE:
++		case STATE_COMPLETE:
++		case STATE_ERROR:
++			return;
++
++		case STATE_CONNECTING: {
++			Error err = http->poll();
++			if (err != OK) {
++				_fail("poll() error during connect: " + String::num_int64(err));
++				return;
++			}
++
++			HTTPClient::Status s = http->get_status();
++			switch (s) {
++				case HTTPClient::STATUS_CONNECTED: {
++					_transition(STATE_CONNECTED);
++					_log("INFO", "Connected to " + host);
++					// Fall through to send request immediately.
++				} break;
++				case HTTPClient::STATUS_CONNECTING:
++				case HTTPClient::STATUS_RESOLVING:
++					return; // Keep polling.
++				default:
++					_fail("Unexpected HTTP status during connect: " + String::num_int64(s));
++					return;
++			}
++		}
++		// Fall-through intentional when connection just established.
++		[[fallthrough]];
++
++		case STATE_CONNECTED: {
++			Vector<String> headers;
++			headers.push_back("Content-Type: application/json");
++			headers.push_back("Authorization: Bearer " + api_key);
++			headers.push_back("Content-Length: " + String::num_int64(request_body.utf8().size()));
++
++			CharString body_utf8 = request_body.utf8();
++			Error err = http->request(HTTPClient::METHOD_POST, path, headers,
++					reinterpret_cast<const uint8_t *>(body_utf8.ptr()), body_utf8.size());
++			if (err != OK) {
++				_fail("request() failed: " + String::num_int64(err));
++				return;
++			}
++
++			_transition(STATE_REQUESTING);
++			_log("INFO", "POST " + path + " sent (" + String::num_int64(body_utf8.size()) + " bytes)");
++			return;
++		}
++
++		case STATE_REQUESTING: {
++			Error err = http->poll();
++			if (err != OK) {
++				_fail("poll() error during request: " + String::num_int64(err));
++				return;
++			}
++
++			HTTPClient::Status s = http->get_status();
++			switch (s) {
++				case HTTPClient::STATUS_BODY: {
++					_transition(STATE_READING);
++					_log("INFO", "Response code: " + String::num_int64(http->get_response_code()));
++					// Fall through to read body.
++				} break;
++				case HTTPClient::STATUS_REQUESTING:
++					return; // Keep polling.
++				default:
++					_fail("Unexpected HTTP status during request: " + String::num_int64(s));
++					return;
++			}
++		}
++		[[fallthrough]];
++
++		case STATE_READING: {
++			Error err = http->poll();
++			if (err != OK) {
++				_fail("poll() error during body read: " + String::num_int64(err));
++				return;
++			}
++
++			if (http->get_status() == HTTPClient::STATUS_BODY) {
++				PackedByteArray chunk = http->read_response_body_chunk();
++				if (chunk.size() > 0) {
++					response_text += String::utf8(reinterpret_cast<const char *>(chunk.ptr()), chunk.size());
++				}
++				return;
++			}
++
++			// Body complete.
++			_transition(STATE_COMPLETE);
++			_log("RESPONSE", response_text);
++			_log("INFO", "Request complete.");
++			http->close();
++			break;
++		}
++	}
++}
++
++// ---------------------------------------------------------------------------
++// ClassDB binding
++// ---------------------------------------------------------------------------
++void DeepSeekClient::_bind_methods() {
++	ClassDB::bind_method(D_METHOD("set_api_key", "key"), &DeepSeekClient::set_api_key);
++	ClassDB::bind_method(D_METHOD("get_api_key"), &DeepSeekClient::get_api_key);
++	ADD_PROPERTY(PropertyInfo(Variant::STRING, "api_key"), "set_api_key", "get_api_key");
++
++	ClassDB::bind_method(D_METHOD("set_model", "model"), &DeepSeekClient::set_model);
++	ClassDB::bind_method(D_METHOD("get_model"), &DeepSeekClient::get_model);
++	ADD_PROPERTY(PropertyInfo(Variant::STRING, "model"), "set_model", "get_model");
++
++	ClassDB::bind_method(D_METHOD("set_endpoint", "endpoint"), &DeepSeekClient::set_endpoint);
++	ClassDB::bind_method(D_METHOD("get_endpoint"), &DeepSeekClient::get_endpoint);
++	ADD_PROPERTY(PropertyInfo(Variant::STRING, "endpoint"), "set_endpoint", "get_endpoint");
++
++	ClassDB::bind_method(D_METHOD("request_completion", "prompt"), &DeepSeekClient::request_completion);
++	ClassDB::bind_method(D_METHOD("poll"), &DeepSeekClient::poll);
++	ClassDB::bind_method(D_METHOD("get_state"), &DeepSeekClient::get_state);
++	ClassDB::bind_method(D_METHOD("get_response_text"), &DeepSeekClient::get_response_text);
++	ClassDB::bind_method(D_METHOD("get_last_error"), &DeepSeekClient::get_last_error);
++
++	ADD_PROPERTY(PropertyInfo(Variant::INT, "state"), "", "get_state");
++	ADD_PROPERTY(PropertyInfo(Variant::STRING, "response_text"), "", "get_response_text");
++	ADD_PROPERTY(PropertyInfo(Variant::STRING, "last_error"), "", "get_last_error");
++
++	BIND_ENUM_CONSTANT(STATE_IDLE);
++	BIND_ENUM_CONSTANT(STATE_CONNECTING);
++	BIND_ENUM_CONSTANT(STATE_CONNECTED);
++	BIND_ENUM_CONSTANT(STATE_REQUESTING);
++	BIND_ENUM_CONSTANT(STATE_READING);
++	BIND_ENUM_CONSTANT(STATE_COMPLETE);
++	BIND_ENUM_CONSTANT(STATE_ERROR);
++}
