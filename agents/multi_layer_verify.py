@@ -24,7 +24,11 @@ from typing import Dict, List, Optional
 LOG_DIR = os.path.expanduser(
     "~/.local/share/godot/app_userdata/HVAC Simulation/oe_audit"
 )
-SCREENSHOT_DIR = "/tmp/godot_verify"
+# Editor captures go to Godot's user data directory (from get_editor_viewport_3d).
+# --script mode produces black frames; only --editor mode renders real pixels.
+SCREENSHOT_DIR = os.path.expanduser(
+    "~/.local/share/godot/app_userdata/HVAC Simulation"
+)
 
 # ── Core verifier ────────────────────────────────────────────────────────────
 
@@ -336,9 +340,13 @@ class MultiLayerVerifier:
     def _extract_pdf_section(self, section: str) -> Optional[str]:
         """Extract a section from the design spec PDF."""
         try:
+            # Use venv python for PyMuPDF access
+            venv_python = "/home/idor/hvac-simulation/venv/bin/python3"
+            if not os.path.exists(venv_python):
+                venv_python = "python3"
             result = subprocess.run(
                 [
-                    "python3",
+                    venv_python,
                     "/home/idor/hvac-simulation/agents/pdf_bridge.py",
                     "/home/idor/hvac-simulation/docs/design_specs/"
                     "DeepSeek-VL-Viewport-Verification-Design.pdf",
@@ -393,7 +401,7 @@ if __name__ == "__main__":
     verifier = MultiLayerVerifier()
     result = verifier.run_all(
         instruction="Add compressor at origin",
-        screenshot_path="/tmp/godot_verify/compressor_test.png",
+        screenshot_path=os.path.join(SCREENSHOT_DIR, "editor_capture_1.png"),
         pdf_section="3.1 Architecture",
     )
     print(json.dumps(result, indent=2))
